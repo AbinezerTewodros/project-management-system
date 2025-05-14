@@ -1,72 +1,43 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
-using ProjectManagementSystem1.Services;
-using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Data;
+using ProjectManagementSystem1.Entities;
 
 namespace ProjectManagementSystem1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Ensure only authenticated users access the endpoints
     public class ProjectController : ControllerBase
     {
-        private readonly IProjectService _projectService;
+        private readonly AppDbContext _context;
 
-        public ProjectController(IProjectService projectService)
+        public ProjectController(AppDbContext context)
         {
-            _projectService = projectService;
+            _context = context;
         }
 
-        // GET: api/project
+        // GET: api/Project
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetProjects()
         {
-            var projects = await _projectService.GetAllAsync();
+            var projects = await _context.Projects.ToListAsync();
             return Ok(projects);
         }
 
-        // GET: api/project/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var project = await _projectService.GetByIdAsync(id);
-            if (project == null)
-                return NotFound();
-            return Ok(project);
-        }
-
-        // POST: api/project
+        // POST: api/Project
         [HttpPost]
-        [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
+        public async Task<IActionResult> Create([FromBody] Project project)
         {
-            var username = User.FindFirstValue(ClaimTypes.Name);
-            var created = await _projectService.CreateAsync(dto, username);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
+            if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        // PUT: api/project/{id}
-        [HttpPut("{id}")]
-        [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectDto dto)
-        {
-            var username = User.FindFirstValue(ClaimTypes.Name);
-            var updated = await _projectService.UpdateAsync(id, dto, username);
-            if (updated == null)
-                return NotFound();
-            return Ok(updated);
-        }
+            project.CreatedDate = DateTime.UtcNow;
+            project.CreateUser = "System"; // TODO: Replace with actual user logic
 
-        // DELETE: api/project/{id}
-        [HttpDelete("{id}")]
-        [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var deleted = await _projectService.DeleteAsync(id);
-            if (!deleted)
-                return NotFound();
-            return NoContent();
+            await _context.Projects.AddAsync(project);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetProjects), new { id = project.Id }, project);
         }
     }
 }
