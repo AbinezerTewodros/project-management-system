@@ -11,6 +11,11 @@ namespace ProjectManagementSystem1.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Project> Projects { get; set; }
 
+        modelBuilder.Entity<ProjectTask>()
+        .Property(p => p.Version)
+        .IsRowVersion();
+
+
         // If you have other tables like RefreshTokens:
         //public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
