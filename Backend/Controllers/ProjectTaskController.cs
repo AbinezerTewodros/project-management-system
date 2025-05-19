@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Data;
-using ProjectManagementSystem1.Model.Dtos;
+using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
 
