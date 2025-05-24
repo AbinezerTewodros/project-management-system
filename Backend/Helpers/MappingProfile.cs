@@ -52,6 +52,29 @@ namespace ProjectManagementSystem1.Helpers
     //           .ForAllMembers(opts => opts.Condition((src, dest, srcMember) =>
     //    srcMember != null // Only update fields that are NOT null in the DTO
     //));
+    // Personal Message Mapping
+            CreateMap<PersonalMessage, PersonalMessageDto>();
+            CreateMap<PersonalMessageDto, PersonalMessage>()
+                .ForMember(dest => dest.Attachment, opt => opt.Ignore()); // set by FK or manually
+
+            // Project Message Mapping
+            CreateMap<ProjectMessage, ProjectMessageDto>();
+
+            CreateMap<ProjectMessageDto, ProjectMessage>()
+                .ForMember(dest => dest.Attachment, opt => opt.Ignore());
+
+            // Departmental Message Mapping
+            CreateMap<DepartmentalMessage, DepartmentalMessageDto>();
+            CreateMap<DepartmentalMessageDto, DepartmentalMessage>()
+                .ForMember(dest => dest.Attachment, opt => opt.Ignore());
+
+            // Attachment Mapping
+            CreateMap<Attachment, AttachmentDto>().ReverseMap();
+
+            // Message View Mapping (flatten Viewer info if needed)
+            CreateMap<MessageView, MessageViewDto>()
+                .ForMember(dest => dest.ViewerIp, opt => opt.MapFrom(src => src.ViewerIp));
+            CreateMap<MessageViewDto, MessageView>();
         }
 
     }
