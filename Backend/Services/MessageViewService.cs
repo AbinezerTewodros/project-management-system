@@ -1,3 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Data;
+using ProjectManagementSystem1.Model.Dto;
+using ProjectManagementSystem1.Model.Entities;
+
 namespace ProjectManagementSystem1.Services
 {
 public class MessageViewService : IMessageViewService
