@@ -24,7 +24,7 @@ namespace ProjectManagementSystem1.Controllers
             _commentService = commentService;
         }
 
-        [Authorize(Policy = "SupervisorOnly")]
+        //[Authorize(Policy = "SupervisorOnly")]
         [HttpPost("create-task")]
         public async Task<IActionResult> CreateTask([FromBody] ProjectTaskCreateDto dto)
         {

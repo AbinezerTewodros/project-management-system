@@ -45,6 +45,7 @@ namespace ProjectManagementSystem1.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email ?? ""),
+                new Claim("Department", user.Department)
             };
 
             var userRoles = await _userManager.GetRolesAsync(user);

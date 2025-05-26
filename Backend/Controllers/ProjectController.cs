@@ -19,9 +19,13 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpGet("All-projects")]
+        [Authorize(Roles = "Manager")]
         public async Task<IActionResult> GetAll()
         {
-            var projects = await _projectService.GetAllAsync();
+            var userDept = User.FindFirst("Department")?.Value;
+            if (userDept == null) return Forbid();
+
+            var projects = await _projectService.GetAllAsync(userDept);
             return Ok(projects);
         }
 

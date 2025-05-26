@@ -17,9 +17,9 @@ namespace ProjectManagementSystem1.Services
             _mapper = mapper;
         }
 
-        public async Task<List<ProjectDto>> GetAllAsync()
+        public async Task<List<ProjectDto>> GetAllAsync(string department)
         {
-            var projects = await _context.Projects.ToListAsync();
+            var projects = await _context.Projects.Where(p => p.Department == department).ToListAsync();
             return _mapper.Map<List<ProjectDto>>(projects);
         }
 

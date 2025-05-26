@@ -8,6 +8,7 @@ public class Project
 
     [Required]
     public string ProjectName { get; set; }
+    public string Department {  get; set; } // assigned when project is created (logged-in manager department)
 
     public string ProjectOwner { get; set; }
     public string ProjectOwnerPhone { get; set; }
