@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium;
 using ProjectManagementSystem1.Model.Dto;
+using ProjectManagementSystem1.Model.Dto.ProjectTaskDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 
@@ -15,10 +17,11 @@ namespace ProjectManagementSystem1.Controllers
     public class ProjectTaskController : ControllerBase
     {
         private readonly IProjectTaskService _projectTaskService;
-
-        public ProjectTaskController(IProjectTaskService projectTaskService)
+        private readonly ICommentService _commentService;
+        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService)
         {
             _projectTaskService = projectTaskService;
+            _commentService = commentService;
         }
 
         [Authorize(Policy = "SupervisorOnly")]
@@ -77,9 +80,10 @@ namespace ProjectManagementSystem1.Controllers
                 IsLeaf = task.IsLeaf,
                 Progress = task.Progress,
                 Weight = task.Weight,
-                Priority = task.Priority,
+                //Priority = task.Priority,
                 Status = task.Status,
                 EstimatedHours = task.EstimatedHours,
+                ActualHours = task.ActualHours,
                 DueDate = task.DueDate,
                 CreatedAt = task.CreatedAt,
                 SubTasks = task.SubTasks.Select(MapToResponseDto).ToList()
@@ -105,7 +109,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         // GET: api/ProjectTask/{id}
-        [HttpGet("{id}")]
+        [HttpGet("Get-task-by-id/{id}")]
         public async Task<IActionResult> GetTaskById(int id)
         {
             var task = await _projectTaskService.GetTaskByIdAsync(id);
@@ -117,15 +121,152 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         // GET: api/ProjectTask
-        [HttpGet]
+        [HttpGet("Get-all-tasks")]
         public async Task<IActionResult> GetAllTasks()
         {
             var tasks = await _projectTaskService.GetAllTasksAsync();
             return Ok(tasks.Select(MapToResponseDto));
         }
 
+        [HttpPut("update-task/{id}")]
+        public async Task<IActionResult> UpdateTask(int id, [FromBody] ProjectTaskUpdateDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(memberId))
+                return Unauthorized();
+
+            bool isSupervisor = User.IsInRole("Supervisor");
+
+            var updatedTask = await _projectTaskService.UpdateTaskAsync(id, memberId, dto, isSupervisor);
+            if (updatedTask == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(MapToResponseDto(updatedTask));
+        }
+
+        [HttpPut("{taskId}/accept")]
+        public async Task<IActionResult> AcceptTask(int taskId)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(memberId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                await _projectTaskService.AcceptTaskAsync(taskId, memberId);
+                return Ok();
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPut("{taskId}/reject")]
+        public async Task<IActionResult> RejectTask(int taskId, [FromBody]  RejectTaskDto rejectDto)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(memberId))
+            {
+                return Unauthorized();
+            }
+
+            if (string.IsNullOrWhiteSpace(rejectDto?.Reason))
+            {
+                return BadRequest("Rejection reason is required.");
+            }
+
+            try
+            {
+                await _projectTaskService.RejectTaskAsync(taskId, memberId, rejectDto.Reason);
+                return Ok();
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("{taskId}/comments")]
+        public async Task<IActionResult> AddComment(int taskId, [FromBody] AddCommentDto commentDto)
+        {
+            var memeberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(memeberId))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _commentService.AddCommentAsync(taskId, memeberId, commentDto.Content);
+                return Ok();
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet("{taskId}/comments")]
+        public async Task<IActionResult> GetComments(int taskId)
+        {
+            var comments = await _commentService.GetCommentsByTaskIdAsync(taskId);
+            return Ok(comments);
+        }
+
+        [HttpPut("{taskId}/actual-hours")]
+        public async Task<IActionResult> UpdateTaskActualHours(int taskId, [FromBody] UpdateTaskActualHoursDto actualHoursDto)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(memberId))
+            {
+                return Unauthorized();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _projectTaskService.UpdateTaskActualHoursAsync(taskId, memberId, actualHoursDto.ActualHours);
+                return Ok();
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
         // DELETE: api/ProjectTask/{id}
-        [HttpDelete("{id}")]
+        [HttpDelete("Delete-task")]
         [Authorize(Policy = "SupervisorOnly")] // Example policy for deletion
         public async Task<IActionResult> DeleteTask(int id)
         {
@@ -140,83 +281,3 @@ namespace ProjectManagementSystem1.Controllers
     }
 }
 
-
-
-
-
-
-
-
-
-//[HttpPost("create-task")]
-//public async Task<IActionResult> CreateTask([FromBody] ProjectTaskCreateDto dto)
-//{
-//    if (!ModelState.IsValid)
-//        return BadRequest(ModelState);
-
-//    try
-//    {
-//        var result = await _projectTaskService.CreateTaskAsync(dto);
-//        return CreatedAtAction(nameof(GetByTaskId), new { id = result.Id }, result);
-//    }
-//    catch (ArgumentException ex)
-//    {
-//        return BadRequest(new { error = ex.Message });
-//    }
-
-//}
-
-//// GET: api/ProjectTask/{id}
-//[HttpGet("get-by-id")]
-//public async Task<IActionResult> GetByTaskId(int id)
-//{
-//    var task = await _projectTaskService.GetTaskByIdAsync(id);
-//    if (task == null)
-//        return NotFound();
-
-//    return Ok(task);
-//}
-
-//// GET: api/ProjectTask
-//[HttpGet("get-all")]
-//public async Task<IActionResult> GetAllTasks()
-//{
-//    var tasks = await _projectTaskService.GetAllTasksAsync();
-//    return Ok(tasks);
-//}
-
-//// PUT: api/ProjectTask/{id}
-//[HttpPut("update-task")]
-//public async Task<IActionResult> UpdateTask(int id, [FromBody] ProjectTaskUpdateDto dto)
-//{
-//    if (!ModelState.IsValid)
-//        return BadRequest(ModelState);
-
-//    try
-//    {
-//        var result = await _projectTaskService.UpdateTaskAsync(id, dto);
-//        if (result == null)
-//            return NotFound();
-
-//        return Ok(result);
-//    }
-//    catch (ArgumentException ex)
-//    {
-//        return BadRequest(new { error = ex.Message });
-//    }
-
-
-
-//    // 204 No Content
-//}
-
-//// DELETE: api/ProjectTask/{id}
-//[HttpDelete("delete-task")]
-//public async Task<IActionResult> Delete(int id)
-//{
-//    var result = await _projectTaskService.DeleteTaskAsync(id);
-//    if (!result)
-//        return NotFound();
-
-//    return NoContent();
-//}

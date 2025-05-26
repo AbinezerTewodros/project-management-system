@@ -22,7 +22,7 @@ namespace ProjectManagementSystem1.Model.Dto
         public int Weight { get; set; }
         public TaskPriority Priority { get; set; }
         public double EstimatedHours { get; set; }
-        public double ActualHours { get; set; }
+        public double? ActualHours { get; set; }
         public DateTime? DueDate { get; set; }
         public TaskStatus Status { get; set; }
         public string? RejectionReason { get; set; }

@@ -13,14 +13,12 @@ namespace ProjectManagementSystem1.Services
         Task ValidateMemberAssignmentAsync(string? memberId, int projectAssignmentId);
         Task<ProjectTask> AddSubtaskAsync(int parentTaskId, ProjectTaskCreateDto dto);
         Task AssignTaskAsync(int taskId, string memberId);
+        Task<ProjectTask> UpdateTaskAsync(int id, string memberIdFromToken, ProjectTaskUpdateDto dto, bool isSupervisor);
+        Task AcceptTaskAsync(int taskId, string memeberId);
+        Task RejectTaskAsync(int taskId, string memberId, string reason);
+        Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours);
         Task<bool> DeleteTaskAsync(int taskId);
 
-
-        //Task ValidateCircularReferenceAsync(int taskId, int? parentTaskId);
-        //Task<ProjectTaskReadDto> GetTaskByIdAsync(int taskId);
-        //Task<IEnumerable<ProjectTaskReadDto>> GetAllTasksAsync();
-        //Task<ProjectTaskReadDto> UpdateTaskAsync(int id, ProjectTaskUpdateDto dto);
-        //Task<bool> DeleteTaskAsync(int taskId);
     }
 }
 
