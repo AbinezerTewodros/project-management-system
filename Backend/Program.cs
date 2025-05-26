@@ -50,7 +50,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
-
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 // Add services to the container.
 

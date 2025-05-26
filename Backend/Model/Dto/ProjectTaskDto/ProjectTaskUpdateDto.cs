@@ -31,6 +31,7 @@ namespace ProjectManagementSystem1.Model.Dto
         public DateTime? DueDate { get; set; }
 
         public TaskPriority? Priority { get; set; }
+        //public int? ProjectGoalId { get; set; }
 
         [Required]
         public TaskStatus? Status { get; set; }

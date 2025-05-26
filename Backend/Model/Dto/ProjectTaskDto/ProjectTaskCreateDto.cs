@@ -25,6 +25,7 @@ namespace ProjectManagementSystem1.Model.Dto
         public double EstimatedHours { get; set; }
 
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+        //public int? ProjectGoalId { get; set; }
 
         public DateTime? DueDate { get; set; }
 
