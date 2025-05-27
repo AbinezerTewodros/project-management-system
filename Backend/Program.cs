@@ -12,6 +12,7 @@ using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
 using ProjectManagementSystem1.Services.Background;
 using Scalar.AspNetCore;
+using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
 
@@ -48,15 +49,22 @@ builder.Services.AddHostedService<RefreshTokenCleanupService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
-
+builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -90,7 +98,10 @@ builder.Services.AddSwaggerGen(c =>
             new string[] { }
         }
     });
+    c.UseAllOfToExtendReferenceSchemas();
+    //c.SchemaFilter<EnumSchemaFilter>(); 
 });
+
 
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");

@@ -13,10 +13,10 @@ public class Project
     public string ProjectOwnerPhone { get; set; }
     public string ProjectOwnerEmail { get; set; }
 
-    public ProjectPriority Priority { get; set; } = ProjectPriority.Medium;
+    public string Priority { get; set; } 
     public DateTime? DueDate { get; set; }
 
-    public ProjectStatus Status { get; set; } = ProjectStatus.ToDo;
+    public string Status { get; set; }
 
     // Audit fields
     public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;

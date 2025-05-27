@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 using ProjectManagementSystem1.Model.Entities;
 
 public class ProjectAssignment
@@ -14,15 +14,15 @@ public class ProjectAssignment
     public Project Project { get; set; }
 
     [Required]
-    public string MemberId { get; set; } // FK to ApplicationUser
+    public string MemberId { get; set; }
 
     [ForeignKey("MemberId")]
     public ApplicationUser Member { get; set; }
 
     [Required]
-    public string MemberRole { get; set; } // Supervisor or User
+    public string MemberRole { get; set; }
 
-    public double Status { get; set; } = 0; // Calculated from sub-tasks
+    public double Status { get; set; } = 0;
 
     // Audit fields
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
@@ -32,4 +32,6 @@ public class ProjectAssignment
 
     [Timestamp]
     public byte[] Version { get; set; }
+
+    public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>(); // navigation property
 }
