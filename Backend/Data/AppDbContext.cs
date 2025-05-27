@@ -16,6 +16,12 @@ namespace ProjectManagementSystem1.Data
         public DbSet<ProjectTask> ProjectTasks { get; set; }
         public DbSet<Comment> Comments { get; set; }
         //public DbSet<ProjectGoal> ProjectGoals { get; set; }
+        public DbSet<PersonalMessage> PersonalMessages { get; set; }
+        public DbSet<DepartmentalMessage> DepartmentalMessages { get; set; }
+        public DbSet<ProjectMessage> ProjectMessages { get; set; }
+        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<MessageView> MessageViews { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -33,6 +39,22 @@ namespace ProjectManagementSystem1.Data
                     .WithMany(t => t.SubTasks)
                     .HasForeignKey(t => t.ParentTaskId)
                     .OnDelete(DeleteBehavior.Restrict);
+                // Example: map MessageView → all message tables via no cascade delete
+                modelBuilder.Entity<MessageView>()
+                   .HasOne<PersonalMessage>()
+                   .WithMany(m => m.Views)
+                   .HasForeignKey(v => v.MessageId)
+                   .OnDelete(DeleteBehavior.NoAction);
+                modelBuilder.Entity<MessageView>()
+                   .HasOne<DepartmentalMessage>()
+                   .WithMany(m => m.Views)
+                   .HasForeignKey(v => v.MessageId)
+                   .OnDelete(DeleteBehavior.NoAction);
+                modelBuilder.Entity<MessageView>()
+                   .HasOne<ProjectMessage>()
+                   .WithMany(m => m.Views)
+                   .HasForeignKey(v => v.MessageId)
+                   .OnDelete(DeleteBehavior.NoAction);
             });
 
             // Prevent circular references via SQL trigger (optional)

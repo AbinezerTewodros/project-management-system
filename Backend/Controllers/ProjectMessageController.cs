@@ -1,10 +1,13 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Data;
-using projectManagementSystem1.Model;
+using ProjectManagementSystem1.Model.Entities;
 
 namespace ProjectManagementSystem1.Controllers
 {
@@ -12,9 +15,9 @@ namespace ProjectManagementSystem1.Controllers
     [Route("api/[controller]")]
     public class ProjectMessagesController : ControllerBase
     {
-        private readonly MessagingDbContext _context;
+        private readonly AppDbContext _context;
 
-        public ProjectMessagesController(MessagingDbContext context)
+        public ProjectMessagesController(AppDbContext context)
         {
             _context = context;
         }

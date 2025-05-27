@@ -384,6 +384,59 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Attachment", b =>
+                {
+                    b.Property<long>("AttachmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("AttachmentId"));
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StoragePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("UploadedBy")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("AttachmentId");
+
+                    b.ToTable("Attachments");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Comment", b =>
                 {
                     b.Property<int>("Id")
@@ -411,6 +464,232 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasIndex("TaskId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.DepartmentalMessage", b =>
+                {
+                    b.Property<long>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("MessageId"));
+
+                    b.Property<long?>("AttachmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ReceiverDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SenderDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TimeEdited")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("AttachmentId");
+
+                    b.ToTable("DepartmentalMessages");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.MessageView", b =>
+                {
+                    b.Property<long>("ViewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("ViewId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("MessageId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("SeenTimestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("ViewerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ViewerIp")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ViewId");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("MessageViews");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.PersonalMessage", b =>
+                {
+                    b.Property<long>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("MessageId"));
+
+                    b.Property<long?>("AttachmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveryTimeSeen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCurrentEmployee")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ReceiverDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ReceiverId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ReceiverName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SenderDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TimeEdited")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("AttachmentId");
+
+                    b.ToTable("PersonalMessages");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectMessage", b =>
+                {
+                    b.Property<long>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("MessageId"));
+
+                    b.Property<long?>("AttachmentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeliveryTimeSeen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCurrentEmployee")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("ReceiverDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("ReceiverId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ReceiverName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SenderDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("SenderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TimeEdited")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("AttachmentId");
+
+                    b.ToTable("ProjectMessages");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
@@ -625,6 +904,54 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("Task");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.DepartmentalMessage", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Attachment", "Attachment")
+                        .WithMany()
+                        .HasForeignKey("AttachmentId");
+
+                    b.Navigation("Attachment");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.MessageView", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.DepartmentalMessage", null)
+                        .WithMany("Views")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.PersonalMessage", null)
+                        .WithMany("Views")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectMessage", null)
+                        .WithMany("Views")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.PersonalMessage", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Attachment", "Attachment")
+                        .WithMany()
+                        .HasForeignKey("AttachmentId");
+
+                    b.Navigation("Attachment");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectMessage", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Attachment", "Attachment")
+                        .WithMany()
+                        .HasForeignKey("AttachmentId");
+
+                    b.Navigation("Attachment");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
                 {
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ParentTask")
@@ -668,6 +995,21 @@ namespace ProjectManagementSystem1.Migrations
             modelBuilder.Entity("ProjectAssignment", b =>
                 {
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.DepartmentalMessage", b =>
+                {
+                    b.Navigation("Views");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.PersonalMessage", b =>
+                {
+                    b.Navigation("Views");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectMessage", b =>
+                {
+                    b.Navigation("Views");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>

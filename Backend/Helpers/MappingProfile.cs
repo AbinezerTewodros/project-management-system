@@ -30,29 +30,29 @@ namespace ProjectManagementSystem1.Helpers
             //    .ForMember(dest => dest.AssignmentStatus, opt => opt.MapFrom(src => src.AssignmentStatus.ToString()))
             //    .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
 
-    //        CreateMap<ProjectTask, ProjectTaskReadDto>()
-    //       .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-    //       .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
+            //        CreateMap<ProjectTask, ProjectTaskReadDto>()
+            //       .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            //       .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => src.Priority.ToString()));
 
-    //        CreateMap<ProjectTaskCreateDto, ProjectTask>()
-    //        .ForMember(dest => dest.AssignedMemberId, opt => opt.Ignore()) // Set manually in service
-    //        .ForMember(dest => dest.ProjectAssignmentId, opt => opt.Ignore()) // Set manually in service
-    //        .ForMember(dest => dest.Id, opt => opt.Ignore())
-    //        .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-    //        .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
-    //        //.ForMember(dest => dest.Id, opt => opt.Ignore())
-    //        //.ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
-    //        //.ForMember(dest => dest.UpdatedDate, opt => opt.Ignore());
+            //        CreateMap<ProjectTaskCreateDto, ProjectTask>()
+            //        .ForMember(dest => dest.AssignedMemberId, opt => opt.Ignore()) // Set manually in service
+            //        .ForMember(dest => dest.ProjectAssignmentId, opt => opt.Ignore()) // Set manually in service
+            //        .ForMember(dest => dest.Id, opt => opt.Ignore())
+            //        .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            //        .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
+            //        //.ForMember(dest => dest.Id, opt => opt.Ignore())
+            //        //.ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+            //        //.ForMember(dest => dest.UpdatedDate, opt => opt.Ignore());
 
-    //        CreateMap<ProjectTask, ProjectTaskCreateDto>();
-    //        CreateMap<ProjectTaskUpdateDto, ProjectTask>()
-    //          .ForMember(dest => dest.Id, opt => opt.Ignore())
-    //          .ForMember(dest => dest.ProjectAssignmentId, opt => opt.Ignore())
-    //          .ForMember(dest => dest.AssignedMemberId, opt => opt.Ignore())
-    //           .ForAllMembers(opts => opts.Condition((src, dest, srcMember) =>
-    //    srcMember != null // Only update fields that are NOT null in the DTO
-    //));
-    // Personal Message Mapping
+            //        CreateMap<ProjectTask, ProjectTaskCreateDto>();
+            //        CreateMap<ProjectTaskUpdateDto, ProjectTask>()
+            //          .ForMember(dest => dest.Id, opt => opt.Ignore())
+            //          .ForMember(dest => dest.ProjectAssignmentId, opt => opt.Ignore())
+            //          .ForMember(dest => dest.AssignedMemberId, opt => opt.Ignore())
+            //           .ForAllMembers(opts => opts.Condition((src, dest, srcMember) =>
+            //    srcMember != null // Only update fields that are NOT null in the DTO
+            //));
+            // Personal Message Mapping
             CreateMap<PersonalMessage, PersonalMessageDto>();
             CreateMap<PersonalMessageDto, PersonalMessage>()
                 .ForMember(dest => dest.Attachment, opt => opt.Ignore()); // set by FK or manually

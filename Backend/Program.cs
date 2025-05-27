@@ -15,6 +15,7 @@ using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
+using ProjectManamegemntSystem1.Hubs;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,6 +52,16 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
+
+// ?? ADDED: Real-Time Chat Service Registrations
+builder.Services.AddScoped<IPersonalMessageService, PersonalMessageService>();
+builder.Services.AddScoped<IProjectMessageService, ProjectMessageService>();
+builder.Services.AddScoped<IDepartmentalMessageService, DepartmentalMessageService>();
+builder.Services.AddScoped<IMessageViewService, MessageViewService>();
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+
+// --- SIGNALR ---
+builder.Services.AddSignalR(); // ADDED FOR CHAT FEATURE
 
 // Add services to the container.
 
@@ -182,5 +193,6 @@ app.UseSwaggerUI(c =>
 });
 
 app.MapControllers();
+app.MapHub<ChatHub>("/chat");
 
 app.Run();
