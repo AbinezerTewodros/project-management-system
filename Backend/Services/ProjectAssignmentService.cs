@@ -15,8 +15,12 @@ public class ProjectAssignmentService : IProjectAssignmentService
         _mapper = mapper;
     }
 
-    public async Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId)
+    public async Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId, string requesterDept)
     {
+        var project = await _context.Projects.FindAsync(projectId);
+        if (project == null || project.Department != requesterDept)
+            throw new UnauthorizedAccessException("Access denied. Department mismatch.");
+
         var assignments = await _context.ProjectAssignments
             .Include(p => p.Project)
             .Include(m => m.Member)
@@ -26,10 +30,13 @@ public class ProjectAssignmentService : IProjectAssignmentService
         return _mapper.Map<List<AssignmentDto>>(assignments);
     }
 
-    public async Task<List<UserProjectDto>> GetProjectsByEmployeeIdAsync(string employeeId)
+    public async Task<List<UserProjectDto>> GetProjectsByEmployeeIdAsync(string employeeId, string requesterDept)
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == employeeId);
-        if (user == null)
+        if (user == null || user.Department != requesterDept)
+            throw new UnauthorizedAccessException("Access denied. Department mismatch.");
+
+        if (user.EmployeeId != employeeId)
             throw new ArgumentException("No user found with that Employee ID.");
 
         var assignments = await _context.ProjectAssignments
@@ -61,8 +68,12 @@ public class ProjectAssignmentService : IProjectAssignmentService
         return assignment != null ? _mapper.Map<AssignmentDto>(assignment) : null;
     }
 
-    public async Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string currentUser)
+    public async Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string requesterDept, string currentUser)
     {
+        var project = await _context.Projects.FindAsync(dto.ProjectId);
+        if (project == null || project.Department != requesterDept)
+            throw new UnauthorizedAccessException("Access denied. Department mismatch.");
+
         // Find user by EmployeeId
         var user = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == dto.EmployeeId);
         if (user == null)

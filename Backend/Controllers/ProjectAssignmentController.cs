@@ -22,8 +22,17 @@ namespace ProjectManagementSystem1.Controllers
         [HttpGet("All-members")]
         public async Task<IActionResult> GetByProject(int projectId)
         {
-            var assignments = await _assignmentService.GetAllByProjectAsync(projectId);
-            return Ok(assignments);
+            var dept = User.FindFirst("Department")?.Value;
+
+            try
+            {
+                var assignments = await _assignmentService.GetAllByProjectAsync(projectId, dept);
+                return Ok(assignments);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
         }
 
         // GET: Show all projects assigned for a user
@@ -31,9 +40,11 @@ namespace ProjectManagementSystem1.Controllers
         [Authorize] // Optional: Adjust roles as needed
         public async Task<IActionResult> GetProjectsByEmployeeId(string employeeId)
         {
+            var dept = User.FindFirst("Department")?.Value;
+
             try
             {
-                var result = await _assignmentService.GetProjectsByEmployeeIdAsync(employeeId);
+                var result = await _assignmentService.GetProjectsByEmployeeIdAsync(employeeId, dept);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -55,9 +66,25 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPost("Add-members")]
         public async Task<IActionResult> Create([FromBody] CreateAssignmentDto dto)
         {
+            var dept = User.FindFirst("Department")?.Value;
             var currentUser = User.FindFirstValue(ClaimTypes.Name);
-            var result = await _assignmentService.CreateAsync(dto, currentUser);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            try
+            {
+                var result = await _assignmentService.CreateAsync(dto, dept, currentUser);
+                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
         }
 
         // PUT: Edit role of the project members

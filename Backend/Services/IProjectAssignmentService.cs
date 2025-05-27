@@ -2,10 +2,11 @@
 
 public interface IProjectAssignmentService
 {
-    Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId);
-    Task<List<UserProjectDto>> GetProjectsByEmployeeIdAsync(string employeeId);
+    Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId, string requesterDept);
+    Task<List<UserProjectDto>> GetProjectsByEmployeeIdAsync(string employeeId, string requesterDept);
     Task<AssignmentDto?> GetByIdAsync(int id);
-    Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string currentUser);
+    Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string requesterDept, string currentUser);
     Task<bool> UpdateAsync(int id, UpdateAssignmentDto dto, string currentUser);
     Task<bool> DeleteAsync(int id);
+    //Task GetAllByProjectAsync(int projectId);
 }
