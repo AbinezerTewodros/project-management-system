@@ -1,0 +1,13 @@
+{
+  "JwtSettings": {
+    "SecretKey": "YOUR_SECRET_KEY_HERE",
+    "Issuer": "example.com",
+    "Audience": "example.com"
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=MyAppDb;User Id=YOUR_USERNAME;Password=YOUR_PASSWORD;"
+  },
+  "OtherConfig": {
+    "SomeApiKey": "YOUR_API_KEY_HERE"
+  }
+}
