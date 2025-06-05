@@ -45,14 +45,14 @@ namespace ProjectManagementSystem1.Data
             //// Limit hierarchy depth
             //entity.HasCheckConstraint("CK_MaxDepth", "Depth BETWEEN 0 AND 10");
 
-
+            modelBuilder.Entity<ProjectTask>()
+           .Property(p => p.Version)
+           .IsRowVersion();
 
         }
 
 
-        modelBuilder.Entity<ProjectTask>()
-        .Property(p => p.Version)
-        .IsRowVersion();
+       
 
 
         // If you have other tables like RefreshTokens:
