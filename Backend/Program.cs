@@ -16,6 +16,9 @@ using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
 using ProjectManagementSystem1.Services.AttachmentService;
+using ProjectManagementSystem1.Services.TodoItems;
+using ProjectManagementSystem1.Services.TodoItemService;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,6 +56,8 @@ builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>(
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<ITodoItemService, TodoItemService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 

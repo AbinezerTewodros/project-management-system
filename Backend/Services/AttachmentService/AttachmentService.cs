@@ -1,5 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using OpenQA.Selenium.DevTools.V134.Browser;
+using ProjectManagementSystem1.Data;
+using ProjectManagementSystem1.Model.Dto.Attachments;
+using ProjectManagementSystem1.Model.Entities;
+using PermissionType = ProjectManagementSystem1.Model.Entities.PermissionType;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.Attachments;
 
@@ -69,6 +74,11 @@ namespace ProjectManagementSystem1.Services.AttachmentService
 
         public async Task<Attachment> GetAttachmentByIdAsync(Guid id)
         {
+           
+            return await _context.Attachments
+                .Include(a => a.UploadedBy)
+                .Include(a => a.ProjectTask)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             return await _context.Attachments.FindAsync(id);
         }
@@ -80,6 +90,131 @@ namespace ProjectManagementSystem1.Services.AttachmentService
                 .ToListAsync();
         }
 
+
+        public async Task<AttachmentPermission> GrantPermissionAsync(Guid attachmentId, string userId, string roleId, ProjectManagementSystem1.Model.Entities.PermissionType permissionType)
+        {
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(roleId))
+            {
+                return null;
+            }
+            var existingPermission = await _context.AttachmentPermissions.FirstOrDefaultAsync(
+                p => p.AttachmentId == attachmentId &&
+                     p.PermissionType == permissionType &&
+                     p.UserId == userId &&
+                     p.RoleId == roleId
+            );
+
+            if (existingPermission != null)
+            {
+                return existingPermission;
+            }
+
+            var permission = new AttachmentPermission
+            {
+                AttachmentId = attachmentId,
+                PermissionType = permissionType,
+                UserId = userId,
+                RoleId = roleId
+            };
+
+            _context.AttachmentPermissions.Add(permission);
+            await _context.SaveChangesAsync();
+            return permission;
+        }
+
+        public async Task<bool> RevokePermissionAsync(Guid attachmentId, string userId, string roleId, ProjectManagementSystem1.Model.Entities.PermissionType permissionType)
+        {
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty (roleId))
+            {
+                return false;
+            }
+
+            var permissionToRemove = await _context.AttachmentPermissions.FirstOrDefaultAsync
+                (
+                    p => p.AttachmentId == attachmentId &&
+                    p.PermissionType == permissionType &&
+                    p.UserId == userId &&
+                    p.RoleId == roleId
+                );
+
+            if (permissionToRemove != null)
+            {
+                _context.AttachmentPermissions.Remove(permissionToRemove);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> CheckPermissionAsync(Guid attachmentId, string userId, ProjectManagementSystem1.Model.Entities.PermissionType permissionType)
+        {
+
+            var attachment = await _context.Attachments.FindAsync(attachmentId);
+            if (attachment == null)
+            {
+                return false;
+            }
+
+            if (attachment.UploadedByUserId == userId)
+            {
+                return true;
+            }
+
+            //if (permissionType == PermissionType.View && attachment.UploadedByUserId == userId)
+            //{
+            //    return true;
+            //}
+            // Check if there's a direct permission for the user
+            var userPermission = await _context.AttachmentPermissions.AnyAsync(
+                p => p.AttachmentId == attachmentId &&
+                     p.UserId == userId &&
+                     p.PermissionType == permissionType);
+
+            if (userPermission)
+            {
+                return true;
+            }
+
+            // If no direct user permission, check for role-based permissions
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Select(ur => ur.RoleId)
+                .ToListAsync();
+
+            if (userRoles.Any())
+            {
+                var rolePermission = await _context.AttachmentPermissions.AnyAsync(
+                    p => p.AttachmentId == attachmentId &&
+                         userRoles.Contains(p.RoleId) &&
+                         p.PermissionType == permissionType);
+
+                if (rolePermission)
+                {
+                    return true;
+                }
+            }
+
+            return false; // No explicit permission found
+        }
+
+        public async Task<IEnumerable<AttachmentPermission>> GetPermissionsForAttachmentAsync(Guid attachmentId)
+        {
+            return await _context.AttachmentPermissions
+                   .Where(p => p.AttachmentId == attachmentId)
+                   .Include(p => p.User)
+                   .Include(p => p.Role)
+                   .ToListAsync();
+
+        }
+
+        public async Task<AttachmentPermission> GetPermissionByIdAsync(Guid id)
+        {
+            return await _context.AttachmentPermissions
+                .Include(p => p.User)
+                .Include(p => p.Role)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
         public async Task SoftDeleteAttachmentAsync(Guid id)
         {
             var attachment = await _context.Attachments.FindAsync(id);
