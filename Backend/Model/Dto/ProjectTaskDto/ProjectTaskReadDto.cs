@@ -1,6 +1,6 @@
 ﻿using System;
+using ProjectManagementSystem1.Model.Dto.TodoItemsDto;
 using ProjectManagementSystem1.Model.Entities;
-using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus;
 
 namespace ProjectManagementSystem1.Model.Dto
 {
@@ -25,7 +25,7 @@ namespace ProjectManagementSystem1.Model.Dto
         public double? ActualHours { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
-        public TaskStatus Status { get; set; }
+        public Entities.TaskStatus Status { get; set; }
         public string? RejectionReason { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
@@ -33,5 +33,6 @@ namespace ProjectManagementSystem1.Model.Dto
         // Subtasks (hierarchy)
         public List<int> Dependencies { get; set; } = new List<int>();
         public ICollection<ProjectTaskReadDto> SubTasks { get; set; } = new List<ProjectTaskReadDto>();
+        public ICollection<TodoItemReadDto> TodoItems { get; set; } = new List<TodoItemReadDto>();
     }
 }

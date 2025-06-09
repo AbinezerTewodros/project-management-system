@@ -21,14 +21,14 @@ namespace ProjectManagementSystem1.Controllers
         private readonly ICommentService _commentService;
         private readonly INotificationService _notification;
         private readonly ILogger<ProjectTaskController> _logger;
-        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService, INotificationService notificationService ,ILogger<ProjectTaskController> logger)
+        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService, INotificationService notificationService, ILogger<ProjectTaskController> logger)
         {
             _projectTaskService = projectTaskService;
             _commentService = commentService;
             _notification = notificationService;
             _logger = logger;
         }
-    
+
         [Authorize(Policy = "SupervisorOnly")]
         [HttpPost("create-task")]
         public async Task<IActionResult> CreateTask([FromBody] ProjectTaskCreateDto dto)
@@ -361,4 +361,3 @@ namespace ProjectManagementSystem1.Controllers
 
     }
 }
-
