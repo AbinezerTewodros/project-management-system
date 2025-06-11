@@ -35,13 +35,16 @@ namespace ProjectManagementSystem1.Services
             await _context.SaveChangesAsync();
 
             // Notify the assigned member of the task (if they are not the one who commented)
+            // Notify the assigned member of the task (if they are not the one who commented)
             if (task.AssignedMemberId != memberId && !string.IsNullOrEmpty(task.AssignedMemberId))
             {
                 await _notification.CreateNotificationAsync(
-                    userId: task.AssignedMemberId,
+                    recipientUserId: task.AssignedMemberId,
+                    subject: "New Comment Added",
                     message: $"A new comment has been added to task '{task.Title}'.",
                     relatedEntityType: "ProjectTask",
-                    relatedEntityId: taskId
+                    relatedEntityId: taskId,
+                    deliveryMethod: NotificationDeliveryMethod.InApp // Added delivery method here
                 );
             }
         }
