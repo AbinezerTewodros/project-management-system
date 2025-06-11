@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectAssignmentDto;
 using ProjectManagementSystem1.Services;
 using System.Security.Claims;
@@ -12,10 +14,14 @@ namespace ProjectManagementSystem1.Controllers
     public class ProjectAssignmentController : ControllerBase
     {
         private readonly IProjectAssignmentService _assignmentService;
+        private readonly IUserService _userService;
+        private readonly AppDbContext _context;
 
-        public ProjectAssignmentController(IProjectAssignmentService assignmentService)
+        public ProjectAssignmentController(IProjectAssignmentService assignmentService, IUserService userService, AppDbContext context)
         {
             _assignmentService = assignmentService;
+            _userService = userService;
+            _context = context;
         }
 
         // GET: Show all members of a project
@@ -53,14 +59,6 @@ namespace ProjectManagementSystem1.Controllers
             }
         }
 
-        // GET: View member using Id
-        [HttpGet("member-byId")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var assignment = await _assignmentService.GetByIdAsync(id);
-            if (assignment == null) return NotFound();
-            return Ok(assignment);
-        }
 
         // POST: Add members to the project
         [HttpPost("Add-members")]
@@ -71,7 +69,7 @@ namespace ProjectManagementSystem1.Controllers
             try
             {
                 var result = await _assignmentService.CreateAsync(dto, dept, currentUser);
-                return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+                return Ok(result);
             }
             catch (ArgumentException ex)
             {
@@ -89,21 +87,43 @@ namespace ProjectManagementSystem1.Controllers
 
         // PUT: Edit role of the project members
         [HttpPut("edit-role")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateAssignmentDto dto)
+        [Authorize(Policy = "ManagerOnly")]
+        public async Task<IActionResult> EditRole([FromBody] UpdateAssignmentDto dto)
         {
-            var currentUser = User.FindFirstValue(ClaimTypes.Name);
-            var updated = await _assignmentService.UpdateAsync(id, dto, currentUser);
-            if (!updated) return NotFound();
-            return Ok("Assignment updated.");
+            var user = await _userService.GetUserByEmployeeIdAsync(dto.EmployeeId);
+            if (user == null) return NotFound("User not found.");
+
+            var assignment = await _context.ProjectAssignments
+                .FirstOrDefaultAsync(p => p.ProjectId == dto.ProjectId && p.MemberId == user.Id);
+
+            if (assignment == null) return NotFound("Assignment not found.");
+
+            assignment.MemberRole = dto.MemberRole;
+            assignment.UpdatedDate = DateTime.UtcNow;
+            assignment.UpdateUser = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            await _context.SaveChangesAsync();
+            return Ok("✅ Role updated.");
         }
+
 
         // DELETE: Delete member from the project
         [HttpDelete("delete-member")]
-        public async Task<IActionResult> Delete(int id)
+        [Authorize(Policy = "ManagerOnly")]
+        public async Task<IActionResult> DeleteMember([FromBody] UpdateAssignmentDto dto)
         {
-            var deleted = await _assignmentService.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            var user = await _userService.GetUserByEmployeeIdAsync(dto.EmployeeId);
+            if (user == null) return NotFound("User not found.");
+
+            var assignment = await _context.ProjectAssignments
+                .FirstOrDefaultAsync(p => p.ProjectId == dto.ProjectId && p.MemberId == user.Id);
+
+            if (assignment == null) return NotFound("Assignment not found.");
+
+            _context.ProjectAssignments.Remove(assignment);
+            await _context.SaveChangesAsync();
+
+            return Ok("🗑️ Member removed from project.");
         }
     }
 }
