@@ -11,7 +11,11 @@ public class Project
     public string Department {  get; set; } // assigned when project is created (logged-in manager department)
 
     public string ProjectOwner { get; set; }
+
+    [Phone]
     public string ProjectOwnerPhone { get; set; }
+
+    [EmailAddress]
     public string ProjectOwnerEmail { get; set; }
 
     public string Priority { get; set; } 
