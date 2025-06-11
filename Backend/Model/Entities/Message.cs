@@ -31,7 +31,7 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required]
         public int MessageType { get; set; } // 1 = Project, 2 = Department, 3 = Personal
 
-        public int? AttachmentId { get; set; }
+        public Guid? AttachmentId { get; set; }
 
         [ForeignKey("AttachmentId")]
         public Attachment? Attachment { get; set; }

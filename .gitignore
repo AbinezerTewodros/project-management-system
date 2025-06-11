@@ -3,13 +3,13 @@ bin/
 obj/
 *.user
 *.vs
-.vscode/
 
 # Secrets
 appsettings.json
 secrets.json
 
 # System files
+temp_auto_push.bat
 .DS_Store
 Thumbs.db
 
@@ -21,3 +21,5 @@ Thumbs.db
 
 **/Migrations/
 
+.gitignore
+branch_structure.json

@@ -6,6 +6,6 @@
         public string? ReceiverId { get; set; } // for personal chat only
         public int? ProjectId { get; set; } // for project message
         public int MessageType { get; set; } // 1=Project, 2=Dept, 3=Personal
-        public int? AttachmentId { get; set; }
+        public Guid? AttachmentId { get; set; }
     }
 }
