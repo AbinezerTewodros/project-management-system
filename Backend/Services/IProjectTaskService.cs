@@ -9,17 +9,16 @@ namespace ProjectManagementSystem1.Services
         Task<ProjectTask> CreateTaskAsync(ProjectTaskCreateDto dto, string creatorId);
         Task<List<ProjectTask>> GetAllTasksAsync();
         Task<ProjectTask> GetTaskByIdAsync(int taskId);
-        Task ValidateParentTaskAsync(int? parentTaskId, int projectAssignmentId);
-        Task ValidateMemberAssignmentAsync(string? memberId, int projectAssignmentId);
+        Task ValidateParentTaskAsync(int? parentTaskId, int projectAssignmentId); Task ValidateMemberAssignmentAsync(string? memberId, int projectAssignmentId);
         Task<ProjectTask> AddSubtaskAsync(int parentTaskId, ProjectTaskCreateDto dto, string creatorId);
         Task AssignTaskAsync(int taskId, string memberId);
         Task<ProjectTask> UpdateTaskAsync(int id, string memberIdFromToken, ProjectTaskUpdateDto dto, bool isSupervisor);
-        Task AcceptTaskAsync(int taskId, string memeberId);
-        Task RejectTaskAsync(int taskId, string memberId, string reason);
+        //Task AcceptTaskAsync(int taskId, string memeberId);
+        //Task RejectTaskAsync(int taskId, string memberId, string reason);
         Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours);
         Task UpdateTaskProgressAsync(int taskId, string memberId, double progress);
+        Task UpdateParentTaskProgressAsync(int? parentTaskId);
         Task<bool> DeleteTaskAsync(int taskId);
 
     }
 }
-
