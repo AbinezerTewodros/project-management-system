@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Services;
 using System.Security.Claims;
@@ -8,14 +10,16 @@ namespace ProjectManagementSystem1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Ensure only authenticated users access the endpoints
+    [Authorize] // only authenticated users access the endpoints
     public class ProjectController : ControllerBase
     {
         private readonly IProjectService _projectService;
+        private readonly AppDbContext _context;
 
-        public ProjectController(IProjectService projectService)
+        public ProjectController(IProjectService projectService, AppDbContext context)
         {
             _projectService = projectService;
+            _context = context;
         }
 
         [HttpGet("All-projects")]
@@ -36,6 +40,17 @@ namespace ProjectManagementSystem1.Controllers
             if (project == null)
                 return NotFound();
             return Ok(project);
+        }
+
+        //Get All Projects by Priority
+        [HttpGet("project-by-priority/{priority}")]
+        public async Task<IActionResult> GetProjectsByPriority(string priority)
+        {
+            var projects = await _context.Projects
+                .Where(p => p.Priority.ToLower() == priority.ToLower())
+                .ToListAsync();
+
+            return Ok(projects);
         }
 
         [HttpPost("create-project")]
@@ -67,5 +82,6 @@ namespace ProjectManagementSystem1.Controllers
                 return NotFound();
             return NoContent();
         }
+
     }
 }
