@@ -15,12 +15,14 @@ namespace ProjectManagementSystem1.Controller
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IADService _adService; // Service for Active Directory fetch
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IUserService _userService;
 
-        public AdminController(UserManager<ApplicationUser> userManager, IADService adService, RoleManager<IdentityRole> roleManager)
+        public AdminController(UserManager<ApplicationUser> userManager, IADService adService, RoleManager<IdentityRole> roleManager, IUserService userService)
         {
             _userManager = userManager;
             _adService = adService;
             _roleManager = roleManager;
+            _userService = userService;
         }
 
 
@@ -94,5 +96,43 @@ namespace ProjectManagementSystem1.Controller
 
             return Ok(new { message = "User created successfully.", userId = newUser.Id });
         }
+
+        [HttpPut("edit-user")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> EditUser(EditUserDto dto)
+        {
+            var user = await _userService.FindUserByIdentifierAsync(dto.Identifier);
+            if (user == null) return NotFound("User not found.");
+
+            user.FullName = dto.FullName ?? user.FullName;
+            user.Email = dto.Email ?? user.Email;
+            user.Department = dto.Department ?? user.Department;
+            user.Title = dto.Title ?? user.Title;
+            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
+            //user.Role = dto.Role ?? user.Role;
+            user.Company = dto.Company ?? user.Company;
+            //user.Status = dto.Status;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest("Failed to update user.");
+
+            return Ok("✅ User updated successfully.");
+        }
+
+        [HttpDelete("delete-user/{identifier}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> DeleteUser(string identifier)
+        {
+            var user = await _userService.FindUserByIdentifierAsync(identifier);
+            if (user == null) return NotFound("User not found.");
+
+            user.Status = "Inactive";
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded) return BadRequest("Failed to deactivate user.");
+
+            return Ok("🗑️ User deactivated.");
+        }
+
     }
 }
