@@ -73,6 +73,8 @@ namespace ProjectManagementSystem1.Model.Entities
             if ((Priority == TaskPriority.High || Priority == TaskPriority.Critical) && !DueDate.HasValue)
                 yield return new ValidationResult("High/Critical tasks require due dates", [nameof(DueDate)]);
         }
+        [Timestamp]
+        public byte[] Version { get; set; }
 
         public void UpdateHierarchy()
         {
