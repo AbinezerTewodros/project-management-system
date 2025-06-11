@@ -9,6 +9,7 @@ namespace ProjectManagementSystem1.Services
         Task<bool> ChangePasswordAsync(ChangePasswordDto changePasswordDto);
         Task<ApplicationUser?> GetUserByUsernameAsync(string username);
         Task<ApplicationUser?> GetUserByEmployeeIdAsync(string employeeId);
+        Task<ApplicationUser> FindUserByIdentifierAsync(string identifier);
 
     }
 }
