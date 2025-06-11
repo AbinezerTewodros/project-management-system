@@ -23,11 +23,13 @@ namespace ProjectManagementSystem1.Model.Dto
         public int weight { get; set; }
 
         public double EstimatedHours { get; set; }
-
+        public DateTime? StartDate { get; set; }
         public TaskPriority Priority { get; set; } = TaskPriority.Medium;
         //public int? ProjectGoalId { get; set; }
-
+        public System.Threading.Tasks.TaskStatus Status { get; set; }
         public DateTime? DueDate { get; set; }
+
+        public List<int> Dependencies { get; set; } = new List<int>(); // Add this line
 
         // Optional advanced structure handling
         //public int Depth { get; set; } = 0;
