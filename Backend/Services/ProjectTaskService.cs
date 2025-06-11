@@ -3,10 +3,6 @@ using OpenQA.Selenium;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Entities;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus; // Keep this specific using alias
 
 namespace ProjectManagementSystem1.Services
 {
@@ -26,6 +22,7 @@ namespace ProjectManagementSystem1.Services
                 .Include(t => t.ProjectAssignment)
                 .Include(t => t.ParentTask)
                 .Include(t => t.SubTasks)
+                .Include(t => t.TodoItems)
                 .FirstOrDefaultAsync(t => t.Id == taskId);
 
             if (task != null)
@@ -46,7 +43,6 @@ namespace ProjectManagementSystem1.Services
                     {
                         await _context.Entry(subtask).Collection(t => t.SubTasks).LoadAsync();
                     }
-
                     await LoadSubtasksRecursively(subtask);
                 }
             }
@@ -75,7 +71,6 @@ namespace ProjectManagementSystem1.Services
             string assignedMemberId = taskToDelete.AssignedMemberId;
             string taskTitle = taskToDelete.Title;
 
-
             if (taskToDelete.SubTasks.Any())
             {
                 foreach (var subtask in taskToDelete.SubTasks.ToList())
@@ -87,16 +82,14 @@ namespace ProjectManagementSystem1.Services
             _context.ProjectTasks.Remove(taskToDelete);
             await _context.SaveChangesAsync();
 
-            if (!string.IsNullOrEmpty(assignedMemberId))
-            {
-                await _notification.CreateNotificationAsync(
-                    userId: assignedMemberId,
-                    message: $"Task '{taskTitle}' has been decommleted.",
+            await _notification.CreateNotificationAsync(
+                    recipientUserId: assignedMemberId,
+                    subject: "Task Deleted",
+                    message: $"Task '{taskTitle}' has been deleted.",
                     relatedEntityType: "ProjectTask",
-                    relatedEntityId: taskId
+                    relatedEntityId: taskId,
+                    deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                 );
-                // Optionally notify the supervisor or creator
-            }
 
             return true;
         }
@@ -105,9 +98,8 @@ namespace ProjectManagementSystem1.Services
         {
             if (!parentTaskId.HasValue) return;
 
-            // Get current task's project ID from its assignment
             var currentTaskProjectAssignment = await _context.ProjectAssignments
-                .AsNoTracking() // No need to track for validation
+                .AsNoTracking()
                 .FirstOrDefaultAsync(pa => pa.Id == projectAssignmentIdOfCurrentTask);
 
             if (currentTaskProjectAssignment == null)
@@ -117,7 +109,7 @@ namespace ProjectManagementSystem1.Services
             var currentTaskProjectId = currentTaskProjectAssignment.ProjectId;
 
             var parentTask = await _context.ProjectTasks
-                .AsNoTracking() // No need to track for validation
+                .AsNoTracking()
                 .Include(t => t.ProjectAssignment)
                 .FirstOrDefaultAsync(t => t.Id == parentTaskId.Value);
 
@@ -201,18 +193,16 @@ namespace ProjectManagementSystem1.Services
             var task = new ProjectTask
             {
                 Title = dto.Title,
-                Description = dto.Description, // Added description mapping
+                Description = dto.Description,
                 ProjectAssignmentId = dto.ProjectAssignmentId,
                 ParentTaskId = dto.ParentTaskId,
-                Weight = dto.weight, // Assuming ProjectTaskCreateDto.weight maps to ProjectTask.Weight
+                Weight = dto.weight,
                 Priority = dto.Priority,
-                //ProjectGoal = dto.ProjectGoalId,
                 DueDate = dto.DueDate,
+                StartDate = dto.StartDate,
                 EstimatedHours = dto.EstimatedHours,
-                AssignedMemberId = dto.AssignedMemberId
-                // EF Core by convention will set ProjectAssignment if ProjectAssignmentId is set,
-                // and ParentTask if ParentTaskId is set, assuming the related entities are tracked or loaded.
-                // Initial Depth (0) and IsLeaf (true) are fine for new tasks. UpdateHierarchy will adjust later if it becomes a parent/subtask.
+                AssignedMemberId = dto.AssignedMemberId,
+                IsProjectRoot = !dto.ParentTaskId.HasValue
             };
 
 
@@ -221,31 +211,29 @@ namespace ProjectManagementSystem1.Services
 
             // Notify the creator
             await _notification.CreateNotificationAsync(
-                userId: creatorId,
+                recipientUserId: creatorId,
+                subject: "New Task Created",
                 message: $"You have created task: '{task.Title}'.",
                 relatedEntityType: "ProjectTask",
-                relatedEntityId: task.Id
+                relatedEntityId: task.Id,
+                deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
             );
-
             // Notify the assigned member, if any
             if (!string.IsNullOrEmpty(task.AssignedMemberId) && task.AssignedMemberId != creatorId)
             {
                 await _notification.CreateNotificationAsync(
-                    userId: task.AssignedMemberId,
-                    message: $"You have been assigned to task: '{task.Title}'.",
-                    relatedEntityType: "ProjectTask",
-                    relatedEntityId: task.Id
-                );
+                     recipientUserId: task.AssignedMemberId,
+                     subject: "Assigned to Task",
+                     message: $"You have been assigned to task: '{task.Title}'.",
+                     relatedEntityType: "ProjectTask",
+                     relatedEntityId: task.Id,
+                     deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                 );
             }
             await UpdateParentTaskEstimatedHoursAsync(task.Id);
 
             // Validate circular reference after task has an ID and ParentTaskId is set
             await ValidateCircularReferenceAsync(task.Id, task.ParentTaskId);
-
-            // If it's a subtask, its hierarchy (Depth, parent's IsLeaf) will be updated by AddSubtaskAsync.
-            // If it's a root task, its initial Depth (0) and IsLeaf (true) are correct.
-            // If a root task needs its ParentTask explicitly set to null (it is by default for int?), it's fine.
-            // No need to call UpdateHierarchy here as its state is initially correct or will be handled by AddSubtaskAsync.
 
             return task;
         }
@@ -276,30 +264,32 @@ namespace ProjectManagementSystem1.Services
                 ParentTaskId = parentTaskId, // Explicitly set the ParentTaskId for the new subtask
                 weight = subtaskSpecificDto.weight,
                 EstimatedHours = subtaskSpecificDto.EstimatedHours,
-                //Priority = subtaskSpecificDto.Priority,
                 DueDate = subtaskSpecificDto.DueDate
             };
 
-            // CreateTaskAsync will validate, create, add to context, and save the new subtask.
             var subtaskEntity = await CreateTaskAsync(dtoForCreateCall, creatorId);
 
             // Notify the creator
             await _notification.CreateNotificationAsync(
-                userId: creatorId,
+                recipientUserId: creatorId,
+                subject: "New Subtask Created",
                 message: $"You have created subtask: '{subtaskEntity.Title}' under task '{parentTaskEntity.Title}'.",
                 relatedEntityType: "ProjectTask",
-                relatedEntityId: subtaskEntity.Id
+                relatedEntityId: subtaskEntity.Id,
+                deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
             );
 
             // Notify the assigned member, if any
             if (!string.IsNullOrEmpty(subtaskEntity.AssignedMemberId) && subtaskEntity.AssignedMemberId != creatorId)
             {
                 await _notification.CreateNotificationAsync(
-                    userId: subtaskEntity.AssignedMemberId,
-                    message: $"You have been assigned to subtask: '{subtaskEntity.Title}' under task '{parentTaskEntity.Title}'.",
-                    relatedEntityType: "ProjectTask",
-                    relatedEntityId: subtaskEntity.Id
-                );
+                   recipientUserId: subtaskEntity.AssignedMemberId,
+                   subject: "Assigned to Subtask",
+                   message: $"You have been assigned to subtask: '{subtaskEntity.Title}' under task '{parentTaskEntity.Title}'.",
+                   relatedEntityType: "ProjectTask",
+                   relatedEntityId: subtaskEntity.Id,
+                   deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+               );
             }
 
             if (!parentTaskEntity.SubTasks.Contains(subtaskEntity))
@@ -322,7 +312,10 @@ namespace ProjectManagementSystem1.Services
 
         public async Task AssignTaskAsync(int taskId, string memberId)
         {
-            var task = await _context.ProjectTasks.FindAsync(taskId);
+            var task = await _context.ProjectTasks
+                .Include(t => t.SubTasks) // Include subtasks
+                .FirstOrDefaultAsync(t => t.Id == taskId);
+
             if (task == null)
             {
                 throw new NotFoundException($"Task with ID '{taskId}' not found.");
@@ -331,15 +324,111 @@ namespace ProjectManagementSystem1.Services
             // Optionally validate if the member is assigned to the project
             await ValidateMemberAssignmentAsync(memberId, task.ProjectAssignmentId);
 
+            string originalAssignee = task.AssignedMemberId;
             task.AssignedMemberId = memberId;
             await _context.SaveChangesAsync();
 
+            if (originalAssignee != memberId)
+            {
+                if (!string.IsNullOrEmpty(memberId))
+                {
+                    await _notification.CreateNotificationAsync(
+                        recipientUserId: memberId,
+                        subject: "Assigned to Task",
+                        message: $"You have been assigned to task: '{task.Title}'.",
+                        relatedEntityType: "ProjectTask",
+                        relatedEntityId: taskId,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                    );
+                }
+                if (!string.IsNullOrEmpty(originalAssignee))
+                {
+                    await _notification.CreateNotificationAsync(
+                        recipientUserId: originalAssignee,
+                        subject: "Unassigned from Task",
+                        message: $"You have been unassigned from task: '{task.Title}'.",
+                        relatedEntityType: "ProjectTask",
+                        relatedEntityId: taskId,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                    );
+                }
+            }
+
+
+            // Enhancement: Automatically create a TodoItem for the assigned task with the same weight as the task
+            var mainTodoItem = new TodoItem
+            {
+                ProjectTaskId = taskId,
+                Title = $"Action Item for {task.Title}",
+                Weight = task.Weight, // Inherit weight from the task
+                Status = TodoItemStatus.Pending
+            };
+            _context.TodoItems.Add(mainTodoItem);
+            await _context.SaveChangesAsync();
             await _notification.CreateNotificationAsync(
-                userId: memberId,
-                message: $"You have been assigned to task: '{task.Title}'.",
-                relatedEntityType: "ProjectTask",
-                relatedEntityId: taskId
-                );
+                recipientUserId: memberId,
+                subject: "New Action Item Created",
+                message: $"A new action item has been created for you in task: '{task.Title}'.",
+                relatedEntityType: "TodoItem",
+                relatedEntityId: mainTodoItem.Id,
+                deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+            );
+
+            // Enhancement: Automatically create TodoItems and assign member to subtasks as well with the same weight as the subtask
+            if (task.SubTasks != null && task.SubTasks.Any())
+            {
+                foreach (var subtask in task.SubTasks)
+                {
+                    string originalSubtaskAssignee = subtask.AssignedMemberId;
+                    // Assign the member to the subtask
+                    subtask.AssignedMemberId = memberId;
+                    _context.ProjectTasks.Update(subtask); // Mark subtask for update
+
+                    var subtaskTodoItem = new TodoItem
+                    {
+                        ProjectTaskId = subtask.Id,
+                        Title = $"Action Item for {subtask.Title}",
+                        Weight = subtask.Weight, // Inherit weight from the subtask
+                        Status = TodoItemStatus.Pending
+                    };
+                    _context.TodoItems.Add(subtaskTodoItem);
+                    await _context.SaveChangesAsync(); // Save changes for both subtask assignment and todo item creation
+                    if (originalSubtaskAssignee != memberId)
+                    {
+                        if (!string.IsNullOrEmpty(memberId))
+                        {
+                            await _notification.CreateNotificationAsync(
+                                recipientUserId: memberId,
+                                subject: "Assigned to Subtask",
+                                message: $"You have been assigned to subtask: '{subtask.Title}' under task '{task.Title}'.",
+                                relatedEntityType: "ProjectTask",
+                                relatedEntityId: subtask.Id,
+                                deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                            );
+                        }
+                        if (!string.IsNullOrEmpty(originalSubtaskAssignee))
+                        {
+                            await _notification.CreateNotificationAsync(
+                                recipientUserId: originalSubtaskAssignee,
+                                subject: "Unassigned from Subtask",
+                                message: $"You have been unassigned from subtask: '{subtask.Title}' under task '{task.Title}'.",
+                                relatedEntityType: "ProjectTask",
+                                relatedEntityId: subtask.Id,
+                                deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                            );
+                        }
+                    }
+                    await _notification.CreateNotificationAsync(
+                        recipientUserId: memberId,
+                        subject: "New Action Item Created",
+                        message: $"A new action item has been created for you in subtask: '{subtask.Title}' under task '{task.Title}'.",
+                        relatedEntityType: "TodoItem",
+                        relatedEntityId: subtaskTodoItem.Id,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
+                    );
+                }
+                await _context.SaveChangesAsync(); // Save all subtask assignments
+            }
         }
 
         public async Task<ProjectTask> UpdateTaskAsync(int id, string memberIdFromToken, ProjectTaskUpdateDto dto, bool isSupervisor)
@@ -352,67 +441,17 @@ namespace ProjectManagementSystem1.Services
 
             string originalAssignedMemberId = task.AssignedMemberId;
             DateTime? originalDueDate = task.DueDate;
-            TaskStatus originalStatus = task.Status;
+            //TaskStatus originalStatus = task.Status; // TaskStatus removed
 
             // Update properties if provided in the DTO
-            if (dto.Title != null)
-            {
-                task.Title = dto.Title;
-            }
-            if (dto.Description != null)
-            {
-                task.Description = dto.Description;
-            }
+            if (dto.Title != null) task.Title = dto.Title;
+            if (dto.Description != null) task.Description = dto.Description;
             if (dto.Weight.HasValue)
             {
-                if (dto.Weight.HasValue && (dto.Weight.Value < 1 || dto.Weight.Value > 100))
-                {
+                if (dto.Weight.Value < 1 || dto.Weight.Value > 100)
                     throw new InvalidOperationException("Weight must be between 1 and 100.");
-                }
                 task.Weight = dto.Weight.Value;
                 await UpdateParentTaskWeightAsync(id);
-            }
-
-            if (dto.DueDate.HasValue)
-            {
-                task.DueDate = dto.DueDate;
-            }
-            if (dto.EstimatedHours.HasValue)
-            {
-                task.EstimatedHours = dto.EstimatedHours.Value;
-                await UpdateParentTaskEstimatedHoursAsync(id); // Update parent on estimated hours change
-            }
-            if (dto.AssignedMemberId != null)
-            {
-                task.AssignedMemberId = dto.AssignedMemberId;
-            }
-            if (dto.Status.HasValue)
-            {
-                task.Status = dto.Status.Value;
-            }
-            if (dto.Priority.HasValue)
-            {
-                task.Priority = dto.Priority.Value;
-            }
-
-            task.UpdatedAt = DateTime.UtcNow;
-            _context.ProjectTasks.Update(task);
-            await _context.SaveChangesAsync();
-
-            // Send notifications based on changes
-            if (dto.Status.HasValue && dto.Status.Value != originalStatus)
-            {
-                // Notify assigned member and potentially supervisor
-                if (!string.IsNullOrEmpty(task.AssignedMemberId))
-                {
-                    await _notification.CreateNotificationAsync(
-                        userId: task.AssignedMemberId,
-                        message: $"The status of task '{task.Title}' has been updated to '{dto.Status.Value}'.",
-                        relatedEntityType: "ProjectTask",
-                        relatedEntityId: id
-                    );
-                }
-                // Optionally notify supervisor
             }
 
             if (dto.DueDate.HasValue && dto.DueDate.Value != originalDueDate)
@@ -421,146 +460,70 @@ namespace ProjectManagementSystem1.Services
                 if (!string.IsNullOrEmpty(task.AssignedMemberId))
                 {
                     await _notification.CreateNotificationAsync(
-                        userId: task.AssignedMemberId,
+                        recipientUserId: task.AssignedMemberId,
+                        subject: "Task Due Date Updated",
                         message: $"The due date of task '{task.Title}' has been updated to '{dto.DueDate?.ToString("yyyy-MM-dd")}'.",
                         relatedEntityType: "ProjectTask",
-                        relatedEntityId: id
+                        relatedEntityId: id,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                     );
                 }
                 // Optionally notify supervisor
             }
-
+            if (dto.StartDate.HasValue) task.StartDate = dto.StartDate; // Ensure this line is present
+            if (dto.EstimatedHours.HasValue)
+            {
+                task.EstimatedHours = dto.EstimatedHours.Value;
+                await UpdateParentTaskEstimatedHoursAsync(id); // Update parent on estimated hours change
+            }
+            if (dto.ActualHours.HasValue)
+            {
+                task.ActualHours = dto.ActualHours.Value;
+            }
             if (dto.AssignedMemberId != null && dto.AssignedMemberId != originalAssignedMemberId)
             {
                 // Notify the newly assigned member
-                if (!string.IsNullOrEmpty(task.AssignedMemberId))
+                if (!string.IsNullOrEmpty(dto.AssignedMemberId))
                 {
                     await _notification.CreateNotificationAsync(
-                        userId: task.AssignedMemberId,
+                        recipientUserId: dto.AssignedMemberId,
+                        subject: "Assigned to Task",
                         message: $"You have been assigned to task: '{task.Title}'.",
                         relatedEntityType: "ProjectTask",
-                        relatedEntityId: id
+                        relatedEntityId: id,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                     );
                 }
                 // Optionally notify the previously assigned member
                 if (!string.IsNullOrEmpty(originalAssignedMemberId))
                 {
                     await _notification.CreateNotificationAsync(
-                        userId: originalAssignedMemberId,
+                        recipientUserId: originalAssignedMemberId,
+                        subject: "Unassigned from Task",
                         message: $"You have been unassigned from task: '{task.Title}'.",
                         relatedEntityType: "ProjectTask",
-                        relatedEntityId: id
+                        relatedEntityId: id,
+                        deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                     );
                 }
                 // Optionally notify supervisor
             }
+            //if (dto.Status.HasValue) task.Status = dto.Status.Value; // Status removed
+            if (dto.Priority.HasValue) task.Priority = dto.Priority.Value;
+
+            task.UpdatedAt = DateTime.UtcNow;
+            _context.ProjectTasks.Update(task);
+            await _context.SaveChangesAsync();
 
             return task;
         }
 
-        public async Task AcceptTaskAsync(int taskId, string memberId)
-        {
-            var task = await _context.ProjectTasks.FindAsync(taskId);
-            if (task == null)
-            {
-                throw new NotFoundException($"Task with ID '{taskId}' not found.");
-            }
-
-            await ValidateMemberAssignmentAsync(memberId, task.ProjectAssignmentId);
-
-            if (task.AssignedMemberId != memberId)
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not assigned to member ID '{memberId}'.");
-            }
-
-            if (!task.IsLeaf)
-            {
-                throw new InvalidOperationException($"Task with Id '{taskId}' is not a leaf task and cannot be accepted directly.");
-            }
-            if (task.Status == TaskStatus.Pending || task.Status == TaskStatus.Rejected)
-            {
-                task.Status = TaskStatus.Accepted;
-                task.RejectionReason = null;
-                await _context.SaveChangesAsync();
-
-                await _notification.CreateNotificationAsync(
-                   userId: memberId,
-                   message: $"You have accepted task: '{task.Title}'.",
-                   relatedEntityType: "ProjectTask",
-                   relatedEntityId: taskId
-               );
-            }
-            else
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not in a Pending state and cannot be accepted.");
-            }
-
-
-        }
-
-        public async Task RejectTaskAsync(int taskId, string memberId, string reason)
-        {
-            var task = await _context.ProjectTasks.FindAsync(taskId);
-            if (task == null)
-            {
-                throw new NotFoundException($"Task with ID '{taskId}' not found.");
-            }
-
-            await ValidateMemberAssignmentAsync(memberId, task.ProjectAssignmentId);
-
-            if (task.AssignedMemberId != memberId)
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not assigned to member ID '{memberId}'.");
-            }
-
-            if (!task.IsLeaf)
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not a leaf task and cannot be rejected directly.");
-            }
-            if (task.Status == TaskStatus.Pending || task.Status == TaskStatus.Accepted)
-            {
-                task.Status = TaskStatus.Rejected;
-                task.RejectionReason = reason;
-                await _context.SaveChangesAsync();
-
-                await _notification.CreateNotificationAsync(
-                    userId: memberId,
-                    message: $"You have rejected task: '{task.Title}' with reason.",
-                    relatedEntityType: "ProjectTask",
-                    relatedEntityId: taskId
-                );
-            }
-            else
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not in a Pending state and cannot be rejected.");
-            }
-        }
-
-        public async Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours)
-        {
-            var task = await _context.ProjectTasks.FindAsync(taskId);
-            if (task == null)
-                throw new NotFoundException($"Task with ID '{taskId} not found.");
-
-            await ValidateMemberAssignmentAsync(memberId, task.ProjectAssignmentId);
-
-            if (task.AssignedMemberId != memberId)
-            {
-                throw new InvalidOperationException($"Task with ID '{taskId}' is not assigned to member ID '{memberId}.");
-            }
-
-            task.ActualHours = actualHours;
-            task.UpdatedAt = DateTime.UtcNow;
-            _context.ProjectTasks.Update(task);
-            await _context.SaveChangesAsync();
-        }
         public async Task UpdateTaskProgressAsync(int taskId, string memberId, double progress)
         {
-
             var task = await _context.ProjectTasks
                 .Include(t => t.SubTasks)
+                .Include(t => t.TodoItems) // Ensure TodoItems are loaded for IsLeaf check
                 .FirstOrDefaultAsync(t => t.Id == taskId);
-
 
             if (task == null)
             {
@@ -574,28 +537,13 @@ namespace ProjectManagementSystem1.Services
                 throw new InvalidOperationException($"Task with ID '{taskId}' is not assigned to member ID '{memberId}'.");
             }
 
-            if (task.Status != TaskStatus.Accepted)
+            var hasAcceptedTodo = await _context.TodoItems.AnyAsync(ti => ti.ProjectTaskId == taskId && ti.Status == TodoItemStatus.Accepted);
+            if (!hasAcceptedTodo)
             {
-                throw new InvalidOperationException($"Progress can only be updated for task '{task.Title}' if it has been accepted.");
+                throw new InvalidOperationException($"Progress can only be updated for task '{task.Title}' if it has at least one accepted TodoItem.");
             }
 
-            if (!task.IsLeaf)
-            {
-                await _context.Entry(task).ReloadAsync();
-                if (!task.IsLeaf)
-                {
-                    throw new InvalidOperationException("Progress can only be updated for leaf tasks.");
-                }
-            }
-
-            task.Progress = progress;
-
-            if (task.Weight > 0)
-            {
-                task.Weight = (int)(task.Weight * (1 - (progress / 100)));
-                task.Weight = Math.Max(0, Math.Min(100, task.Weight));
-            }
-
+            task.Progress = progress; // This will now use the private setter with IsLeaf check
             task.UpdatedAt = DateTime.UtcNow;
             _context.ProjectTasks.Update(task);
             await _context.SaveChangesAsync();
@@ -607,51 +555,86 @@ namespace ProjectManagementSystem1.Services
             }
         }
 
-        private async Task UpdateParentTaskProgressAsync(int? parentTaskId)
+        public async Task UpdateParentTaskProgressAsync(int? parentTaskId)
         {
-
             Console.WriteLine($"UpdateParentTaskProgressAsync called with parentTaskId: {parentTaskId}");
 
             if (parentTaskId.HasValue)
             {
                 var parentTask = await _context.ProjectTasks
                     .Include(p => p.SubTasks)
+                    .Include(p => p.TodoItems)
                     .FirstOrDefaultAsync(p => p.Id == parentTaskId);
 
                 if (parentTask == null)
                 {
                     Console.WriteLine($"Parent task with ID {parentTaskId} not found.");
-                    return; // Exit the method if the parent task doesn't exist
+                    return;
                 }
-
 
                 _context.Entry(parentTask).Reload();
 
                 if (parentTask != null)
                 {
+                    double totalWeight = 0;
+                    double weightedProgressSum = 0;
+
+                    // Calculate progress based on sub-ProjectTasks
                     if (parentTask.SubTasks.Any())
                     {
-                        double totalWeight = parentTask.SubTasks.Sum(st => st.Weight);
-                        if (totalWeight > 0)
+                        foreach (var subtask in parentTask.SubTasks)
                         {
-                            double weightedProgressSum = parentTask.SubTasks.Sum(st => st.Progress * st.Weight);
-                            parentTask.Progress = weightedProgressSum / totalWeight;
-                            Console.WriteLine($"Calculated progress for parent task ID {parentTaskId}: {parentTask.Progress}");
+                            // Reload each subtask to get the latest progress
+                            _context.Entry(subtask).Reload();
+                            totalWeight += subtask.Weight;
+                            weightedProgressSum += subtask.Progress * subtask.Weight;
+                            Console.WriteLine($"Subtask ID {subtask.Id} - Weight: {subtask.Weight}, Progress: {subtask.Progress}, Contribution: {subtask.Progress * subtask.Weight}");
+                        }
+                    }
+
+                    // Calculate progress based on TodoItems
+                    if (parentTask.TodoItems.Any())
+                    {
+                        foreach (var todoItem in parentTask.TodoItems)
+                        {
+                            // Reload each todo item to get the latest progress
+                            _context.Entry(todoItem).Reload();
+                            totalWeight += todoItem.Weight;
+                            weightedProgressSum += todoItem.Progress * todoItem.Weight;
+                            Console.WriteLine($"TodoItem ID {todoItem.Id} - Weight: {todoItem.Weight}, Progress: {todoItem.Progress}, Contribution: {todoItem.Progress * todoItem.Weight}");
+                        }
+                    }
+
+                    if (totalWeight > 0)
+                    {
+                        double newProgress = weightedProgressSum / totalWeight;
+                        Console.WriteLine($"Calculated progress for parent task ID {parentTaskId}: {newProgress} (from {weightedProgressSum}/{totalWeight})");
+
+                        // Only update if the progress has actually changed
+                        if (Math.Abs(parentTask.Progress - newProgress) > 0.01)
+                        {
+                            parentTask.SetCalculatedProgress(newProgress);
+                            parentTask.UpdatedAt = DateTime.UtcNow;
+                            _context.Entry(parentTask).State = EntityState.Modified;
+                            await _context.SaveChangesAsync();
                         }
                         else
                         {
-                            parentTask.Progress = 0;
+                            Console.WriteLine($"Progress for parent task ID {parentTaskId} hasn't changed significantly, skipping update.");
                         }
-
-                        //parentTask.Progress = parentTask.SubTasks.Average(st => st.Progress);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No subtasks or todo items found for parent task ID {parentTaskId}, setting progress to 0");
+                        parentTask.SetCalculatedProgress(0);
                         parentTask.UpdatedAt = DateTime.UtcNow;
                         _context.Entry(parentTask).State = EntityState.Modified;
-
                         await _context.SaveChangesAsync();
-
-                        Console.WriteLine($"Calling UpdateParentTaskProgressAsync recursively with parentTaskId: {parentTask.ParentTaskId}");
-                        await UpdateParentTaskProgressAsync(parentTask.ParentTaskId); // Recursive update
                     }
+
+                    // Continue propagating the update up the hierarchy
+                    Console.WriteLine($"Calling UpdateParentTaskProgressAsync recursively with parentTaskId: {parentTask.ParentTaskId}");
+                    await UpdateParentTaskProgressAsync(parentTask.ParentTaskId);
                 }
             }
         }
@@ -673,13 +656,8 @@ namespace ProjectManagementSystem1.Services
                     parentTask.EstimatedHours = totalEstimatedHours;
                     _context.ProjectTasks.Update(parentTask);
                     await _context.SaveChangesAsync();
-
-                    // Optionally, you could propagate this update further up the hierarchy
-                    // if your requirements dictate immediate consistency across all levels.
-                    // However, for better performance, you might defer such full updates.
                 }
             }
-
         }
 
         private async Task UpdateParentTaskWeightAsync(int? parentTaskId)
@@ -691,42 +669,49 @@ namespace ProjectManagementSystem1.Services
                 return;
             }
 
-            var task = await _context.ProjectTasks
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.Id == parentTaskId);
+            var parentTask = await _context.ProjectTasks
+                .Include(p => p.SubTasks)
+                .Include(p => p.TodoItems)
+                .FirstOrDefaultAsync(p => p.Id == parentTaskId);
 
-
-            if (task?.ParentTaskId.HasValue == true)
+            if (parentTask != null)
             {
-                var parentTask = await _context.ProjectTasks
-                    .Include(p => p.SubTasks)
-                    .FirstOrDefaultAsync(p => p.Id == task.ParentTaskId);
+                Console.WriteLine($"Found parent task with ID {parentTask.Id}, Title: {parentTask.Title}");
 
-                if (parentTask != null)
-                {
-                    Console.WriteLine($"Found parent task with ID {parentTask.Id}, Title: {parentTask.Title}");
-                    double totalWeight = parentTask.SubTasks.Sum(sub => sub.Weight);
-                    Console.WriteLine($"Total weight of subtasks for parent {parentTask.Id}: {totalWeight}");
-                    parentTask.Weight = Math.Min(100, (int)totalWeight); // Assuming weight is an integer
-                    _context.Entry(parentTask).State = EntityState.Modified;
-                    //_context.ProjectTasks.Update(parentTask);
-                    await _context.SaveChangesAsync();
+                double totalWeight = 0;
 
-                    // Continue propagating the update up the hierarchy
-                    Console.WriteLine($"Calling UpdateParentTaskWeightAsync recursively with parentTaskId: {parentTask.ParentTaskId}");
-                    await UpdateParentTaskWeightAsync(parentTask.ParentTaskId);
-                }
-                else
+                // Sum weights of sub-ProjectTasks
+                if (parentTask.SubTasks.Any())
                 {
-                    Console.WriteLine($"Parent task with ID {task.ParentTaskId} not found.");
+                    totalWeight += parentTask.SubTasks.Sum(sub => sub.Weight);
+                    Console.WriteLine($"Total weight of sub-ProjectTasks for parent {parentTask.Id}: {parentTask.SubTasks.Sum(sub => sub.Weight)}");
                 }
+
+                // Sum weights of TodoItems
+                if (parentTask.TodoItems.Any())
+                {
+                    totalWeight += parentTask.TodoItems.Sum(todo => todo.Weight);
+                    Console.WriteLine($"Total weight of TodoItems for parent {parentTask.Id}: {parentTask.TodoItems.Sum(todo => todo.Weight)}");
+                }
+
+                Console.WriteLine($"Total combined weight for parent {parentTask.Id}: {totalWeight}");
+                parentTask.Weight = Math.Min(100, (int)totalWeight); // Assuming weight is an integer
+                _context.Entry(parentTask).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+
+                // Continue propagating the update up the hierarchy
+                Console.WriteLine($"Calling UpdateParentTaskWeightAsync recursively with parentTaskId: {parentTask.ParentTaskId}");
+                await UpdateParentTaskWeightAsync(parentTask.ParentTaskId);
             }
             else
             {
-                Console.WriteLine($"Task with ID {task?.Id} has no ParentTaskId, stopping.");
+                Console.WriteLine($"Parent task with ID {parentTaskId} not found.");
             }
+        }
 
+        public Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours)
+        {
+            throw new NotImplementedException();
         }
     }
 }
-
