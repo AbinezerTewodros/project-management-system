@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace ProjectManagementSystem1.Model.Entities
 {
-    public enum TaskStatus { Pending, Accepted, Rejected }
+    public enum TaskStatus { Pending, Accepted, Rejected, Completed } // Re-add this
     public enum TaskPriority { Low, Medium, High, Critical }
 
     public class ProjectTask : IValidatableObject
@@ -41,92 +41,58 @@ namespace ProjectManagementSystem1.Model.Entities
         public int Weight { get; set; }
         public double? ActualHours { get; set; }
 
-        //[Required]
         public TaskPriority Priority { get; set; }
 
-        //public int? ProjectGoalId { get; set; }
-
-        //[ForeignKey("ProjectGoalId")]
-        //public ProjectGoal? ProjectGoal { get; set; }
-
-        // Progress logic
         private double _progress;
         [Range(0, 100)]
         public double Progress
         {
-            get
+            get => _progress;
+            internal set
             {
-                if (SubTasks != null && SubTasks.Any())
+                if (!IsLeaf && value != _progress)
                 {
-                    double totalWeight = SubTasks.Sum(st => st.Weight);
-                    if (totalWeight == 0)
-                    {
-                        return 0;
-                    }
-                    double weightedProgressSum = SubTasks.Sum(st => st.Progress * st.Weight);
-                    //return SubTasks.Average(st => st.Progress);
-                    return (totalWeight > 0) ? (weightedProgressSum / totalWeight) : 0;
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            set
-            {
-                if (!IsLeaf)
                     throw new InvalidOperationException("Progress can only be set on leaf tasks");
-
+                }
                 _progress = value;
             }
-
-
-            //set => _progress = value; // Only stored for leaf nodes
         }
-
-        [Required]
-        public TaskStatus Status { get; set; } = TaskStatus.Pending;
+        public bool IsProjectRoot { get; set; } = false;
+        public TaskStatus Status { get; set; } = TaskStatus.Pending; // Re-add this with a default value
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
         public double EstimatedHours { get; set; }
-
+        public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
-        public string? RejectionReason { get; set; }
+        public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
+        public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (Status == TaskStatus.Rejected && string.IsNullOrWhiteSpace(AssignedMemberId))
-                yield return new ValidationResult("Rejecting member must be specified", [nameof(AssignedMemberId)]);
-
             if ((Priority == TaskPriority.High || Priority == TaskPriority.Critical) && !DueDate.HasValue)
                 yield return new ValidationResult("High/Critical tasks require due dates", [nameof(DueDate)]);
-
-            //if (ParentTask != null && Depth != ParentTask.Depth + 1)
-            //    yield return new ValidationResult("Depth miscalculation", [nameof(Depth)]);
         }
 
         public void UpdateHierarchy()
         {
 
             Depth = ParentTask?.Depth + 1 ?? 0;
+            IsLeaf = !SubTasks.Any() && !TodoItems.Any();
 
-            // A task is a leaf only if it has no subtasks at this point in time.
-            IsLeaf = !SubTasks.Any();
-
-            // Propagate upward
-            //ParentTask?.UpdateHierarchy(); // Propagate changes upward
-
-            // Propagate downward (to update children's Depth)
             if (SubTasks != null)
             {
                 foreach (var subtask in SubTasks)
                 {
-                    // Ensure subtask's ParentTask reference is this instance for correct depth calculation
                     if (subtask.ParentTask != this) subtask.ParentTask = this;
                     subtask.UpdateHierarchy();
                 }
             }
+        }
+
+        public void SetCalculatedProgress(double progress)
+        {
+            _progress = progress;
         }
     }
 }
