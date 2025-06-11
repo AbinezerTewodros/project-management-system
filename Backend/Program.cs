@@ -15,7 +15,16 @@ using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
+using MailKit.Net.Smtp;
+using MimeKit;
+using Microsoft.Extensions.Configuration;
 using ProjectManagementSystem1.Services.AttachmentService;
+using ProjectManagementSystem1.Services.TodoItems;
+using ProjectManagementSystem1.Services.TodoItemService;
+using Hangfire;
+using Hangfire.SqlServer;
+using ProjectManagementSystem1.Configuration;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,10 +62,13 @@ builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>(
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<ITodoItemService, TodoItemService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 
-
+builder.Services.Configure<ReminderConfiguration>(builder.Configuration.GetSection("ReminderConfiguration"));
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -64,6 +76,23 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 //builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+// Add Hangfire services.
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"), new SqlServerStorageOptions
+    {
+        CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+        SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+        QueuePollInterval = TimeSpan.Zero,
+        UseRecommendedIsolationLevel = true,
+        DisableGlobalLocks = true
+    }));
+
+// Add the processing server as IHostedService
+builder.Services.AddHangfireServer();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -170,6 +199,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
     app.MapOpenApi();
 }
+
+app.UseHangfireDashboard();
 
 //app.UseMiddleware<JwtErrorHandlingMiddleware>();
 
