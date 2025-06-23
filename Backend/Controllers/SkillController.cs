@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagementSystem1.Services;
-using ProjectManagementSystem1.Model.Dto.SkillDto;
+using ProjectManagementSystem1.Model;
 
 namespace ProjectManagementSystem1.Controllers
 {
@@ -29,6 +29,7 @@ namespace ProjectManagementSystem1.Controllers
         [AllowAnonymous] // or [Authorize] if it should require login
         public async Task<IActionResult> GetSkillSuggestions([FromQuery] string query)
         {
+<<<<<<< HEAD
             if (string.IsNullOrWhiteSpace(query))
                 return BadRequest("Search query is required.");
 
@@ -40,13 +41,32 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPost("add-user-skill")]
         [Authorize]
         public async Task<IActionResult> AddSkillToUser([FromBody] string skillName)
+=======
+        if (string.IsNullOrWhiteSpace(query))
+        return BadRequest("Search query is required.");
+
+        var suggestions = await _skillService.GetSkillSuggestionsAsync(query);
+        return Ok(suggestions);
+        }
+
+
+        // POST: api/Skill/add-user-skill
+        [HttpPost("add-user-skill")]
+        [Authorize]
+        public async Task<IActionResult> AddSkillToUser([FromBody] AddSkillToUserDto dto)
+>>>>>>> 1d16b8f860a803c113b38c92c14fe69c8c7adebb
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
+<<<<<<< HEAD
             await _skillService.AddSkillToUserAsync(SkillName);
             return Ok(skill);
+=======
+            await _skillService.AddSkillToUserAsync(userId, dto.SkillName);
+            return Ok("Skill added successfully.");
+>>>>>>> 1d16b8f860a803c113b38c92c14fe69c8c7adebb
         }
 
         // POST: api/Skill/submit-new
@@ -88,6 +108,7 @@ namespace ProjectManagementSystem1.Controllers
             await _skillService.RejectSkillAsync(skillId);
             return Ok("Skill rejected.");
         }
+<<<<<<< HEAD
 
         [HttpPost("assign")]
         [Authorize] // make sure user is logged in
@@ -113,3 +134,7 @@ namespace ProjectManagementSystem1.Controllers
         }
     }
 }
+=======
+    }
+}
+>>>>>>> 1d16b8f860a803c113b38c92c14fe69c8c7adebb
