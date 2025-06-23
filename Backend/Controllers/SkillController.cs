@@ -29,44 +29,29 @@ namespace ProjectManagementSystem1.Controllers
         [AllowAnonymous] // or [Authorize] if it should require login
         public async Task<IActionResult> GetSkillSuggestions([FromQuery] string query)
         {
-<<<<<<< HEAD
-            if (string.IsNullOrWhiteSpace(query))
-                return BadRequest("Search query is required.");
+            // GET: api/Skill/suggest?query=xyz
+            [HttpGet("suggest")]
+            public async Task<IActionResult> SuggestSkills(string query)
+            {
+                if (string.IsNullOrWhiteSpace(query))
+                    return BadRequest("Search query is required.");
 
-            var suggestions = await _skillService.GetSkillSuggestionsAsync(query);
-            return Ok(suggestions);
-        }
+                var suggestions = await _skillService.GetSkillSuggestionsAsync(query);
+                return Ok(suggestions);
+            }
 
-        // POST: api/Skill/add-user-skill
-        [HttpPost("add-user-skill")]
-        [Authorize]
-        public async Task<IActionResult> AddSkillToUser([FromBody] string skillName)
-=======
-        if (string.IsNullOrWhiteSpace(query))
-        return BadRequest("Search query is required.");
+            // POST: api/Skill/add-user-skill
+            [HttpPost("add-user-skill")]
+            [Authorize]
+            public async Task<IActionResult> AddSkillToUser([FromBody] AddSkillToUserDto dto)
+            {
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
 
-        var suggestions = await _skillService.GetSkillSuggestionsAsync(query);
-        return Ok(suggestions);
-        }
-
-
-        // POST: api/Skill/add-user-skill
-        [HttpPost("add-user-skill")]
-        [Authorize]
-        public async Task<IActionResult> AddSkillToUser([FromBody] AddSkillToUserDto dto)
->>>>>>> 1d16b8f860a803c113b38c92c14fe69c8c7adebb
-        {
-            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-<<<<<<< HEAD
-            await _skillService.AddSkillToUserAsync(SkillName);
-            return Ok(skill);
-=======
-            await _skillService.AddSkillToUserAsync(userId, dto.SkillName);
-            return Ok("Skill added successfully.");
->>>>>>> 1d16b8f860a803c113b38c92c14fe69c8c7adebb
+                await _skillService.AddSkillToUserAsync(userId, dto.SkillName);
+                return Ok("Skill added successfully.");
+            }
         }
 
         // POST: api/Skill/submit-new
