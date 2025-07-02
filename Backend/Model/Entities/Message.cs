@@ -36,6 +36,9 @@ namespace ProjectManagementSystem1.Model.Entities
         [ForeignKey("AttachmentId")]
         public Attachment? Attachment { get; set; }
 
+        public int? ChatGroupId { get; set; } // null if not in a group
+        public ProjectChatGroup? ChatGroup { get; set; }
+
         public DateTime TimeSent { get; set; } = DateTime.UtcNow;
         public DateTime? TimeEdited { get; set; }
 

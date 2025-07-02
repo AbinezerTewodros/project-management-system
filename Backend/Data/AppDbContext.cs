@@ -13,6 +13,9 @@ namespace ProjectManagementSystem1.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<ProjectChatGroup> ProjectChatGroups { get; set; }
+        public DbSet<ProjectChatGroupMember> ProjectChatGroupMembers { get; set; }
+
         public DbSet<ProjectTask> ProjectTasks { get; set; }
         public DbSet<TodoItem> TodoItems { get; set; }
         public DbSet<Comment> Comments { get; set; }

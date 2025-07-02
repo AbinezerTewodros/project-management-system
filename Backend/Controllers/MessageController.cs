@@ -90,6 +90,65 @@ namespace ProjectManagementSystem1.Controllers
             }
         }
 
+        [HttpPost("send-group")]
+        public async Task<IActionResult> SendGroupMessage([FromBody] SendGroupMessageDto dto)
+        {
+            var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                var message = await _messageService.SendGroupMessageAsync(dto, senderId);
+                return Ok(message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("group-messages/{groupId}")]
+        public async Task<IActionResult> GetGroupMessages(int groupId)
+        {
+            var requesterId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                var messages = await _messageService.GetGroupMessagesAsync(groupId, requesterId);
+                return Ok(messages);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("edit")]
+        public async Task<IActionResult> EditMessage([FromBody] EditMessageDto dto)
+        {
+            var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                var result = await _messageService.EditMessageAsync(dto, senderId);
+                return result ? Ok("✅ Message edited.") : BadRequest("Failed to edit message.");
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
+        [HttpDelete("delete/{messageId}")]
+        public async Task<IActionResult> DeleteMessage(int messageId)
+        {
+            var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                var result = await _messageService.SoftDeleteMessageAsync(messageId, senderId);
+                return result ? Ok("🗑️ Message deleted (soft).") : BadRequest("Failed to delete.");
+            }
+            catch (UnauthorizedAccessException ex) { return Forbid(ex.Message); }
+            catch (Exception ex) { return BadRequest(new { message = ex.Message }); }
+        }
 
 
         // ------------------ DEPARTMENT MESSAGE ------------------

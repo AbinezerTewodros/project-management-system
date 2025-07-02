@@ -125,6 +125,93 @@ namespace ProjectManagementSystem1.Services
             return _mapper.Map<List<MessageDto>>(messages);
         }
 
+        public async Task<MessageDto> SendGroupMessageAsync(SendGroupMessageDto dto, string senderId)
+        {
+            var group = await _context.ProjectChatGroups
+                .Include(g => g.Members)
+                .FirstOrDefaultAsync(g => g.Id == dto.ChatGroupId);
+
+            if (group == null)
+                throw new ArgumentException("Chat group not found.");
+
+            // ✅ Ensure sender is part of the group
+            if (!group.Members.Any(m => m.UserId == senderId))
+                throw new UnauthorizedAccessException("You are not a member of this group.");
+
+            var message = new Message
+            {
+                ChatGroupId = dto.ChatGroupId,
+                ProjectId = group.ProjectId,
+                SenderId = senderId,
+                Content = dto.Content,
+                MessageType = 4, // Group message
+                TimeSent = DateTime.UtcNow,
+                Version = BitConverter.GetBytes(DateTime.UtcNow.Ticks)
+            };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            return new MessageDto
+            {
+                MessageId = message.MessageId,
+                Content = message.Content,
+                SenderId = message.SenderId,
+                TimeSent = message.TimeSent
+            };
+        }
+
+        public async Task<List<MessageDto>> GetGroupMessagesAsync(int groupId, string requesterId)
+        {
+            var group = await _context.ProjectChatGroups
+                .Include(g => g.Members)
+                .FirstOrDefaultAsync(g => g.Id == groupId);
+
+            if (group == null)
+                throw new ArgumentException("Chat group not found.");
+
+            if (!group.Members.Any(m => m.UserId == requesterId))
+                throw new UnauthorizedAccessException("You are not a member of this group.");
+
+            return await _context.Messages
+                .Where(m => m.ChatGroupId == groupId && !m.IsDeleted)
+                .OrderBy(m => m.TimeSent)
+                .Select(m => new MessageDto
+                {
+                    MessageId = m.MessageId,
+                    Content = m.Content,
+                    SenderId = m.SenderId,
+                    TimeSent = m.TimeSent
+                }).ToListAsync();
+        }
+
+        public async Task<bool> EditMessageAsync(EditMessageDto dto, string senderId)
+        {
+            var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == dto.MessageId);
+            if (message == null) throw new ArgumentException("Message not found.");
+            if (message.SenderId != senderId) throw new UnauthorizedAccessException("You can only edit your own messages.");
+            if (message.IsDeleted) throw new InvalidOperationException("Cannot edit a deleted message.");
+
+            message.Content = dto.NewContent;
+            message.TimeEdited = DateTime.UtcNow;
+            message.Version = BitConverter.GetBytes(DateTime.UtcNow.Ticks);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> SoftDeleteMessageAsync(int messageId, string senderId)
+        {
+            var message = await _context.Messages.FirstOrDefaultAsync(m => m.MessageId == messageId);
+            if (message == null) throw new ArgumentException("Message not found.");
+            if (message.SenderId != senderId) throw new UnauthorizedAccessException("You can only delete your own messages.");
+            if (message.IsDeleted) throw new InvalidOperationException("Message is already deleted.");
+            message.IsDeleted = true;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+
     }
 
 }

@@ -66,6 +66,10 @@ builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<ITodoItemService, TodoItemService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<IProjectChatGroupService, ProjectChatGroupService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
+
 
 builder.Services.Configure<ReminderConfiguration>(builder.Configuration.GetSection("ReminderConfiguration"));
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
