@@ -32,6 +32,10 @@ namespace ProjectManagementSystem1.Model.Dto
         public bool IsProjectRoot { get; set; }
         // Subtasks (hierarchy)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        public bool? IsAutoCreateTodo { get; set; }
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
         public bool? IsAutoCreateTodo { get; set; }
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287

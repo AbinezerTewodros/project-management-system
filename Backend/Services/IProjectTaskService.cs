@@ -19,11 +19,17 @@ namespace ProjectManagementSystem1.Services
         Task UpdateTaskProgressAsync(int taskId, string memberId, double progress);
         Task UpdateParentTaskProgressAsync(int? parentTaskId);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         //Task AddDependencyAsync(int predecessorTaskId, int successorTaskId);
         //Task RemoveDependencyAsync(int predecessorTaskId, int successorTaskId);
         //Task<IEnumerable<ProjectTaskReadDto>> GetPredecessorsAsync(int taskId);
         //Task<IEnumerable<ProjectTaskReadDto>> GetSuccessorsAsync(int taskId);
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
         Task<bool> DeleteTaskAsync(int taskId);
 

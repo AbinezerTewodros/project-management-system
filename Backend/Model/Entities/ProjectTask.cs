@@ -8,7 +8,11 @@ using System.Linq;
 namespace ProjectManagementSystem1.Model.Entities
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
     public enum TaskStatus { Pending, Accepted, InProgress, Rejected, Completed } // Re-add this
+=======
+    public enum TaskStatus { Pending, Accepted, Rejected, Completed, InProgress, WaitingForReview } // Re-add this
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
     public enum TaskStatus { Pending, Accepted, Rejected, Completed, InProgress, WaitingForReview } // Re-add this
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -50,7 +54,11 @@ namespace ProjectManagementSystem1.Model.Entities
         public int Weight { get; set; }
         public double? ActualHours { get; set; }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+        public string? RejectionReason { get; set; }
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
         public string? RejectionReason { get; set; }
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -81,14 +89,20 @@ namespace ProjectManagementSystem1.Model.Entities
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
 <<<<<<< HEAD
+<<<<<<< HEAD
         public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
         public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public bool IsAutoCreateTodo { get; set; } // Default to true
         public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
         public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
         //public ICollection<TaskDependency> PredecessorDependencies { get; set; } = new List<TaskDependency>(); // Tasks that this task depends on
         //public ICollection<TaskDependency> SuccessorDependencies { get; set; } = new List<TaskDependency>();   // Tasks that depend on this task
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

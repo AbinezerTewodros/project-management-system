@@ -29,8 +29,11 @@ namespace ProjectManagementSystem1.Model.Dto
         public System.Threading.Tasks.TaskStatus Status { get; set; }
         public DateTime? DueDate { get; set; }
         public List<int> Dependencies { get; set; } = new List<int>(); // Add this line
+<<<<<<< HEAD
 
         public List<int> Dependencies { get; set; } = new List<int>(); // Add this line
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 
         // Optional advanced structure handling
         //public int Depth { get; set; } = 0;

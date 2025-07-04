@@ -14,6 +14,7 @@ namespace ProjectManagementSystem1.Data
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<Message> Messages { get; set; }
 <<<<<<< HEAD
+<<<<<<< HEAD
         public DbSet<ProjectTask> ProjectTasks { get; set; }
         public DbSet<TodoItem> TodoItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
@@ -39,6 +40,11 @@ namespace ProjectManagementSystem1.Data
         public DbSet<Milestone> Milestones { get; set; }
         public DbSet<ProjectTask> ProjectTasks { get; set; }
         public DbSet<TodoItem> TodoItems { get; set; }
+=======
+        public DbSet<Milestone> Milestones { get; set; }
+        public DbSet<ProjectTask> ProjectTasks { get; set; }
+        public DbSet<TodoItem> TodoItems { get; set; }
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         //public DbSet<ProjectGoal> ProjectGoals { get; set; }
@@ -49,6 +55,9 @@ namespace ProjectManagementSystem1.Data
 
         public DbSet<IndependentTask> IndependentTasks { get; set; }
         public DbSet<PersonalTodo> PersonalTodo { get; set; }
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

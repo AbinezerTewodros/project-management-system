@@ -4,6 +4,10 @@ using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Entities;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus;
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus;
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -255,7 +259,13 @@ namespace ProjectManagementSystem1.Services
                 EstimatedHours = dto.EstimatedHours,
                 AssignedMemberId = dto.AssignedMemberId,
 <<<<<<< HEAD
+<<<<<<< HEAD
                 IsProjectRoot = !dto.ParentTaskId.HasValue
+=======
+                IsProjectRoot = !dto.ParentTaskId.HasValue,
+                MilestoneId = dto.MilestoneId,
+                IsAutoCreateTodo = dto.IsAutoCreateTodo
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
                 IsProjectRoot = !dto.ParentTaskId.HasValue,
                 MilestoneId = dto.MilestoneId,
@@ -350,6 +360,7 @@ namespace ProjectManagementSystem1.Services
             {
                 await _notification.CreateNotificationAsync(
 <<<<<<< HEAD
+<<<<<<< HEAD
                    recipientUserId: subtaskEntity.AssignedMemberId,
                    subject: "Assigned to Subtask",
                    message: $"You have been assigned to subtask: '{subtaskEntity.Title}' under task '{parentTaskEntity.Title}'.",
@@ -358,6 +369,8 @@ namespace ProjectManagementSystem1.Services
                    deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                );
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
                     recipientUserId: subtaskEntity.AssignedMemberId,
                     subject: "Assigned to Subtask",
                     message: $"You have been assigned to subtask: '{subtaskEntity.Title}' under task '{parentTaskEntity.Title}'.",
@@ -431,6 +444,7 @@ namespace ProjectManagementSystem1.Services
             }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
             // Enhancement: Automatically create a TodoItem for the assigned task with the same weight as the task
             var mainTodoItem = new TodoItem
@@ -453,6 +467,8 @@ namespace ProjectManagementSystem1.Services
 
             // Enhancement: Automatically create TodoItems and assign member to subtasks as well with the same weight as the subtask
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
             if (task.IsAutoCreateTodo)
             {
                 // Enhancement: Automatically create a TodoItem for the assigned task with the same weight as the task
@@ -480,6 +496,9 @@ namespace ProjectManagementSystem1.Services
             }  
 
              // Enhancement: Automatically create TodoItems and assign member to subtasks as well with the same weight as the subtask
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
             if (task.SubTasks != null && task.SubTasks.Any())
             {
@@ -496,11 +515,14 @@ namespace ProjectManagementSystem1.Services
                         Title = $"Action Item for {subtask.Title}",
                         Weight = subtask.Weight, // Inherit weight from the subtask
 <<<<<<< HEAD
+<<<<<<< HEAD
                         Status = TodoItemStatus.Pending
                     };
                     _context.TodoItems.Add(subtaskTodoItem);
                     await _context.SaveChangesAsync(); // Save changes for both subtask assignment and todo item creation
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
                         Status = TodoItemStatus.Pending,
                         AssignedBy = memberId,
                         DueDate = subtask.DueDate
@@ -509,6 +531,9 @@ namespace ProjectManagementSystem1.Services
                     _context.TodoItems.Add(subtaskTodoItem);
                     await _context.SaveChangesAsync(); // Save changes for both subtask assignment and todo item creation
                    
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
                     if (originalSubtaskAssignee != memberId)
                     {
@@ -590,6 +615,9 @@ namespace ProjectManagementSystem1.Services
             if (dto.StartDate.HasValue) task.StartDate = dto.StartDate; // Ensure this line is present
             if (dto.EstimatedHours.HasValue)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
             {
                 task.EstimatedHours = dto.EstimatedHours.Value;
                 await UpdateParentTaskEstimatedHoursAsync(id); // Update parent on estimated hours change
@@ -598,6 +626,7 @@ namespace ProjectManagementSystem1.Services
             {
                 task.ActualHours = dto.ActualHours.Value;
             }
+<<<<<<< HEAD
             if (dto.AssignedMemberId != null && dto.AssignedMemberId != originalAssignedMemberId)
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -609,6 +638,8 @@ namespace ProjectManagementSystem1.Services
             {
                 task.ActualHours = dto.ActualHours.Value;
             }
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
             if (dto.IsAutoCreateTodo)
             {
                 task.IsAutoCreateTodo = dto.IsAutoCreateTodo;
@@ -695,6 +726,10 @@ namespace ProjectManagementSystem1.Services
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+       
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
        
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -716,7 +751,11 @@ namespace ProjectManagementSystem1.Services
                 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 _context.Entry(parentTask).Reload();
+=======
+                _context.Entry(parentTask).Reload(); // Ensure we have the latest data
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
                 _context.Entry(parentTask).Reload(); // Ensure we have the latest data
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -727,7 +766,10 @@ namespace ProjectManagementSystem1.Services
                     double weightedProgressSum = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                     // Calculate progress based on sub-ProjectTasks
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
                     if (parentTask.SubTasks.Any())
@@ -743,7 +785,10 @@ namespace ProjectManagementSystem1.Services
                     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                     // Calculate progress based on TodoItems
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
                     if (parentTask.TodoItems.Any())
@@ -788,7 +833,12 @@ namespace ProjectManagementSystem1.Services
                     // Continue propagating the update up the hierarchy
                     Console.WriteLine($"Calling UpdateParentTaskProgressAsync recursively with parentTaskId: {parentTask.ParentTaskId}");
 <<<<<<< HEAD
+<<<<<<< HEAD
                     await UpdateParentTaskProgressAsync(parentTask.ParentTaskId);
+=======
+
+                    await UpdateParentTaskProgressAsync(parentTask.ParentTaskId); // Recursive call
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 
                     await UpdateParentTaskProgressAsync(parentTask.ParentTaskId); // Recursive call
@@ -865,7 +915,10 @@ namespace ProjectManagementSystem1.Services
             {
                 Console.WriteLine($"Parent task with ID {parentTaskId} not found.");
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
             }
         }
 
@@ -875,6 +928,7 @@ namespace ProjectManagementSystem1.Services
             if (projectTask == null)
             {
                 throw new NotFoundException($"Project task with ID '{id}' not found.");
+<<<<<<< HEAD
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
             }
         }
@@ -907,10 +961,43 @@ namespace ProjectManagementSystem1.Services
             if (projectTask == null)
             {
                 throw new NotFoundException($"Project task with ID '{id}' not found.");
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
             }
 
             if (projectTask.Status == TaskStatus.WaitingForReview)
             {
+<<<<<<< HEAD
+=======
+                projectTask.Status = TaskStatus.Completed;
+                projectTask.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                _notification.CreateNotificationAsync(
+                    recipientUserId: teamLeaderId, // Or the assigned member? Decide who to notify.
+                    subject: "Project Task Completed",
+                    message: $"Project task '{projectTask.Title}' has been accepted as completed.",
+                    relatedEntityType: "ProjectTask",
+                    relatedEntityId: id,
+                    deliveryMethod: NotificationDeliveryMethod.InApp
+                );
+            }
+            else
+            {
+                throw new InvalidOperationException($"Project task with ID '{id}' is not in a state where it can be accepted for completion (Current status: {projectTask.Status}). It should be '{TaskStatus.WaitingForReview}'.");
+            }
+        }
+
+        public async Task RejectProjectTaskCompletionAsync(int id, string teamLeaderId, string reason)
+        {
+            var projectTask = await _context.ProjectTasks.FindAsync(id);
+            if (projectTask == null)
+            {
+                throw new NotFoundException($"Project task with ID '{id}' not found.");
+            }
+
+            if (projectTask.Status == TaskStatus.WaitingForReview)
+            {
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
                 projectTask.Status = TaskStatus.InProgress;
                 projectTask.UpdatedAt = DateTime.UtcNow;
                 // Optionally store the rejection reason
@@ -930,6 +1017,9 @@ namespace ProjectManagementSystem1.Services
                 throw new InvalidOperationException($"Project task with ID '{id}' is not in a state where it can be rejected for completion (Current status: {projectTask.Status}). It should be '{TaskStatus.WaitingForReview}'.");
             }
         }
+<<<<<<< HEAD
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours)
         {
@@ -937,7 +1027,11 @@ namespace ProjectManagementSystem1.Services
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 }
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287

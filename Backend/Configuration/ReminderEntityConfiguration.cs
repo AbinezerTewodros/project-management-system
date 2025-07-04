@@ -15,7 +15,11 @@ namespace ProjectManagementSystem1.Configuration
         public List<string> ExcludedStatuses { get; set; } // Add this
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 }
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287

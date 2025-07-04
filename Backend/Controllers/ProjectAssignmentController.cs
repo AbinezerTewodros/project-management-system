@@ -100,6 +100,10 @@ namespace ProjectManagementSystem1.Controllers
 
             assignment.MemberRole = dto.MemberRole;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+            assignment.Role = dto.MemberRole;
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
             assignment.Role = dto.MemberRole;
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287

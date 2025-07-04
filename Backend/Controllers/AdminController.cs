@@ -17,7 +17,10 @@ namespace ProjectManagementSystem1.Controller
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserService _userService;
 <<<<<<< HEAD
+<<<<<<< HEAD
         private readonly IAuthService _authService;
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
 
@@ -102,6 +105,7 @@ namespace ProjectManagementSystem1.Controller
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         [HttpGet("search-users")]
         [AllowAnonymous]
         public async Task<IActionResult> SearchUsers([FromQuery] string name, [FromQuery] string department = null)
@@ -120,6 +124,8 @@ namespace ProjectManagementSystem1.Controller
             return Ok(response);
         }
 
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
         [HttpPut("edit-user")]

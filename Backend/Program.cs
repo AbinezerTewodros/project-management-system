@@ -25,6 +25,10 @@ using Hangfire;
 using Hangfire.SqlServer;
 using ProjectManagementSystem1.Configuration;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+using ProjectManagementSystem1.Services.MilestoneService;
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 using ProjectManagementSystem1.Services.MilestoneService;
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
@@ -76,6 +80,7 @@ builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 <<<<<<< HEAD
+<<<<<<< HEAD
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<ITodoItemService, TodoItemService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
@@ -84,13 +89,21 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
 builder.Services.AddScoped<ITodoItemService, TodoItemService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+=======
+builder.Services.AddScoped<IAttachmentService, AttachmentService>();
+builder.Services.AddScoped<ITodoItemService, TodoItemService>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IIndependentTaskService, IndependentTaskService>();
 builder.Services.AddScoped<IPersonalTodoService, PersonalTodoService>();
 builder.Services.AddHttpContextAccessor(); 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 builder.Services.Configure<ReminderConfiguration>(builder.Configuration.GetSection("ReminderConfiguration"));
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
@@ -116,6 +129,10 @@ builder.Services.AddHangfire(configuration => configuration
     }));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 =======
 GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287

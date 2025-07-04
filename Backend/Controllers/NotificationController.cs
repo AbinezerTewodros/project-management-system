@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 ﻿namespace ProjectManagementSystem1.Controllers
 {
     public class NotificationController
@@ -6,6 +7,8 @@
     }
 }
 =======
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectManagementSystem1.Model.Entities;
@@ -109,5 +112,9 @@ namespace ProjectManagementSystem1.Controllers
             return NoContent();
         }
     }
+<<<<<<< HEAD
+}
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
+=======
 }
 >>>>>>> 890391528c11f4793f7d61f942815184bf328287
