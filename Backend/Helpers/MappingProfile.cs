@@ -2,6 +2,7 @@
 using Humanizer;
 using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Dto.Message;
+using ProjectManagementSystem1.Model.Dto.MilestoneDto;
 using ProjectManagementSystem1.Model.Dto.ProjectAssignmentDto;
 using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Model.Entities;
@@ -29,6 +30,13 @@ namespace ProjectManagementSystem1.Helpers
             CreateMap<Message, MessageDto>()
             .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
             .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.Sender.EmployeeId));
+
+            CreateMap<CreateMilestoneDto, Milestone>();
+            CreateMap<Milestone, MilestoneReadDto>();
+            CreateMap<UpdateMilestoneDto, Milestone>()
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => System.DateTime.UtcNow))
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            CreateMap<ProjectTaskCreateDto, ProjectTask>();
             //CreateMap<ProjectTask, ProjectTaskDto>()
             //    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             //    .ForMember(dest => dest.AssignmentStatus, opt => opt.MapFrom(src => src.AssignmentStatus.ToString()))

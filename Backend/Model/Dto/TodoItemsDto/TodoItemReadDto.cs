@@ -13,5 +13,8 @@ namespace ProjectManagementSystem1.Model.Dto.TodoItemsDto
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public TodoItemStatus Status { get; set; }
+        public string AssigneeId { get; set; }
+        public string AssignedBy { get; set; }
+        public DateTime? DueDate { get; set; }
     }
 }

@@ -99,6 +99,7 @@ namespace ProjectManagementSystem1.Controllers
             if (assignment == null) return NotFound("Assignment not found.");
 
             assignment.MemberRole = dto.MemberRole;
+            assignment.Role = dto.MemberRole;
             assignment.UpdatedDate = DateTime.UtcNow;
             assignment.UpdateUser = User.FindFirstValue(ClaimTypes.NameIdentifier);
 

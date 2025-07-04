@@ -5,6 +5,7 @@ namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
     public class ProjectDto
     {
         public int Id { get; set; }
+        public string? Description { get; set; }
         public string ProjectName { get; set; }
         public string ProjectOwner { get; set; }
 

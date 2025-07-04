@@ -29,7 +29,7 @@ namespace ProjectManagementSystem1.Controllers
             _logger = logger;
         }
 
-        [Authorize(Policy = "SupervisorOnly")]
+        //[Authorize(Policy = "SupervisorOnly")]
         [HttpPost("create-task")]
         public async Task<IActionResult> CreateTask([FromBody] ProjectTaskCreateDto dto)
         {
@@ -66,7 +66,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         // POST: api/ProjectTask/{parentTaskId}/add-subtask
-        [Authorize(Policy = "SupervisorOnly")] // Example: Specific policy for creation
+        //[Authorize(Policy = "SupervisorOnly")] // Example: Specific policy for creation
         [HttpPost("{parentTaskId}/add-subtask")]
         public async Task<IActionResult> AddSubtask(int parentTaskId, [FromBody] ProjectTaskCreateDto dto)
         {
@@ -136,9 +136,11 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPut("{taskId}/assign/{memberId}")]
         public async Task<IActionResult> AssignTask(int taskId, string memberId)
         {
+            var assignerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             try
             {
-                await _projectTaskService.AssignTaskAsync(taskId, memberId);
+                await _projectTaskService.AssignTaskAsync(taskId, memberId, assignerId);
                 return Ok(); // Or a more descriptive response
             }
             catch (InvalidOperationException ex)
@@ -346,7 +348,90 @@ namespace ProjectManagementSystem1.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPut("{id}/acceptcompletion")]
+        public async Task<IActionResult> AcceptProjectTaskCompletion(int id)
+        {
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader is the logged-in user
+            try
+            {
+                await _projectTaskService.AcceptProjectTaskCompletionAsync(id, teamLeaderId);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the project task completion."); }
+        }
+
+        [HttpPut("{id}/rejectcompletion")]
+        public async Task<IActionResult> RejectProjectTaskCompletion(int id, [FromBody] string reason)
+        {
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader is the logged-in user
+            try
+            {
+                await _projectTaskService.RejectProjectTaskCompletionAsync(id, teamLeaderId, reason);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the project task completion."); }
+        }
+
+        //[HttpPost("{successorTaskId}/dependencies/{predecessorTaskId}")]
+        //public async Task<IActionResult> AddDependency(int successorTaskId, int predecessorTaskId)
+        //{
+        //    try
+        //    {
+        //        await _projectTaskService.AddDependencyAsync(predecessorTaskId, successorTaskId);
+        //        return NoContent(); // Return 204 No Content for successful operation
+        //    }
+        //    catch (NotFoundException ex)
+        //    {
+        //        return NotFound(ex.Message); // Return 404 Not Found if either task doesn't exist
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message); // Return 400 Bad Request if dependency already exists or other invalid operation
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the error
+        //        return StatusCode(500, "An error occurred while adding the dependency.");
+        //    }
+        //}
+        //[HttpDelete("{successorTaskId}/dependencies/{predecessorTaskId}")]
+        //public async Task<IActionResult> RemoveDependency(int successorTaskId, int predecessorTaskId)
+        //{
+        //    try
+        //    {
+        //        await _projectTaskService.RemoveDependencyAsync(predecessorTaskId, successorTaskId);
+        //        return NoContent(); // Return 204 No Content for successful operation
+        //    }
+        //    catch (NotFoundException ex)
+        //    {
+        //        return NotFound(ex.Message); // Return 404 Not Found if either task or dependency doesn't exist
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the error
+        //        return StatusCode(500, "An error occurred while removing the dependency.");
+        //    }
+        //}
+        //[HttpGet("{taskId}/predecessors")]
+        //public async Task<ActionResult<IEnumerable<ProjectTaskReadDto>>> GetPredecessors(int taskId)
+        //{
+        //    var predecessors = await _projectTaskService.GetPredecessorsAsync(taskId);
+        //    return Ok(predecessors);
+        //}
+
+        //[HttpGet("{taskId}/successors")]
+        //public async Task<ActionResult<IEnumerable<ProjectTaskReadDto>>> GetSuccessors(int taskId)
+        //{
+        //    var successors = await _projectTaskService.GetSuccessorsAsync(taskId);
+        //    return Ok(successors);
+        //}
         // DELETE: api/ProjectTask/{id}
+
         [HttpDelete("Delete-task")]
         [Authorize(Policy = "SupervisorOnly")] // Example policy for deletion
         public async Task<IActionResult> DeleteTask(int id)
