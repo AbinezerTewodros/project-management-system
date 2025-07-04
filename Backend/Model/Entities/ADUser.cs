@@ -1,4 +1,6 @@
-﻿namespace ProjectManagementSystem1.Model
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ProjectManagementSystem1.Model
 {
     public class ADUser
     {

@@ -22,6 +22,8 @@ public class ProjectAssignment
     [Required]
     public string MemberRole { get; set; }
 
+    public string? Role { get; set; } // e.g., "ScrumMaster", "TeamLeader", "Member"
+
     public double Status { get; set; } = 0;
 
     // Audit fields

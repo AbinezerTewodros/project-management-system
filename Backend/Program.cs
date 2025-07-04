@@ -24,10 +24,19 @@ using ProjectManagementSystem1.Services.TodoItemService;
 using Hangfire;
 using Hangfire.SqlServer;
 using ProjectManagementSystem1.Configuration;
+using ProjectManagementSystem1.Services.MilestoneService;
 
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddConsole();
+    logging.AddDebug();
+    logging.SetMinimumLevel(LogLevel.Trace);
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -59,6 +68,7 @@ builder.Services.AddHostedService<RefreshTokenCleanupService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
+builder.Services.AddScoped<IMilestoneService, MilestoneService>();
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
@@ -70,8 +80,11 @@ builder.Services.AddScoped<IProjectChatGroupService, ProjectChatGroupService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 
 
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IIndependentTaskService, IndependentTaskService>();
+builder.Services.AddScoped<IPersonalTodoService, PersonalTodoService>();
+builder.Services.AddHttpContextAccessor(); 
 
-builder.Services.Configure<ReminderConfiguration>(builder.Configuration.GetSection("ReminderConfiguration"));
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
 
@@ -94,6 +107,7 @@ builder.Services.AddHangfire(configuration => configuration
         DisableGlobalLocks = true
     }));
 
+GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
 // Add the processing server as IHostedService
 builder.Services.AddHangfireServer();
 
@@ -109,6 +123,9 @@ builder.Services.AddSwaggerGen(c =>
         Title = "Project Management API",
         Version = "v1"
     });
+
+     c.CustomSchemaIds(type => type.FullName);
+    c.IgnoreObsoleteProperties();
 
     // ?? JWT Bearer Auth Setup
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -136,12 +153,19 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
     c.UseAllOfToExtendReferenceSchemas();
+    c.CustomSchemaIds(type => type.FullName);
+    c.IgnoreObsoleteProperties();
     //c.SchemaFilter<EnumSchemaFilter>(); 
 });
 
 
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
+
+if (!jwtSection.Exists() || string.IsNullOrEmpty(jwtSection["SecretKey"]))
+{
+    throw new ApplicationException("Missing or invalid JWT configuration");
+}
 
 if (string.IsNullOrEmpty(jwtSection["SecretKey"]))
     throw new Exception("JWT SecretKey is missing in appsettings.json");
@@ -192,6 +216,19 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        Console.WriteLine($"Database connection test: {db.Database.CanConnect()}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"DATABASE CONNECTION FAILED: {ex.Message}");
+    }
+}
+
+using (var scope = app.Services.CreateScope())
+{
     var services = scope.ServiceProvider;
     await RoleSeeder.SeedRolesAsync(services); //Seed Roles
     await AdminSeeder.SeedAdminAsync(services); //Seed Admin
@@ -208,12 +245,6 @@ app.UseHangfireDashboard();
 
 //app.UseMiddleware<JwtErrorHandlingMiddleware>();
 
-app.UseHttpsRedirection();
-
-app.UseJwtErrorHandling();
-app.UseAuthentication();
-app.UseAuthorization();
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -221,6 +252,31 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "Swagger"; // Set Swagger UI at the app's root
 });
 
+app.UseHttpsRedirection();
+
+app.UseJwtErrorHandling();
+app.UseAuthentication();
+app.UseAuthorization();
+
+
+
 app.MapControllers();
+
+// Add this before app.Run()
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"UNHANDLED EXCEPTION: {ex}");
+        throw;
+    }
+});
+
+// Test endpoint
+app.MapGet("/test", () => "API is running");
 
 app.Run();

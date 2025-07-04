@@ -8,6 +8,9 @@ public class Project
 
     [Required]
     public string ProjectName { get; set; }
+
+    public string? Description { get; set; }
+
     public string Department {  get; set; } // assigned when project is created (logged-in manager department)
 
     public string ProjectOwner { get; set; }
@@ -21,7 +24,7 @@ public class Project
     public string Priority { get; set; } 
     public DateTime? DueDate { get; set; }
 
-    public string Status { get; set; }
+    public string Status { get; set; }  // "Active", "On Hold", "Completed", "Archived"
 
     // Audit fields
     public DateTime? CreatedDate { get; set; } = DateTime.UtcNow;
@@ -31,4 +34,8 @@ public class Project
 
     [Timestamp]
     public byte[] Version { get; set; }
+
+    public bool IsAutomateTodo { get; set; } = true; // Default to true
+    public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
+
 }

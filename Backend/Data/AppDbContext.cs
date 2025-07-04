@@ -13,6 +13,7 @@ namespace ProjectManagementSystem1.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<Message> Messages { get; set; }
+        public DbSet<Milestone> Milestones { get; set; }
         public DbSet<ProjectChatGroup> ProjectChatGroups { get; set; }
         public DbSet<ProjectChatGroupMember> ProjectChatGroupMembers { get; set; }
 
@@ -23,7 +24,11 @@ namespace ProjectManagementSystem1.Data
         //public DbSet<ProjectGoal> ProjectGoals { get; set; }
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<AttachmentPermission> AttachmentPermissions { get; set; }
-        //public DbSet<AttachmentPermission> AttachmentPermissions { get; set; }
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
+        //public DbSet<TaskDependency> TaskDependencies { get; set; }
+
+        public DbSet<IndependentTask> IndependentTasks { get; set; }
+        public DbSet<PersonalTodo> PersonalTodo { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -43,6 +48,7 @@ namespace ProjectManagementSystem1.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+           
             modelBuilder.Entity<AttachmentPermission>(entity =>
             {
                 entity.HasOne(ap => ap.Attachment)
@@ -66,6 +72,25 @@ namespace ProjectManagementSystem1.Data
                 .WithMany()
                 .HasForeignKey(a => a.UploadedByUserId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<IndependentTask>()
+            .HasOne(t => t.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(t => t.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<IndependentTask>()
+                .HasOne(t => t.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(t => t.AssignedToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PersonalTodo>()
+                .HasOne(pt => pt.User)
+                .WithMany() // Or a navigation property in ApplicationUser
+                .HasForeignKey(pt => pt.UserId)
+                .OnDelete(DeleteBehavior.Restrict); // Or DeleteBehavior.NoAction
+
             // Prevent circular references via SQL trigger (optional)
             //entity.HasCheckConstraint("CK_NoSelfReference", "ParentTaskId <> Id");
 

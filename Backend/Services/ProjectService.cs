@@ -10,11 +10,13 @@ namespace ProjectManagementSystem1.Services
     {
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IProjectAssignmentService _projectAssignmentService;
 
-        public ProjectService(AppDbContext context, IMapper mapper)
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService)
         {
             _context = context;
             _mapper = mapper;
+            _projectAssignmentService = projectAssignmentService;
         }
 
         public async Task<List<ProjectDto>> GetAllAsync(string department)
@@ -42,6 +44,17 @@ namespace ProjectManagementSystem1.Services
             project.UpdatedDate = now;         // set updated time on create too
 
             _context.Projects.Add(project);
+            await _context.SaveChangesAsync();
+
+            var projectAssignment = new ProjectAssignment
+            {
+                ProjectId = project.Id,
+                MemberId = currentUser,
+                MemberRole = "Project Manager", // Or Role = "Project Manager" if you're using the new Role property
+                CreatedDate = now,
+                CreateUser = currentUser
+            };
+            _context.ProjectAssignments.Add(projectAssignment);
             await _context.SaveChangesAsync();
 
             return _mapper.Map<ProjectDto>(project);

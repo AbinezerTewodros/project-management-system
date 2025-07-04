@@ -57,8 +57,11 @@ namespace ProjectManagementSystem1.Controllers
         [Authorize(Roles = "Manager")]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
-            var username = User.FindFirstValue(ClaimTypes.Name);
-            var created = await _projectService.CreateAsync(dto, username);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (userId == null) return Unauthorized()
+;
+            var created = await _projectService.CreateAsync(dto, userId);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

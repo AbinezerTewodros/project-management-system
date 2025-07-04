@@ -51,56 +51,120 @@ namespace ProjectManagementSystem1.Controllers
             {
                 return BadRequest(ModelState);
             }
-            var todoItem = await _todoItemService.CreateTodoItemAsync(createDto);
+
+            var assignerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            if (string.IsNullOrEmpty(assignerId))
+            {
+                return Unauthorized();
+            }
+
+            var todoItem = await _todoItemService.CreateTodoItemAsync(createDto, assignerId);
             return CreatedAtAction(nameof(GetTodoItemById), new { id = todoItem.Id }, todoItem);
         }
 
-        [HttpPut("{id}/accept")]
-        public async Task<IActionResult> AcceptTodoItem(int id)
+        //[HttpPut("{id}/accept")]
+        //public async Task<IActionResult> AcceptTodoItem(int id)
+        //{
+        //    var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    if (string.IsNullOrEmpty(memberId))
+        //    {
+        //        return Unauthorized();
+        //    }
+
+        //    try
+        //    {
+        //        await _todoItemService.AcceptTodoItemAsync(id, memberId);
+        //        return Ok();
+        //    }
+        //    catch (NotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
+
+        //[HttpPut("{id}/reject")]
+        //public async Task<IActionResult> RejectTodoItem(int id, [FromBody] RejectTodoItemDto rejectDto)
+        //{
+        //    var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    if (string.IsNullOrEmpty(memberId))
+        //    {
+        //        return Unauthorized();
+        //    }
+
+        //    try
+        //    {
+        //        await _todoItemService.RejectTodoItemAsync(id, memberId, rejectDto.Reason);
+        //        return Ok();
+        //    }
+        //    catch (NotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
+
+        [HttpPut("{id}/acceptassignment")]
+        public async Task<IActionResult> AcceptAssignment(int id)
         {
             var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(memberId))
-            {
-                return Unauthorized();
-            }
-
             try
             {
-                await _todoItemService.AcceptTodoItemAsync(id, memberId);
-                return Ok();
+                await _todoItemService.AcceptAssignmentAsync(id, memberId);
+                return NoContent();
             }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the assignment."); }
         }
 
-        [HttpPut("{id}/reject")]
-        public async Task<IActionResult> RejectTodoItem(int id, [FromBody] RejectTodoItemDto rejectDto)
+        [HttpPut("{id}/acceptapproval")]
+        public async Task<IActionResult> AcceptTodoAfterApproval(int id)
         {
             var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(memberId))
-            {
-                return Unauthorized();
-            }
-
             try
             {
-                await _todoItemService.RejectTodoItemAsync(id, memberId, rejectDto.Reason);
-                return Ok();
+                await _todoItemService.ApproveTodoItemAsync(id, memberId);
+                return NoContent();
             }
-            catch (NotFoundException)
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the approval."); }
+        }
+
+        [HttpPut("{id}/rejectassignment")]
+        public async Task<IActionResult> RejectAssignment(int id, [FromBody] string reason)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
             {
-                return NotFound();
+                await _todoItemService.RejectAssignmentAsync(id, memberId, reason);
+                return NoContent();
             }
-            catch (InvalidOperationException ex)
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the assignment."); }
+        }
+
+        [HttpPut("{id}/rejectcompletion")]
+        public async Task<IActionResult> RejectTodoAfterCompletion(int id, [FromBody] string reason)
+        {
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader makes this action
+            try
             {
-                return BadRequest(ex.Message);
+                await _todoItemService.RejectTodoAfterCompletionAsync(id, teamLeaderId, reason);
+                return NoContent();
             }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the completed todo."); }
         }
 
         [HttpPut("{id}")]
@@ -117,6 +181,36 @@ namespace ProjectManagementSystem1.Controllers
             }
             return Ok(updatedTodoItem);
         }
+
+        [HttpPut("{id}/start")]
+        public async Task<IActionResult> StartTodoItem(int id)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming you have user authentication
+            try
+            {
+                await _todoItemService.StartTodoItemAsync(id, memberId);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (UnauthorizedAccessException ex) { return Unauthorized(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while starting the todo item."); }
+        }
+
+        [HttpPut("{id}/complete")]
+        public async Task<IActionResult> CompleteTodoItem(int id, [FromQuery] int progress, string detailsForLateCompletion = "")
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                await _todoItemService.CompleteTodoItemAsync(id, memberId, progress, detailsForLateCompletion);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while completing the todo item."); }
+        }
+
         [HttpPut("{id}/progress")]
         public async Task<IActionResult> UpdateTodoItemProgress(int id, [FromBody] UpdateTaskProgressDto progressDto)
         {

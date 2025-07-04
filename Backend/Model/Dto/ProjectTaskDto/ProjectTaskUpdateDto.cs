@@ -42,6 +42,8 @@ namespace ProjectManagementSystem1.Model.Dto
         //public string? UpdatedBy { get; set; }
         public DateTime? StartDate { get; set; }
         public List<int> Dependencies { get; set; } = new List<int>(); // Add this line
+        public bool IsAutoCreateTodo { get; set; } = true; // Default to true
+
 
     }
 }

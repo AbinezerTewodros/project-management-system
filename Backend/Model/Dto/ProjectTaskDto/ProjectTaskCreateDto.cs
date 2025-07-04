@@ -28,11 +28,15 @@ namespace ProjectManagementSystem1.Model.Dto
         //public int? ProjectGoalId { get; set; }
         public System.Threading.Tasks.TaskStatus Status { get; set; }
         public DateTime? DueDate { get; set; }
-
         public List<int> Dependencies { get; set; } = new List<int>(); // Add this line
 
         // Optional advanced structure handling
         //public int Depth { get; set; } = 0;
         //public bool IsLeaf { get; set; } = true;
+        public int? MilestoneId { get; set; }
+
+        public bool IsAutoCreateTodo { get; set; } = true; // Default to true
+
+
     }
 }
