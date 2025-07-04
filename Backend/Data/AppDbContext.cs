@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿    using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Model.Entities;
 using System.Reflection.Emit;
@@ -16,9 +16,22 @@ namespace ProjectManagementSystem1.Data
         public DbSet<ProjectTask> ProjectTasks { get; set; }
         public DbSet<TodoItem> TodoItems { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        //public DbSet<StickyNote> StickyNotes { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         //public DbSet<ProjectGoal> ProjectGoals { get; set; }
         public DbSet<Attachment> Attachments { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            ModelBuilder.Entity<Project>()
+                .HasMany(p => p.Attachments)
+                .WithOne(a => a.Project)
+                .HasForeignKey(a => a.ProjectId);
+
+            ModelBuilder.Entity<ProjectTask>()
+                .HasMany(p => p.Attachments)
+                .WithOne(a => a.ProjectTask)
+                .HasForeignKey(a => a.ProjectTaskId);
+        }
         public DbSet<AttachmentPermission> AttachmentPermissions { get; set; }
         //public DbSet<AttachmentPermission> AttachmentPermissions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)

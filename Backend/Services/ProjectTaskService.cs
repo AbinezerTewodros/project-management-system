@@ -94,6 +94,54 @@ namespace ProjectManagementSystem1.Services
             return true;
         }
 
+        // Accept method
+        public async Task AcceptTaskAsync(int taskId, string memberId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null)
+                throw new InvalidOperationException("Task not found.");
+
+            if (task.AssignedMemberId != memberId)
+                throw new InvalidOperationException("You are not assigned to this task.");
+
+            task.Status = ProjectManagementSystem1.Model.Entities.TaskStatus.InProgress;
+            task.UpdatedAt = DateTime.UtcNow;
+
+            _context.ProjectTasks.Update(task);
+            await _context.SaveChangesAsync();
+        }
+
+        // Reject method
+        public async Task RejectTaskAsync(int taskId, string rejectionReason, string memberId)
+        {
+            if (string.IsNullOrWhiteSpace(rejectionReason))
+                throw new ArgumentException("Rejection reason must be provided.", nameof(rejectionReason));
+
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null)
+                throw new InvalidOperationException("Task not found.");
+
+            if (task.AssignedMemberId != memberId)
+                throw new InvalidOperationException("You are not assigned to this task.");
+
+            task.Status = ProjectManagementSystem1.Model.Entities.TaskStatus.Rejected;
+            task.RejectionReason = rejectionReason.Trim();
+            task.UpdatedAt = DateTime.UtcNow;
+
+            _context.ProjectTasks.Update(task);
+            await _context.SaveChangesAsync();
+
+            await _notification.CreateNotificationAsync(
+                recipientUserId: memberId,
+                subject: "Task Rejected",
+                message: $"Task '{task.Title}' has been rejected. Reason: {rejectionReason}",
+                relatedEntityType: "ProjectTask",
+                relatedEntityId: taskId,
+                deliveryMethod: NotificationDeliveryMethod.InApp
+            );
+        }
+
+
         public async Task ValidateParentTaskAsync(int? parentTaskId, int projectAssignmentIdOfCurrentTask)
         {
             if (!parentTaskId.HasValue) return;

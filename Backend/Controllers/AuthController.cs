@@ -29,7 +29,8 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPost("register")]
-        [Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
+        //[Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {
             var result = await _userService.RegisterUserAsync(dto);
@@ -54,16 +55,6 @@ namespace ProjectManagementSystem1.Controllers
                 return Ok(new { message = "First login. Password change required.", jwtResponse });
 
             return Ok(jwtResponse);
-        }
-
-        [HttpPost("refresh-token")]
-        [AllowAnonymous]
-        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
-        {
-            var response = await _authService.RefreshTokenAsync(request.Token);
-            if (response == null) return Unauthorized(new { message = "Invalid or expired refresh token." });
-
-            return Ok(response);
         }
 
         [HttpPost("logout")]

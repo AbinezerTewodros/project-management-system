@@ -46,6 +46,38 @@ namespace ProjectManagementSystem1.Services
             return new RegisterResponseDto { Success = true };
         }
 
+        public async Task<List<SearchUserDto>> SearchUsersAsync(string query, string? department = null)
+        {
+            var usersQuery = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                usersQuery = usersQuery.Where(u =>
+                    u.UserName.Contains(query) ||
+                    u.FullName.Contains(query) ||
+                    u.Email.Contains(query));
+            }
+
+            if (!string.IsNullOrWhiteSpace(department))
+            {
+                usersQuery = usersQuery.Where(u => u.Department == department);
+            }
+
+            var users = await usersQuery
+                .Select(u => new SearchUserDto
+                {
+                    Id = u.Id,
+                    UserName = u.UserName,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    Department = u.Department
+                })
+                .ToListAsync();
+
+            return users;
+        }
+
+
         public async Task<bool> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
         {
             var user = await _userManager.FindByNameAsync(changePasswordDto.Username);

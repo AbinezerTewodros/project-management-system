@@ -18,6 +18,7 @@ public class Project
     [EmailAddress]
     public string ProjectOwnerEmail { get; set; }
 
+    public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
     public string Priority { get; set; } 
     public DateTime? DueDate { get; set; }
 

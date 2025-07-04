@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace ProjectManagementSystem1.Model.Entities
 {
-    public enum TaskStatus { Pending, Accepted, Rejected, Completed } // Re-add this
+    public enum TaskStatus { Pending, Accepted, InProgress, Rejected, Completed } // Re-add this
     public enum TaskPriority { Low, Medium, High, Critical }
 
     public class ProjectTask : IValidatableObject
@@ -62,6 +62,7 @@ namespace ProjectManagementSystem1.Model.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public string? RejectionReason { get; set; }
 
         public double EstimatedHours { get; set; }
         public DateTime? StartDate { get; set; }

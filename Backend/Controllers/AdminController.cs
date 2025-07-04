@@ -16,6 +16,7 @@ namespace ProjectManagementSystem1.Controller
         private readonly IADService _adService; // Service for Active Directory fetch
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserService _userService;
+        private readonly IAuthService _authService;
 
         public AdminController(UserManager<ApplicationUser> userManager, IADService adService, RoleManager<IdentityRole> roleManager, IUserService userService)
         {
@@ -95,6 +96,24 @@ namespace ProjectManagementSystem1.Controller
             await _userManager.AddToRoleAsync(newUser, request.Role);
 
             return Ok(new { message = "User created successfully.", userId = newUser.Id });
+        }
+
+        [HttpGet("search-users")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SearchUsers([FromQuery] string name, [FromQuery] string department = null)
+        {
+            var results = await _userService.SearchUsersAsync(name, department);
+            return Ok(results);
+        }
+
+        [HttpPost("refresh-token")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            var response = await _authService.RefreshTokenAsync(request.Token);
+            if (response == null) return Unauthorized(new { message = "Invalid or expired refresh token." });
+
+            return Ok(response);
         }
 
         [HttpPut("edit-user")]

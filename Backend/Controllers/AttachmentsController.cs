@@ -37,7 +37,15 @@ namespace ProjectManagementSystem1.Controllers
 
             try
             {
+                // Validate that either ProjectId or ProjectTaskId is provided
+                if (uploadDto.ProjectId == null && uploadDto.ProjectTaskId == null)
+                {
+                    return BadRequest("Either ProjectId or ProjectTaskId must be provided.");
+                }
+
+                // Call the service to upload the attachment
                 var attachment = await _attachmentService.UploadAttachmentAsync(uploadDto, memberId);
+
                 return CreatedAtAction(nameof(GetAttachment), new { id = attachment.Id }, attachment);
             }
             catch (Exception ex)
@@ -65,8 +73,47 @@ namespace ProjectManagementSystem1.Controllers
             }
         }
 
+        [HttpGet("{projectId}/attachments")]
+        public async Task<IActionResult> GetAttachments(int projectId)
+        {
+            try
+            {
+                var attachments = await _context.Attachments
+                                             .Where(a => a.ProjectId == projectId && !a.IsDeleted)
+                                             .ToListAsync();
+                if (attachments == null || !attachments.Any())
+                {
+                    return NotFound();
+                }
+                return Ok(attachments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
 
-        [HttpGet("download/{id}")]
+            [HttpGet("{projectTaskId}/attachments")]
+        public async Task<IActionResult> GetAttachments(int projectTaskId)
+        {
+            try
+            {
+                var attachments = await _context.Attachments
+                                             .Where(a => a.ProjectId == projectTaskId && !a.IsDeleted)
+                                             .ToListAsync();
+                if (attachments == null || attachments.Any())
+                {
+                return NotFound();
+                }
+                return Ok(attachments);
+                }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+[HttpGet("download/{id}")]
         public async Task<IActionResult> DownloadAttachment(Guid id)
         {
             try

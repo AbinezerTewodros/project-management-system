@@ -50,6 +50,10 @@ public class Attachment
     public int? ProjectTaskId { get; set; }
     [ForeignKey("ProjectTaskId")]
     public ProjectTask? ProjectTask { get; set; }
+
+    public int ProjectId { get; set; }
+    [ForeignKey("ProjectId")]
+    public Project? Project { get; set; }
 }
 
 public enum AttachmentCategory
