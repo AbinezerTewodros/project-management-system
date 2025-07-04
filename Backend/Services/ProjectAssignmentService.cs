@@ -92,6 +92,7 @@ public class ProjectAssignmentService : IProjectAssignmentService
             ProjectId = dto.ProjectId,
             MemberId = user.Id,
             MemberRole = dto.MemberRole,
+            Role = dto.MemberRole,
             CreateUser = currentUser,
             CreatedDate = DateTime.UtcNow
         };

@@ -14,4 +14,8 @@ namespace ProjectManagementSystem1.Configuration
         public string StatusPropertyName { get; set; } // Add this
         public List<string> ExcludedStatuses { get; set; } // Add this
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287

@@ -7,7 +7,11 @@ using System.Linq;
 
 namespace ProjectManagementSystem1.Model.Entities
 {
+<<<<<<< HEAD
     public enum TaskStatus { Pending, Accepted, InProgress, Rejected, Completed } // Re-add this
+=======
+    public enum TaskStatus { Pending, Accepted, Rejected, Completed, InProgress, WaitingForReview } // Re-add this
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
     public enum TaskPriority { Low, Medium, High, Critical }
 
     public class ProjectTask : IValidatableObject
@@ -23,8 +27,13 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required]
         public int ProjectAssignmentId { get; set; }
 
+        [ForeignKey("ProjectAssignmentId")]
         public ProjectAssignment ProjectAssignment { get; set; }
 
+        public int? MilestoneId { get; set; }
+
+        [ForeignKey("MilestoneId")]
+        public Milestone Milestone { get; set; }
         public string? AssignedMemberId { get; set; }
 
         public int? ParentTaskId { get; set; }
@@ -40,7 +49,11 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required, Range(1, 100)]
         public int Weight { get; set; }
         public double? ActualHours { get; set; }
+<<<<<<< HEAD
 
+=======
+        public string? RejectionReason { get; set; }
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public TaskPriority Priority { get; set; }
 
         private double _progress;
@@ -67,8 +80,16 @@ namespace ProjectManagementSystem1.Model.Entities
         public double EstimatedHours { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
+<<<<<<< HEAD
         public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
         public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
+=======
+        public bool IsAutoCreateTodo { get; set; } // Default to true
+        public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
+        public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
+        //public ICollection<TaskDependency> PredecessorDependencies { get; set; } = new List<TaskDependency>(); // Tasks that this task depends on
+        //public ICollection<TaskDependency> SuccessorDependencies { get; set; } = new List<TaskDependency>();   // Tasks that depend on this task
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if ((Priority == TaskPriority.High || Priority == TaskPriority.Critical) && !DueDate.HasValue)

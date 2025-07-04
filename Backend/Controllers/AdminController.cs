@@ -16,7 +16,10 @@ namespace ProjectManagementSystem1.Controller
         private readonly IADService _adService; // Service for Active Directory fetch
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserService _userService;
+<<<<<<< HEAD
         private readonly IAuthService _authService;
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
 
         public AdminController(UserManager<ApplicationUser> userManager, IADService adService, RoleManager<IdentityRole> roleManager, IUserService userService)
         {
@@ -98,6 +101,7 @@ namespace ProjectManagementSystem1.Controller
             return Ok(new { message = "User created successfully.", userId = newUser.Id });
         }
 
+<<<<<<< HEAD
         [HttpGet("search-users")]
         [AllowAnonymous]
         public async Task<IActionResult> SearchUsers([FromQuery] string name, [FromQuery] string department = null)
@@ -116,6 +120,8 @@ namespace ProjectManagementSystem1.Controller
             return Ok(response);
         }
 
+=======
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         [HttpPut("edit-user")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> EditUser(EditUserDto dto)

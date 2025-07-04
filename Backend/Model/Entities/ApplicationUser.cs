@@ -13,8 +13,7 @@ namespace ProjectManagementSystem1.Model.Entities
         public string Company { get; set; }
 
         public bool IsFirstLogin { get; set; } = true;
-        public string Status { get; set; } = "Active"; // Active or Inactive
-
+        public string Status { get; set; } = "Active"; // Active (true) or Inactive (false)
         // Common fields
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedDate { get; set; }
@@ -26,6 +25,5 @@ namespace ProjectManagementSystem1.Model.Entities
         public byte[]? Version { get; set; }
         
         public string? AccessToken { get; set; } //  Add this
-
     }
 }

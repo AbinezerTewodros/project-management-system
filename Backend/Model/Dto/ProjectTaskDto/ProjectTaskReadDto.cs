@@ -31,6 +31,10 @@ namespace ProjectManagementSystem1.Model.Dto
         public DateTime? UpdatedAt { get; set; }
         public bool IsProjectRoot { get; set; }
         // Subtasks (hierarchy)
+<<<<<<< HEAD
+=======
+        public bool? IsAutoCreateTodo { get; set; }
+>>>>>>> 890391528c11f4793f7d61f942815184bf328287
         public List<int> Dependencies { get; set; } = new List<int>();
         public ICollection<ProjectTaskReadDto> SubTasks { get; set; } = new List<ProjectTaskReadDto>();
         public ICollection<TodoItemReadDto> TodoItems { get; set; } = new List<TodoItemReadDto>();

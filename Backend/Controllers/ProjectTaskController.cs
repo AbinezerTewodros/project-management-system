@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium;
 using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Dto.ProjectTaskDto;
+using ProjectManagementSystem1.Model.Dto.TodoItemsDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
 using System.Security.Claims;
@@ -19,26 +20,16 @@ namespace ProjectManagementSystem1.Controllers
         private readonly IProjectTaskService _projectTaskService;
         private readonly ICommentService _commentService;
         private readonly INotificationService _notification;
-        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService)
+        private readonly ILogger<ProjectTaskController> _logger;
+        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService, INotificationService notificationService, ILogger<ProjectTaskController> logger)
         {
             _projectTaskService = projectTaskService;
             _commentService = commentService;
+            _notification = notificationService;
+            _logger = logger;
         }
 
-        /// GET: api/ProjectTask/notifications
-        [HttpGet("notifications")]
-        public async Task<IActionResult> GetUserNotifications()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            var notifications = await _notification.GetNotificationsForUserAsync(userId);
-            return Ok(notifications);
-        }
-        [Authorize(Policy = "SupervisorOnly")]
+        //[Authorize(Policy = "SupervisorOnly")]
         [HttpPost("create-task")]
         public async Task<IActionResult> CreateTask([FromBody] ProjectTaskCreateDto dto)
         {
@@ -50,6 +41,22 @@ namespace ProjectManagementSystem1.Controllers
             try
             {
                 var task = await _projectTaskService.CreateTaskAsync(dto, memberId);
+                try
+                {
+                    await _notification.CreateNotificationAsync(
+                        recipientUserId: User.FindFirstValue(ClaimTypes.NameIdentifier), // Send to the user creating the task
+                        subject: "Test Email Notification",
+                        message: $"This is a test email notification from your Project Management System to verify email sending functionality.",
+                        relatedEntityType: "ProjectTask",
+                        relatedEntityId: task.Id,
+                        deliveryMethod: NotificationDeliveryMethod.Email
+                    );
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but don't break the task creation
+                    _logger.LogError($"Error sending test email: {ex.Message}");
+                }
                 return Ok(MapToResponseDto(task));
             }
             catch (InvalidOperationException ex)
@@ -59,7 +66,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         // POST: api/ProjectTask/{parentTaskId}/add-subtask
-        [Authorize(Policy = "SupervisorOnly")] // Example: Specific policy for creation
+        //[Authorize(Policy = "SupervisorOnly")] // Example: Specific policy for creation
         [HttpPost("{parentTaskId}/add-subtask")]
         public async Task<IActionResult> AddSubtask(int parentTaskId, [FromBody] ProjectTaskCreateDto dto)
         {
@@ -98,21 +105,42 @@ namespace ProjectManagementSystem1.Controllers
                 Progress = task.Progress,
                 Weight = task.Weight,
                 //Priority = task.Priority,
-                Status = task.Status,
+                //Status = task.Status,
                 EstimatedHours = task.EstimatedHours,
                 ActualHours = task.ActualHours,
                 DueDate = task.DueDate,
                 CreatedAt = task.CreatedAt,
-                SubTasks = task.SubTasks.Select(MapToResponseDto).ToList()
+                SubTasks = task.SubTasks.Select(MapToResponseDto).ToList(),
+                TodoItems = task.TodoItems.Select(MapTodoItemToReadDto).ToList()
             };
         }
+
+        private TodoItemReadDto MapTodoItemToReadDto(TodoItem todoItem)
+        {
+            if (todoItem == null) return null;
+            return new TodoItemReadDto
+            {
+                Id = todoItem.Id,
+                ProjectTaskId = todoItem.ProjectTaskId,
+                Title = todoItem.Title,
+                Description = todoItem.Description,
+                Weight = todoItem.Weight,
+                Progress = todoItem.Progress,
+                CreatedAt = todoItem.CreatedAt,
+                UpdatedAt = todoItem.UpdatedAt
+            };
+        }
+
+
 
         [HttpPut("{taskId}/assign/{memberId}")]
         public async Task<IActionResult> AssignTask(int taskId, string memberId)
         {
+            var assignerId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
             try
             {
-                await _projectTaskService.AssignTaskAsync(taskId, memberId);
+                await _projectTaskService.AssignTaskAsync(taskId, memberId, assignerId);
                 return Ok(); // Or a more descriptive response
             }
             catch (InvalidOperationException ex)
@@ -168,59 +196,59 @@ namespace ProjectManagementSystem1.Controllers
             return Ok(MapToResponseDto(updatedTask));
         }
 
-        [HttpPut("{taskId}/accept")]
-        public async Task<IActionResult> AcceptTask(int taskId)
-        {
-            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(memberId))
-            {
-                return Unauthorized();
-            }
+        //[HttpPut("{taskId}/accept")]
+        //public async Task<IActionResult> AcceptTask(int taskId)
+        //{
+        //    var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //    if (string.IsNullOrEmpty(memberId))
+        //    {
+        //        return Unauthorized();
+        //    }
 
-            try
-            {
-                await _projectTaskService.AcceptTaskAsync(taskId, memberId);
-                return Ok();
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+        //    try
+        //    {
+        //        await _projectTaskService.AcceptTaskAsync(taskId, memberId);
+        //        return Ok();
+        //    }
+        //    catch (NotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
 
-        [HttpPut("{taskId}/reject")]
-        public async Task<IActionResult> RejectTask(int taskId, [FromBody] RejectTaskDto rejectDto)
-        {
-            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        //[HttpPut("{taskId}/reject")]
+        //public async Task<IActionResult> RejectTask(int taskId, [FromBody] RejectTaskDto rejectDto)
+        //{
+        //    var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            if (string.IsNullOrEmpty(memberId))
-            {
-                return Unauthorized();
-            }
+        //    if (string.IsNullOrEmpty(memberId))
+        //    {
+        //        return Unauthorized();
+        //    }
 
-            if (string.IsNullOrWhiteSpace(rejectDto?.Reason))
-            {
-                return BadRequest("Rejection reason is required.");
-            }
+        //    if (string.IsNullOrWhiteSpace(rejectDto?.Reason))
+        //    {
+        //        return BadRequest("Rejection reason is required.");
+        //    }
 
-            try
-            {
-                await _projectTaskService.RejectTaskAsync(taskId, memberId, rejectDto.Reason);
-                return Ok();
-            }
-            catch (NotFoundException)
-            {
-                return NotFound();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
-        }
+        //    try
+        //    {
+        //        await _projectTaskService.RejectTaskAsync(taskId, memberId, rejectDto.Reason);
+        //        return Ok();
+        //    }
+        //    catch (NotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message);
+        //    }
+        //}
 
         [HttpPost("{taskId}/comments")]
         public async Task<IActionResult> AddComment(int taskId, [FromBody] AddCommentDto commentDto)
@@ -245,6 +273,16 @@ namespace ProjectManagementSystem1.Controllers
             {
                 return NotFound();
             }
+        }
+        [HttpGet("{id}/progress")]
+        public async Task<IActionResult> GetProjectTaskProgress(int id)
+        {
+            var task = await _projectTaskService.GetTaskByIdAsync(id);
+            if (task == null)
+            {
+                return NotFound();
+            }
+            return Ok(new { Progress = task.Progress });
         }
         [HttpPut("{taskId}/progress")]
         public async Task<IActionResult> UpdateTaskProgress(int taskId, [FromBody] UpdateTaskProgressDto progressDto)
@@ -310,7 +348,90 @@ namespace ProjectManagementSystem1.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpPut("{id}/acceptcompletion")]
+        public async Task<IActionResult> AcceptProjectTaskCompletion(int id)
+        {
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader is the logged-in user
+            try
+            {
+                await _projectTaskService.AcceptProjectTaskCompletionAsync(id, teamLeaderId);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the project task completion."); }
+        }
+
+        [HttpPut("{id}/rejectcompletion")]
+        public async Task<IActionResult> RejectProjectTaskCompletion(int id, [FromBody] string reason)
+        {
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader is the logged-in user
+            try
+            {
+                await _projectTaskService.RejectProjectTaskCompletionAsync(id, teamLeaderId, reason);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the project task completion."); }
+        }
+
+        //[HttpPost("{successorTaskId}/dependencies/{predecessorTaskId}")]
+        //public async Task<IActionResult> AddDependency(int successorTaskId, int predecessorTaskId)
+        //{
+        //    try
+        //    {
+        //        await _projectTaskService.AddDependencyAsync(predecessorTaskId, successorTaskId);
+        //        return NoContent(); // Return 204 No Content for successful operation
+        //    }
+        //    catch (NotFoundException ex)
+        //    {
+        //        return NotFound(ex.Message); // Return 404 Not Found if either task doesn't exist
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(ex.Message); // Return 400 Bad Request if dependency already exists or other invalid operation
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the error
+        //        return StatusCode(500, "An error occurred while adding the dependency.");
+        //    }
+        //}
+        //[HttpDelete("{successorTaskId}/dependencies/{predecessorTaskId}")]
+        //public async Task<IActionResult> RemoveDependency(int successorTaskId, int predecessorTaskId)
+        //{
+        //    try
+        //    {
+        //        await _projectTaskService.RemoveDependencyAsync(predecessorTaskId, successorTaskId);
+        //        return NoContent(); // Return 204 No Content for successful operation
+        //    }
+        //    catch (NotFoundException ex)
+        //    {
+        //        return NotFound(ex.Message); // Return 404 Not Found if either task or dependency doesn't exist
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // Log the error
+        //        return StatusCode(500, "An error occurred while removing the dependency.");
+        //    }
+        //}
+        //[HttpGet("{taskId}/predecessors")]
+        //public async Task<ActionResult<IEnumerable<ProjectTaskReadDto>>> GetPredecessors(int taskId)
+        //{
+        //    var predecessors = await _projectTaskService.GetPredecessorsAsync(taskId);
+        //    return Ok(predecessors);
+        //}
+
+        //[HttpGet("{taskId}/successors")]
+        //public async Task<ActionResult<IEnumerable<ProjectTaskReadDto>>> GetSuccessors(int taskId)
+        //{
+        //    var successors = await _projectTaskService.GetSuccessorsAsync(taskId);
+        //    return Ok(successors);
+        //}
         // DELETE: api/ProjectTask/{id}
+
         [HttpDelete("Delete-task")]
         [Authorize(Policy = "SupervisorOnly")] // Example policy for deletion
         public async Task<IActionResult> DeleteTask(int id)
@@ -325,4 +446,3 @@ namespace ProjectManagementSystem1.Controllers
 
     }
 }
-
