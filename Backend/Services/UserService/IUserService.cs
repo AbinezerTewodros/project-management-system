@@ -1,7 +1,7 @@
 ﻿using ProjectManagementSystem1.Model.Dto.UserManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 
-namespace ProjectManagementSystem1.Services.UserService.UserService
+namespace ProjectManagementSystem1.Services.UserService
 {
     public interface IUserService
     {
