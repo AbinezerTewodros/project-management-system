@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Model.Dto.UserManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.ADService;
@@ -24,6 +25,29 @@ namespace ProjectManagementSystem1.Controller
             _adService = adService;
             _roleManager = roleManager;
             _userService = userService;
+        }
+
+        [HttpGet("all-users")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userManager.Users
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.Email,
+                    u.UserName,
+                    u.EmployeeId,
+                    u.PhoneNumber,       
+                    u.Department,
+                    u.Status,
+                    u.Company,
+                    u.Title,
+                })
+                .ToListAsync();
+
+            return Ok(users);
         }
 
 

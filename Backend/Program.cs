@@ -35,8 +35,6 @@ using ProjectManagementSystem1.Services.AuthService;
 using ProjectManagementSystem1.Services.JwtService;
 using ProjectManagementSystem1.Data.Seeders;
 using ProjectManagementSystem1.Services.Activators;
-//using ProjectManagementSystem1.Services.UserService.UserService;
-//using ProjectManagementSystem1.Services.UserService;
 
 
 
@@ -95,6 +93,17 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontendDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Vite dev server
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // if cookies/auth are used
+    });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -261,6 +270,8 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontendDev");
 
 app.UseJwtErrorHandling();
 app.UseAuthentication();
