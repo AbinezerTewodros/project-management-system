@@ -18,7 +18,11 @@ namespace ProjectManagementSystem1.Helpers
         public MappingProfile()
         {
             CreateMap<Project, ProjectDto>();
-            CreateMap<CreateProjectDto, Project>();
+            CreateMap<CreateProjectDto, Project>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForSourceMember(src => src.AssignedEmployeeId, opt => opt.DoNotValidate())
+                .ForSourceMember(src => src.AssignedRole, opt => opt.DoNotValidate());
+
             CreateMap<UpdateProjectDto, Project>();
             CreateMap<CreateAssignmentDto, ProjectAssignment>();
             CreateMap<UpdateAssignmentDto, ProjectAssignment>(); // Map only non-null fields

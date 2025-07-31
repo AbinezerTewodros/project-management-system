@@ -10,5 +10,7 @@ namespace ProjectManagementSystem1.Services.UserService
         Task<ApplicationUser?> GetUserByUsernameAsync(string username);
         Task<ApplicationUser?> GetUserByEmployeeIdAsync(string employeeId);
         Task<ApplicationUser> FindUserByIdentifierAsync(string identifier);
+        Task ArchiveUserAsync(string userId, string currentUser);
+        Task RestoreUserAsync(string userId, string currentUser);
     }
 }

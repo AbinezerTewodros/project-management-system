@@ -233,6 +233,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreateUser")
                         .HasColumnType("nvarchar(max)");
 
@@ -248,6 +251,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsAutomateTodo")
                         .HasColumnType("bit");
@@ -394,6 +400,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<string>("AccessToken")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Company")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -426,6 +435,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFirstLogin")
                         .HasColumnType("bit");
