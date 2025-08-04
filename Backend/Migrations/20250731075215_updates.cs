@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProjectManagementSystem1.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAllTable : Migration
+    public partial class updates : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -411,12 +411,15 @@ namespace ProjectManagementSystem1.Migrations
                     MemberId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     MemberRole = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Role = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Status = table.Column<double>(type: "float", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreateUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdateUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    ApprovedById = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ApprovedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -444,7 +447,7 @@ namespace ProjectManagementSystem1.Migrations
                     Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
                     ProjectAssignmentId = table.Column<int>(type: "int", nullable: false),
                     MilestoneId = table.Column<int>(type: "int", nullable: true),
-                    AssignedMemberId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AssignedMemberId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     ParentTaskId = table.Column<int>(type: "int", nullable: true),
                     Depth = table.Column<int>(type: "int", nullable: false),
                     IsLeaf = table.Column<bool>(type: "bit", nullable: false),
@@ -453,6 +456,7 @@ namespace ProjectManagementSystem1.Migrations
                     RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Priority = table.Column<int>(type: "int", nullable: false),
                     Progress = table.Column<double>(type: "float", nullable: false),
+                    AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsProjectRoot = table.Column<bool>(type: "bit", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -461,6 +465,7 @@ namespace ProjectManagementSystem1.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsAutoCreateTodo = table.Column<bool>(type: "bit", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(MAX)", maxLength: 4000, nullable: true),
                     ProjectTaskId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -509,6 +514,8 @@ namespace ProjectManagementSystem1.Migrations
                     Version = table.Column<int>(type: "int", nullable: false),
                     EntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     EntityType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Thumbnail = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    ThumbnailContentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProjectTaskId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
@@ -567,6 +574,7 @@ namespace ProjectManagementSystem1.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ReasonForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DetailsForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CompletionDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IndependentTaskId = table.Column<int>(type: "int", nullable: true),
@@ -590,6 +598,26 @@ namespace ProjectManagementSystem1.Migrations
                         name: "FK_TodoItems_ProjectTasks_ProjectTaskId",
                         column: x => x.ProjectTaskId,
                         principalTable: "ProjectTasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AttachmentMetadata",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Key = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    AttachmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttachmentMetadata", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AttachmentMetadata_Attachments_AttachmentId",
+                        column: x => x.AttachmentId,
+                        principalTable: "Attachments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -736,6 +764,16 @@ namespace ProjectManagementSystem1.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AttachmentMetadata_AttachmentId",
+                table: "AttachmentMetadata",
+                column: "AttachmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AttachmentMetadata_Key_Value",
+                table: "AttachmentMetadata",
+                columns: new[] { "Key", "Value" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AttachmentPermissions_AttachmentId",
                 table: "AttachmentPermissions",
                 column: "AttachmentId");
@@ -831,6 +869,21 @@ namespace ProjectManagementSystem1.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProjectTask_Assignee",
+                table: "ProjectTasks",
+                column: "AssignedMemberId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProjectTask_Assignment",
+                table: "ProjectTasks",
+                column: "ProjectAssignmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProjectTasks_DueDate",
+                table: "ProjectTasks",
+                column: "DueDate");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProjectTasks_MilestoneId",
                 table: "ProjectTasks",
                 column: "MilestoneId");
@@ -841,14 +894,19 @@ namespace ProjectManagementSystem1.Migrations
                 column: "ParentTaskId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ProjectTasks_ProjectAssignmentId",
+                name: "IX_ProjectTasks_Priority",
                 table: "ProjectTasks",
-                column: "ProjectAssignmentId");
+                column: "Priority");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectTasks_ProjectTaskId",
                 table: "ProjectTasks",
                 column: "ProjectTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProjectTasks_Status",
+                table: "ProjectTasks",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UserId",
@@ -869,6 +927,11 @@ namespace ProjectManagementSystem1.Migrations
                 name: "IX_TodoItems_ProjectTaskId",
                 table: "TodoItems",
                 column: "ProjectTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TodoItems_Status",
+                table: "TodoItems",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserAccessTokens_UserId",
@@ -896,6 +959,9 @@ namespace ProjectManagementSystem1.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AttachmentMetadata");
 
             migrationBuilder.DropTable(
                 name: "AttachmentPermissions");

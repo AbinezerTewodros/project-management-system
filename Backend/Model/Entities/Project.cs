@@ -37,6 +37,8 @@ public class Project
     public byte[] Version { get; set; }
 
     public bool IsAutomateTodo { get; set; } = true; // Default to true
+    public bool IsArchived { get; set; } = false; // default to not archived
+    public DateTime? ArchiveDate { get; internal set; }
     public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
     public virtual ICollection<Issue> Issues { get; set; } = new List<Issue>(); // Navigation property
 }

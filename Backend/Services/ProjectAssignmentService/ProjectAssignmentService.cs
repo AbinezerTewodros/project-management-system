@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Humanizer;
 using Microsoft.EntityFrameworkCore;
+using OpenQA.Selenium;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectAssignmentDto;
+using static ProjectAssignment;
 
 public class ProjectAssignmentService : IProjectAssignmentService
 {
@@ -52,7 +54,7 @@ public class ProjectAssignmentService : IProjectAssignmentService
             DueDate = (DateTime)a.Project.DueDate,
             Status = a.Project.Status,
             MemberRole = a.MemberRole,
-            MemberProgress = a.Status
+            MemberProgress = (double)a.Status
         }).ToList();
 
         return result;
@@ -103,7 +105,29 @@ public class ProjectAssignmentService : IProjectAssignmentService
         return await GetByIdAsync(assignment.Id);
     }
 
+    // In ProjectAssignmentService.cs (new service)
+    public async Task ApproveProjectAssignmentAsync(int assignmentId, string teamLeaderId)
+    {
+        var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+        if (assignment == null) throw new NotFoundException("Assignment not found");
 
+        assignment.Status = AssignmentStatus.Approved;
+        assignment.ApprovedById = teamLeaderId;
+        assignment.ApprovedDate = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RejectProjectAssignmentAsync(int assignmentId, string teamLeaderId, string reason)
+    {
+        var assignment = await _context.ProjectAssignments.FindAsync(assignmentId);
+        if (assignment == null) throw new NotFoundException("Assignment not found");
+
+        assignment.Status = AssignmentStatus.Rejected;
+        assignment.RejectionReason = reason;
+
+        await _context.SaveChangesAsync();
+    }
     public async Task<bool> UpdateAsync(int id, UpdateAssignmentDto dto, string currentUser)
     {
         var assignment = await _context.ProjectAssignments.FindAsync(id);

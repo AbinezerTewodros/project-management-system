@@ -64,9 +64,9 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 return null;
             }
 
-            if (updateDto.Progress.HasValue && todoItem.Status != TodoItemStatus.Accepted)
+            if (updateDto.Progress.HasValue && todoItem.Status != TodoItemStatus.InProgress)
             {
-                throw new InvalidOperationException($"Progress can only be updated for TodoItem with ID '{id}' if it has been accepted.");
+                throw new InvalidOperationException($"Progress can only be updated for TodoItem with ID '{id}' if it has been in progress.");
             }
 
             if (updateDto.Title != null)
@@ -109,19 +109,18 @@ namespace ProjectManagementSystem1.Services.TodoItems
 
         public async Task AcceptAssignmentAsync(int id, string memberId)
         {
-            var todoItem = await _context.TodoItems
-                            .Include(ti => ti.ProjectTask)
-                            .FirstOrDefaultAsync(ti => ti.Id == id);
+            var todoItem = await _context.TodoItems.FindAsync(id);
 
             if (todoItem == null)
             {
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
             }
 
-            if (todoItem.Status == TodoItemStatus.Pending || todoItem.Status == TodoItemStatus.Rejected)
+            if (todoItem.Status == TodoItemStatus.Pending)
             {
                 todoItem.Status = TodoItemStatus.Accepted;
                 todoItem.AcceptedDate = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
                 await _projectTaskService.UpdateParentTaskProgressAsync(todoItem.ProjectTaskId);
                 // Update parent ProjectTask status (logic remains the same as before)
@@ -196,7 +195,7 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
             }
 
-            if (todoItem.Status == TodoItemStatus.Completed || todoItem.Status == TodoItemStatus.Approved) // Allow rejection even after approval
+            if (todoItem.Status == TodoItemStatus.Completed || todoItem.Status == TodoItemStatus.Approved || todoItem.Status == TodoItemStatus.WaitingForReview) // Allow rejection even after approval
             {
                 todoItem.Status = TodoItemStatus.Rejected;
                 todoItem.ReasonForLateCompletion = reason; // Or a dedicated RejectionReason field
@@ -210,9 +209,12 @@ namespace ProjectManagementSystem1.Services.TodoItems
             }
         }
 
-        public async Task CompleteTodoItemAsync(int id, string memberId, int progress, string? detailsForLateCompletion)
+        public async Task CompleteTodoItemAsync(int id, string memberId, int progress, string? detailsForLateCompletion, string? completionDetails)
         {
-            var todoItem = await _context.TodoItems.FindAsync(id);
+            var todoItem = await _context.TodoItems
+                    .Include(t => t.ProjectTask)
+                    .FirstOrDefaultAsync(t => t.Id == id);
+
             if (todoItem == null)
             {
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
@@ -224,6 +226,16 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 throw new UnauthorizedAccessException("You are not assigned to this todo item.");
             }
 
+            if (todoItem.Status is not (TodoItemStatus.InProgress or TodoItemStatus.Reopened))
+            {
+                throw new InvalidOperationException("Todo must be in progress to complete");
+            }
+
+            // Validate progress
+            if (progress is < 0 or > 100)
+                throw new InvalidOperationException("Invalid progress value");
+
+
             if (todoItem.Status == TodoItemStatus.InProgress)
             {
                 if (progress >= 0 && progress <= 100)
@@ -231,13 +243,24 @@ namespace ProjectManagementSystem1.Services.TodoItems
                     todoItem.Status = TodoItemStatus.WaitingForReview;
                     todoItem.Progress = progress; // Set the progress
 
+
+                    if (todoItem.Status == TodoItemStatus.InProgress)
+                    {
+                        todoItem.CompletionDetails = completionDetails;
+                        await _context.SaveChangesAsync();
+                    }
+
                     if (todoItem.DueDate.HasValue && DateTime.UtcNow > todoItem.DueDate)
                     {
                         todoItem.DetailsForLateCompletion = detailsForLateCompletion;
+                        //todoItem.CompletionDetails = "";
+
                     }
                     else
                     {
                         todoItem.DetailsForLateCompletion = "";
+                        //todoItem.CompletionDetails = completionDetails;
+
                     }
 
                     //if (!todoItem.StartDate.HasValue) // Set StartDate automatically upon completion
@@ -253,10 +276,37 @@ namespace ProjectManagementSystem1.Services.TodoItems
                         .Include(pt => pt.TodoItems)
                         .FirstOrDefaultAsync(pt => pt.Id == todoItem.ProjectTaskId);
 
-                    if (projectTask != null && projectTask.TodoItems.All(ti => ti.Status == TodoItemStatus.Completed))
+                    //    if (projectTask != null && projectTask.TodoItems.All(ti => ti.Status == TodoItemStatus.Completed))
+                    //    {
+                    //        projectTask.Status = TaskStatus.WaitingForReview;
+                    //        await _context.SaveChangesAsync();
+                    //    }
+                    //}
+
+                    if (projectTask != null)
                     {
-                        projectTask.Status = TaskStatus.WaitingForReview;
+                        // Calculate new progress based on all todos
+                        double totalWeight = projectTask.TodoItems.Sum(t => t.Weight);
+                        double completedWeight = projectTask.TodoItems
+                            .Where(t => t.Status == TodoItemStatus.Approved)
+                            .Sum(t => t.Weight);
+
+                        double newProgress = totalWeight > 0 ? (completedWeight / totalWeight) * 100 : 0;
+
+                        // Update task progress and status
+                        projectTask.Progress = newProgress;
+
+                        if (newProgress >= 100)
+                        {
+                            projectTask.Status = TaskStatus.WaitingForReview;
+                        }
+                        else if (newProgress > 0 && projectTask.Status == TaskStatus.Pending)
+                        {
+                            projectTask.Status = TaskStatus.InProgress;
+                        }
+
                         await _context.SaveChangesAsync();
+                        await _projectTaskService.UpdateParentTaskProgressAsync(projectTask.ParentTaskId);
                     }
                 }
                 else
@@ -279,12 +329,12 @@ namespace ProjectManagementSystem1.Services.TodoItems
             }
 
             // Optional: Check if the memberId matches the assigned member
-            if (todoItem.AssignedBy != memberId)
+            if (todoItem.AssigneeId != memberId)
             {
                 throw new UnauthorizedAccessException("You are not authorized to start this todo item.");
             }
 
-            if (todoItem.Status == TodoItemStatus.Accepted && !todoItem.StartDate.HasValue)
+            if (todoItem.Status == TodoItemStatus.Accepted)
             {
                 todoItem.Status = TodoItemStatus.InProgress;
                 todoItem.StartDate = DateTime.UtcNow;
@@ -320,6 +370,24 @@ namespace ProjectManagementSystem1.Services.TodoItems
             {
                 throw new InvalidOperationException($"TodoItem with ID '{id}' is not in a state where it can be approved (Current status: {todoItem.Status}).");
             }
+        }
+
+        // In TodoItemService.cs
+        public async Task ReopenRejectedTodoAsync(int id, string memberId)
+        {
+            var todoItem = await _context.TodoItems.FindAsync(id);
+            if (todoItem == null)
+                throw new NotFoundException($"TodoItem with ID '{id}' not found.");
+
+            if (todoItem.Status != TodoItemStatus.Rejected)
+                throw new InvalidOperationException("Only rejected todo items can be reopened");
+
+            if (todoItem.AssigneeId != memberId)
+                throw new UnauthorizedAccessException("Only the assigned member can reopen this todo");
+
+            todoItem.Status = TodoItemStatus.InProgress;
+            todoItem.RejectionReason = null; // Clear rejection reason
+            await _context.SaveChangesAsync();
         }
 
         private TodoItemReadDto MapToReadDto(TodoItem todoItem)

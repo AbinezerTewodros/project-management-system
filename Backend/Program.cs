@@ -37,6 +37,19 @@ using ProjectManagementSystem1.Data.Seeders;
 using ProjectManagementSystem1.Services.Activators;
 using ProjectManagementSystem1.Services.ErpUserService;
 using ProjectManagementSystem1.Services.IssueService;
+using ProjectManagementSystem1.Services.FileStorageService;
+using ProjectManagementSystem1.Services.AttachmentDownloadSercvice;
+using ProjectManagementSystem1.Services.ResourceAcessService;
+using ProjectManagementSystem1.Services.Validation;
+using ProjectManagementSystem1.Services.AddSkillService;
+using System.Net.Http.Headers;
+using System.Threading.RateLimiting;
+using System.Net.Http; // For HttpResponseMessage
+using Polly; // For IAsyncPolicy, Policy
+using Polly.Extensions.Http; // For HttpPolicyExtensions
+using Microsoft.Extensions.Http; // For HttpClient builder extensions
+//using ProjectManagementSystem1.Services.ThumbnailService;
+using ProjectManagementSystem1.Services.UserProfile;
 
 
 
@@ -50,6 +63,8 @@ builder.WebHost.ConfigureLogging(logging =>
     logging.AddDebug();
     logging.SetMinimumLevel(LogLevel.Trace);
 });
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -91,12 +106,24 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IIndependentTaskService, IndependentTaskService>();
 builder.Services.AddScoped<IPersonalTodoService, PersonalTodoService>();
+builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient(); // for HttpClient injection
+//builder.Services.AddHttpClient(); // for HttpClient injection
 builder.Services.AddScoped<IErpUserService, ErpUserService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 builder.Services.AddScoped<IADAuthService, ADAuthService>();
 
+// Add this where you configure services
+builder.Services.AddScoped<DownloadTokenService>();
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddScoped<IEntityValidator,  EntityValidator>();
+//builder.Services.AddScoped<IThumbnailGeneratorService, ThumbnailGeneratorService>();
+
+builder.Services.AddScoped<ISkillService, SkillService>();
+builder.Services.AddScoped<SkillDataSeeder>();
+builder.Services.AddHostedService<SkillUpdateBackgroundService>();
+
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
@@ -109,6 +136,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // if cookies/auth are used
+
+       
     });
 });
 
@@ -182,6 +211,26 @@ builder.Services.AddSwaggerGen(c =>
     //c.SchemaFilter<EnumSchemaFilter>(); 
 });
 
+builder.Services.AddHttpClient("EscoClient", client =>
+{
+    client.BaseAddress = new Uri("https://ec.europa.eu/esco/api/");
+    client.DefaultRequestHeaders.Accept.Add(
+        new MediaTypeWithQualityHeaderValue("application/json"));
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy("EscoApiPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString(),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
 
 
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
@@ -253,6 +302,15 @@ using (var scope = app.Services.CreateScope())
 
 using (var scope = app.Services.CreateScope())
 {
+    var seeder = scope.ServiceProvider.GetRequiredService<SkillDataSeeder>();
+    await seeder.SeedAsync(); // Make sure this runs
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var skillCount = await db.AddSkills.CountAsync();
+    Console.WriteLine($"Database contains {skillCount} skills"); // Should be > 0
+}
+
+using (var scope = app.Services.CreateScope())
+{
     var services = scope.ServiceProvider;
     await RoleSeeder.SeedRolesAsync(services); //Seed Roles
     await AdminSeeder.SeedAdminAsync(services); //Seed Admin
@@ -277,6 +335,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 app.UseCors("AllowFrontendDev");
 

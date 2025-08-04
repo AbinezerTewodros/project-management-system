@@ -25,11 +25,16 @@ namespace ProjectManagementSystem1.Data
         //public DbSet<TaskDependency> TaskDependencies { get; set; }
         public DbSet<ErpUser> ErpUsers { get; set; }
         public DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
+
         public DbSet<Issue> Issues { get; set; }
 
 
         public DbSet<IndependentTask> IndependentTasks { get; set; }
         public DbSet<PersonalTodo> PersonalTodo { get; set; }
+        public DbSet<AddSkill> AddSkills { get; set; }
+        public DbSet<UserSkill> UserSkills { get; set; }
+        public object TaskAssignments { get; internal set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -68,17 +73,41 @@ namespace ProjectManagementSystem1.Data
                 .OnDelete(DeleteBehavior.NoAction);
             });
 
+
             modelBuilder.Entity<Attachment>()
                 .HasOne(a => a.UploadedBy)
                 .WithMany()
                 .HasForeignKey(a => a.UploadedByUserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            //modelBuilder.Entity<Attachment>()
+            // .OwnsMany(a => a.Metadata, m =>
+            // {
+            //     m.WithOwner().HasForeignKey("AttachmentId");
+            //     m.Property<Guid>("Id"); // Shadow PK
+            //     m.HasKey("Id");
+            // });
+
+            modelBuilder.Entity<Attachment>()
+            .OwnsMany(a => a.Metadata, m =>
+            {
+                m.ToTable("AttachmentMetadata");
+                m.WithOwner().HasForeignKey("AttachmentId");
+                m.Property<Guid>("Id"); // Shadow PK
+                m.HasKey("Id");
+                m.Property(m => m.Key).HasMaxLength(100);
+                m.Property(m => m.Value).HasMaxLength(100);
+                m.HasIndex(x => new { x.Key, x.Value }); // Composite index
+            });
+
+            //modelBuilder.Entity<AttachmentMetadata>()
+            //    .HasIndex(m => new { m.Key, m.Value });
+
             modelBuilder.Entity<IndependentTask>()
-            .HasOne(t => t.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(t => t.CreatedByUserId)
-            .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(t => t.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<IndependentTask>()
                 .HasOne(t => t.AssignedToUser)
@@ -129,6 +158,69 @@ namespace ProjectManagementSystem1.Data
                 .HasForeignKey(it => it.IssueId) // Foreign key in IndependentTask
                 .OnDelete(DeleteBehavior.Cascade); // Or another behavior you prefer
 
+            // In your DbContext's OnModelCreating
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => t.Status);
+
+            modelBuilder.Entity<ProjectTask>()
+               .HasIndex(t => t.ProjectAssignmentId)
+               .HasDatabaseName("IX_ProjectTask_Assignment");
+
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => t.AssignedMemberId)
+                .HasDatabaseName("IX_ProjectTask_Assignee");
+
+            modelBuilder.Entity<ProjectTask>(entity =>
+            {
+                entity.Property(p => p.Description)
+                    .HasColumnName("Description") // Ensure column name matches
+                    .HasColumnType("nvarchar(max)"); // Use appropriate data type
+            });
+
+            modelBuilder.Entity<TodoItem>(entity =>
+            {
+                entity.HasOne(t => t.ProjectTask)
+                      .WithMany(p => p.TodoItems)
+                      .HasForeignKey(t => t.ProjectTaskId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<TodoItem>()
+             .HasIndex(t => t.Status);
+
+            // In your DbContext's OnModelCreating
+            modelBuilder.Entity<ProjectTask>(entity =>
+            {
+                entity.Property(p => p.Description)
+                .HasColumnType("nvarchar(MAX)")
+                .HasMaxLength(4000);
+
+                entity.HasIndex(p => p.ProjectAssignmentId);
+                entity.HasIndex(p => p.AssignedMemberId);
+                entity.HasIndex(p => p.Status);
+                entity.HasIndex(p => p.Priority);
+                entity.HasIndex(p => p.DueDate);
+            });
+
+
+            modelBuilder.Entity<UserSkill>()
+               .HasKey(us => new { us.UserId, us.SkillId });
+
+            modelBuilder.Entity<UserSkill>()
+                .HasOne(us => us.User)
+                .WithMany(u => u.UserSkills)
+                .HasForeignKey(us => us.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Or Restrict based on your needs
+
+            modelBuilder.Entity<UserSkill>()
+                .HasOne(us => us.Skill)
+                .WithMany(s => s.UserSkills)
+                .HasForeignKey(us => us.SkillId);
+
+            // Index for search optimization
+            modelBuilder.Entity<AddSkill>()
+                .HasIndex(s => s.NormalizedName);
+            // or appropriate type for your DB
 
             // Prevent circular references via SQL trigger (optional)
             //entity.HasCheckConstraint("CK_NoSelfReference", "ParentTaskId <> Id");

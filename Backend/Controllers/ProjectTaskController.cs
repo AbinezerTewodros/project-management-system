@@ -90,6 +90,54 @@ namespace ProjectManagementSystem1.Controllers
             // catch (Exception ex) { /* Log error */ return StatusCode(500, "An unexpected error occurred."); }
         }
 
+        [HttpPost("filter")]
+        public async Task<IActionResult> FilterTasks([FromBody] ProjectTaskFilterDto filter)
+        {
+            var result = await _projectTaskService.GetFilteredTasksAsync(filter);
+            return Ok(result);
+        }
+
+        // Specialized endpoints for common cases
+        [HttpGet("by-assignment/{assignmentId}")]
+        public async Task<IActionResult> GetTasksByAssignment(int assignmentId,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var filter = new ProjectTaskFilterDto
+            {
+                ProjectAssignmentId = assignmentId,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+            return await FilterTasks(filter);
+        }
+
+        [HttpGet("by-member/{memberId}")]
+        public async Task<IActionResult> GetTasksByMember(string memberId,
+            [FromQuery] System.Threading.Tasks.TaskStatus? status = null,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var filter = new ProjectTaskFilterDto
+            {
+                AssignedMemberId = memberId,
+                Status = (Model.Entities.TaskStatus?)status,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+            return await FilterTasks(filter);
+        }
+
+        [HttpGet("by-status/{status}")]
+        public async Task<IActionResult> GetTasksByStatus(System.Threading.Tasks.TaskStatus status,
+            [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        {
+            var filter = new ProjectTaskFilterDto
+            {
+                Status = (Model.Entities.TaskStatus?)status,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+            return await FilterTasks(filter);
+        }
         private ProjectTaskReadDto MapToResponseDto(ProjectTask task)
         {
             if (task == null) return null;
@@ -296,6 +344,22 @@ namespace ProjectManagementSystem1.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPut("{id}/accept")]
+        public async Task<IActionResult> AcceptTask(int id)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _projectTaskService.AcceptTaskAssignmentAsync(id, memberId);
+            return NoContent();
+        }
+
+        [HttpPut("{id}/reject")]
+        public async Task<IActionResult> RejectTask(int id, [FromBody] string reason)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _projectTaskService.RejectTaskAssignmentAsync(id, memberId, reason);
+            return NoContent();
         }
 
         [HttpPut("{id}/acceptcompletion")]

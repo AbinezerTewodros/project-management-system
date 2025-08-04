@@ -121,6 +121,21 @@ namespace ProjectManagementSystem1.Controllers
             catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the completed todo."); }
         }
 
+        // In TodoItemController.cs
+        [HttpPut("{id}/reopen")]
+        public async Task<IActionResult> ReopenRejectedTodo(int id)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                await _todoItemService.ReopenRejectedTodoAsync(id, memberId);
+                return NoContent();
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (UnauthorizedAccessException ex) { return Unauthorized(ex.Message); }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTodoItem(int id, [FromBody] TodoItemUpdateDto updateDto)
         {
@@ -135,6 +150,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             return Ok(updatedTodoItem);
         }
+
 
         [HttpPut("{id}/start")]
         public async Task<IActionResult> StartTodoItem(int id)
@@ -152,12 +168,12 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPut("{id}/complete")]
-        public async Task<IActionResult> CompleteTodoItem(int id, [FromQuery] int progress, string detailsForLateCompletion = "")
+        public async Task<IActionResult> CompleteTodoItem(int id, [FromQuery] int progress, string? detailsForLateCompletion, string? completionDetails)
         {
             var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             try
             {
-                await _todoItemService.CompleteTodoItemAsync(id, memberId, progress, detailsForLateCompletion);
+                await _todoItemService.CompleteTodoItemAsync(id, memberId, progress, detailsForLateCompletion, completionDetails);
                 return NoContent();
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
@@ -180,7 +196,7 @@ namespace ProjectManagementSystem1.Controllers
             }
 
             // Enhancement: Check if the TodoItem has been accepted before allowing progress update
-            if (existingTodoItem.Status != TodoItemStatus.Accepted)
+            if (existingTodoItem.Status != TodoItemStatus.InProgress)
             {
                 return BadRequest("Progress can only be updated for accepted TodoItems.");
             }

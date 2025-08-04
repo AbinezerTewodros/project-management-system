@@ -86,5 +86,41 @@ namespace ProjectManagementSystem1.Controllers
             return NoContent();
         }
 
+        [HttpPost("archive/{id}")]
+        public async Task<IActionResult> ArchiveProject(int id)
+        {
+            var currentUser = User.Identity?.Name; // or get from claims
+
+            await _projectService.ArchiveProjectAsync(id, currentUser);
+
+            return Ok(new { Message = "Project archived successfully" });
+        }
+
+        [HttpPost("restore/{id}")]
+        public async Task<IActionResult> RestoreProject(int id)
+        {
+            var currentUser = User.Identity?.Name;
+
+            try
+            {
+                await _projectService.RestoreProjectAsync(id, currentUser);
+                return Ok(new { Message = "Project restored successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+
+        //[HttpGet("active")]
+        //public async Task<IActionResult> GetActiveProjects()
+        //{
+        //    var projects = await _projectService.GetActiveProjectsAsync();
+        //    return Ok(projects);
+        //}
+
+
+
     }
 }

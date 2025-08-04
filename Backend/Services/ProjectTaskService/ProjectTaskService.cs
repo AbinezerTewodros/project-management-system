@@ -5,6 +5,7 @@ using ProjectManagementSystem1.Model.Dto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.NotificationService;
 using ProjectManagementSystem1.Services.ProjectTaskService;
+using System.Threading.Tasks;
 using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus;
 
 namespace ProjectManagementSystem1.Services.ProjectTaskService
@@ -36,18 +37,35 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
             return task;
         }
 
-        private async Task LoadSubtasksRecursively(ProjectTask task)
+        //private async Task LoadSubtasksRecursively(ProjectTask task)
+        //{
+        //    if (task.SubTasks != null && task.SubTasks.Any())
+        //    {
+        //        foreach (var subtask in task.SubTasks)
+        //        {
+        //            if (!_context.Entry(subtask).Collection(t => t.SubTasks).IsLoaded)
+        //            {
+        //                await _context.Entry(subtask).Collection(t => t.SubTasks).LoadAsync();
+        //            }
+        //            await LoadSubtasksRecursively(subtask);
+        //        }
+        //    }
+        //}
+
+
+        private async Task LoadSubtasksRecursively(ProjectTask task, int maxDepth = 5, int currentDepth = 0)
         {
-            if (task.SubTasks != null && task.SubTasks.Any())
+            if (currentDepth >= maxDepth) return;
+
+            await _context.Entry(task)
+                .Collection(t => t.SubTasks)
+                .Query()
+                .Take(100) // Limit per level
+                .LoadAsync();
+
+            foreach (var subtask in task.SubTasks)
             {
-                foreach (var subtask in task.SubTasks)
-                {
-                    if (!_context.Entry(subtask).Collection(t => t.SubTasks).IsLoaded)
-                    {
-                        await _context.Entry(subtask).Collection(t => t.SubTasks).LoadAsync();
-                    }
-                    await LoadSubtasksRecursively(subtask);
-                }
+                await LoadSubtasksRecursively(subtask, maxDepth, currentDepth + 1);
             }
         }
 
@@ -155,22 +173,22 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
         {
             if (!parentTaskId.HasValue) return;
 
-            var visitedIds = new HashSet<int> { taskId };
-            int? currentAncestorId = parentTaskId;
+            var visited = new HashSet<int> { taskId };
+            var current = parentTaskId;
 
-            while (currentAncestorId != null)
+            while (current.HasValue)
             {
-                if (visitedIds.Contains(currentAncestorId.Value))
-                    throw new InvalidOperationException($"Circular task hierarchy detected. Task ID '{taskId}' cannot have an ancestor (ID: {currentAncestorId.Value}) that is itself or one of its descendants.");
+                if (visited.Contains(current.Value))
+                    throw new InvalidOperationException($"Circular reference detected at task {current.Value}");
 
-                visitedIds.Add(currentAncestorId.Value);
+                visited.Add(current.Value);
 
-                var ancestorTask = await _context.ProjectTasks
-                    .AsNoTracking()
-                    .Select(t => new { t.Id, t.ParentTaskId }) // Select only what's needed
-                    .FirstOrDefaultAsync(t => t.Id == currentAncestorId.Value);
+                var next = await _context.ProjectTasks
+                    .Where(t => t.Id == current.Value)
+                    .Select(t => t.ParentTaskId)
+                    .FirstOrDefaultAsync();
 
-                currentAncestorId = ancestorTask?.ParentTaskId;
+                current = next;
             }
         }
 
@@ -450,8 +468,47 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
                         deliveryMethod: NotificationDeliveryMethod.InApp // You can choose the delivery method
                     );
                 }
+
+                if (task.Status == TaskStatus.Pending)
+                {
+                    task.Status = TaskStatus.Accepted;
+                }
+
                 await _context.SaveChangesAsync(); // Save all subtask assignments
             }
+        }
+
+        // In ProjectTaskService.cs
+        public async Task AcceptTaskAssignmentAsync(int taskId, string memberId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) throw new NotFoundException("Task not found");
+
+            if (task.Status != TaskStatus.Pending)
+                throw new InvalidOperationException("Only pending tasks can be accepted");
+
+            if (task.AssignedMemberId != memberId)
+                throw new UnauthorizedAccessException("Not assigned to this task");
+
+            task.Status = TaskStatus.Accepted;
+            task.AcceptedDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RejectTaskAssignmentAsync(int taskId, string memberId, string reason)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            if (task == null) throw new NotFoundException("Task not found");
+
+            if (task.Status != TaskStatus.Pending)
+                throw new InvalidOperationException("Only pending tasks can be rejected");
+
+            if (task.AssignedMemberId != memberId)
+                throw new UnauthorizedAccessException("Not assigned to this task");
+
+            task.Status = TaskStatus.Rejected;
+            task.RejectionReason = reason;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<ProjectTask> UpdateTaskAsync(int id, string memberIdFromToken, ProjectTaskUpdateDto dto, bool isSupervisor)
@@ -576,6 +633,16 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
                 throw new InvalidOperationException($"Progress can only be updated for task '{task.Title}' if it has at least one accepted TodoItem.");
             }
 
+            if (progress >= 100 && task.Status != TaskStatus.Completed)
+            {
+                ValidateStatusTransition(task.Status, TaskStatus.WaitingForReview);
+                task.Status = TaskStatus.WaitingForReview;
+            }
+            else if (progress > 0 && task.Status == TaskStatus.Pending)
+            {
+                task.Status = TaskStatus.InProgress;
+            }
+
             task.Progress = progress; // This will now use the private setter with IsLeaf check
             task.UpdatedAt = DateTime.UtcNow;
             _context.ProjectTasks.Update(task);
@@ -586,6 +653,8 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
             {
                 await UpdateParentTaskWeightAsync(task.ParentTaskId.Value);
             }
+
+
         }
 
 
@@ -634,7 +703,7 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
                     if (totalWeight > 0)
                     {
                         parentTask.SetCalculatedProgress(weightedProgressSum / totalWeight);
-                        Console.WriteLine($"Calculated progress for parent task ID {parentTaskId}: {parentTask.Progress}");
+                        //Console.WriteLine($"Calculated progress for parent task ID {parentTaskId}: {parentTask.Progress}");
                     }
                     else
                     {
@@ -732,6 +801,8 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
 
             if (projectTask.Status == TaskStatus.WaitingForReview)
             {
+                ValidateStatusTransition(projectTask.Status, TaskStatus.Completed);
+
                 projectTask.Status = TaskStatus.Completed;
                 projectTask.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
@@ -783,5 +854,98 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
         {
             throw new NotImplementedException();
         }
+
+        // In ProjectTaskService.cs
+        public async Task<PaginatedResult<ProjectTask>> GetFilteredTasksAsync(ProjectTaskFilterDto filter)
+        {
+            // Base query with includes
+            var query = _context.ProjectTasks.AsQueryable();
+
+            // Apply filters in optimal order (most selective first)
+            if (filter.ProjectAssignmentId.HasValue)
+            {
+                query = query.Where(t => t.ProjectAssignmentId == filter.ProjectAssignmentId);
+            }
+
+            if (!string.IsNullOrEmpty(filter.AssignedMemberId))
+            {
+                query = query.Where(t => t.AssignedMemberId == filter.AssignedMemberId);
+            }
+
+            if (filter.Status.HasValue)
+            {
+                query = query.Where(t => t.Status == filter.Status.Value);
+            }
+
+            if (filter.Priority.HasValue)
+            {
+                query = query.Where(t => t.Priority == filter.Priority.Value);
+            }
+
+            if (filter.Depth.HasValue)
+            {
+                query = query.Where(t => t.Depth == filter.Depth.Value);
+            }
+
+            if (filter.IsLeaf.HasValue)
+            {
+                query = query.Where(t => t.IsLeaf == filter.IsLeaf.Value);
+            }
+
+            // Date range filtering
+            if (filter.DueDateAfter.HasValue)
+            {
+                query = query.Where(t => t.DueDate >= filter.DueDateAfter.Value);
+            }
+
+            if (filter.DueDateBefore.HasValue)
+            {
+                query = query.Where(t => t.DueDate <= filter.DueDateBefore.Value);
+            }
+
+            // Text search - optimized approach
+            if (!string.IsNullOrEmpty(filter.SearchTerm))
+            {
+                // Option 1: Simple contains (works for small datasets)
+                query = query.Where(t => t.Title.Contains(filter.SearchTerm));
+
+                // Option 2: Full-text search (recommended for enterprise)
+                // query = query.Where(t => EF.Functions.FreeText(t.Title, filter.SearchTerm) || 
+                //                         EF.Functions.FreeText(t.Description, filter.SearchTerm));
+            }
+
+            // Count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply pagination
+            var results = await query
+                .OrderBy(t => t.DueDate ?? DateTime.MaxValue)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PaginatedResult<ProjectTask>(results, totalCount, filter.PageNumber, filter.PageSize);
+        }
+
+        // Update status transitions using state machine
+        private static readonly Dictionary<TaskStatus, List<TaskStatus>> ValidTransitions = new()
+        {
+            [TaskStatus.Pending] = new() { TaskStatus.Accepted, TaskStatus.Rejected },
+            [TaskStatus.Accepted] = new() { TaskStatus.InProgress, TaskStatus.Rejected },
+            [TaskStatus.InProgress] = new() { TaskStatus.WaitingForReview, TaskStatus.Rejected },
+            [TaskStatus.WaitingForReview] = new() { TaskStatus.Completed, TaskStatus.InProgress },
+            [TaskStatus.Completed] = new() { }, 
+            [TaskStatus.Rejected] = new() { TaskStatus.InProgress }   // Reopening
+        };
+        public void ValidateStatusTransition(TaskStatus current, TaskStatus next)
+        {
+            if (!ValidTransitions.ContainsKey(current) || !ValidTransitions[current].Contains(next))
+            {   
+                throw new InvalidOperationException(
+                    $"Invalid transition from {current} to {next}");
+            }
+        }
+
+
     }
 }

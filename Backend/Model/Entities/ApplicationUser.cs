@@ -20,11 +20,15 @@ namespace ProjectManagementSystem1.Model.Entities
         public DateTime? UpdatedDate { get; set; }
         public string? CreatedBy { get; set; }
         public string? UpdatedBy { get; set; }
+        public bool IsArchived { get; set; } = false;
+        public DateTime? ArchiveDate { get; internal set; }
         public DateTime? LastLogin { get; set; }
         public DateTime? LastPasswordChange { get; set; }
         [Timestamp]
         public byte[]? Version { get; set; }
         
         public string? AccessToken { get; set; } //  Add this
+
+        public virtual ICollection<UserSkill> UserSkills { get; set; } = new List<UserSkill>();
     }
 }

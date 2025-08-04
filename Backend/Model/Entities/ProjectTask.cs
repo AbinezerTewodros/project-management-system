@@ -18,7 +18,8 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required, MaxLength(250)]
         public string Title { get; set; } = string.Empty;
 
-        public string Description;
+        [MaxLength(4000)]
+        public string? Description;
 
         [Required]
         public int ProjectAssignmentId { get; set; }
@@ -62,6 +63,8 @@ namespace ProjectManagementSystem1.Model.Entities
                 _progress = value;
             }
         }
+
+        public DateTime? AcceptedDate { get; set; }
         public bool IsProjectRoot { get; set; } = false;
         public TaskStatus Status { get; set; } = TaskStatus.Pending; // Re-add this with a default value
 

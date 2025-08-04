@@ -11,6 +11,8 @@ namespace ProjectManagementSystem1.Services.JwtService
     public interface IJwtService
     {
         Task<string> GenerateJwtTokenAsync(ApplicationUser user);
+        //string GenerateDownloadToken(Guid fileId, TimeSpan lifespan);
+        //bool ValidateDownloadToken(string token, Guid expectedFileId);
     }
 
     public class JwtService : IJwtService
@@ -61,5 +63,7 @@ namespace ProjectManagementSystem1.Services.JwtService
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+    
     }
 }

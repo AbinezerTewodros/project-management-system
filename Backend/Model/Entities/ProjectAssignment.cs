@@ -4,6 +4,13 @@ using ProjectManagementSystem1.Model.Entities;
 
 public class ProjectAssignment
 {
+    public enum AssignmentStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+
     [Key]
     public int Id { get; set; }
 
@@ -24,7 +31,7 @@ public class ProjectAssignment
 
     public string? Role { get; set; } // e.g., "ScrumMaster", "TeamLeader", "Member"
 
-    public double Status { get; set; } = 0;
+    //public double Status { get; set; } = 0;
 
     // Audit fields
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
@@ -35,5 +42,9 @@ public class ProjectAssignment
     [Timestamp]
     public byte[] Version { get; set; }
 
+    public AssignmentStatus Status { get; set; } = AssignmentStatus.Pending;
+    public string? ApprovedById { get; set; }
+    public DateTime? ApprovedDate { get; set; }
+    public string? RejectionReason { get; set; }
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>(); // navigation property
 }

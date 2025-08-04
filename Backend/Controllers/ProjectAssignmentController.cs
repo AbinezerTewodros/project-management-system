@@ -107,6 +107,22 @@ namespace ProjectManagementSystem1.Controllers
             return Ok("✅ Role updated.");
         }
 
+        [HttpPut("{id}/approve")]
+        public async Task<IActionResult> ApproveAssignment(int id)
+        {
+            var leaderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _assignmentService.ApproveProjectAssignmentAsync(id, leaderId);
+            return NoContent();
+        }
+
+        [HttpPut("{id}/reject")]
+        public async Task<IActionResult> RejectAssignment(int id, [FromBody] string reason)
+        {
+            var leaderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _assignmentService.RejectProjectAssignmentAsync(id, leaderId, reason);
+            return NoContent();
+        }
+
 
         // DELETE: Delete member from the project
         [HttpDelete("delete-member")]

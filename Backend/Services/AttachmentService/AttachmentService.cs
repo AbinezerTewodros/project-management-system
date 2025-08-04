@@ -1,9 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenQA.Selenium.DevTools.V134.Browser;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.Attachments;
 using ProjectManagementSystem1.Model.Entities;
+using ProjectManagementSystem1.Services.FileStorageService;
+using ProjectManagementSystem1.Services.ResourceAcessService;
+using ProjectManagementSystem1.Services.Validation;
+using System.Security;
 using PermissionType = ProjectManagementSystem1.Model.Entities.PermissionType;
 
 namespace ProjectManagementSystem1.Services.AttachmentService
@@ -11,48 +16,74 @@ namespace ProjectManagementSystem1.Services.AttachmentService
     public class AttachmentService : IAttachmentService
     {
         private readonly AppDbContext _context;
-
-        public AttachmentService(AppDbContext context)
+        private readonly ILogger<AttachmentService> _logger;
+        private readonly IFileStorageService _fileStorageService;
+        private IEntityValidator _entityValidator;
+        private readonly IProjectMemberService _projectMemberService;
+        public AttachmentService(AppDbContext context, ILogger<AttachmentService> logger, IProjectMemberService projectMemberService
+            , IFileStorageService fileStorage, IEntityValidator entityValidator)
         {
             _context = context;
+            _logger = logger;   
+            _projectMemberService = projectMemberService;
+            _fileStorageService = fileStorage;
+            _entityValidator = entityValidator;
         }
 
-        public async Task<Attachment> UploadAttachmentAsync(AttachmentUploadDto uploadDto, string uploadedByUserId)
+        public async Task<Attachment> UploadAttachmentAsync(AttachmentUploadDto uploadDto, EntityContext context, string uploadedByUserId)
         {
             var file = uploadDto.File;
+
             if (file == null || file.Length == 0)
             {
                 throw new Exception("No file uploaded.");
             }
 
-            var uploadFolderPath = @"C:\ProjectManagementSystem\Attachments"; // Use your desired local path
-            if (!Directory.Exists(uploadFolderPath))
-            {
-                Directory.CreateDirectory(uploadFolderPath);
-            }
+            var entityType = context.IsValid ? context.EntityType : uploadDto.EntityType;
+            var entityId = context.IsValid ? context.EntityId : uploadDto.EntityId;
 
-            var fileName = Path.GetFileName(file.FileName);
-            var uniqueFileName = $"{Guid.NewGuid()}-{fileName}"; // Ensure unique filenames
-            var filePath = Path.Combine(uploadFolderPath, uniqueFileName);
+            if (!await _entityValidator.ExistsAsync(entityType, entityId))
+                throw new ArgumentException($"Invalid {entityType} ID");
 
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
+
+            var filePath = await _fileStorageService.StoreAsync(
+             file.OpenReadStream(),
+             file.FileName
+         );
 
             var attachment = new Attachment
             {
-                FileName = fileName,
+                FileName = file.FileName,
                 ContentType = file.ContentType,
                 Category = uploadDto.Category,
                 FileSize = file.Length,
                 FilePhysicalPath = filePath,
                 UploadedByUserId = uploadedByUserId,
-                EntityId = uploadDto.EntityId,
-                EntityType = uploadDto.EntityType,
-                ProjectTaskId = uploadDto.ProjectTaskId,
-                Checksum = CalculateChecksum(filePath) // Implement this method
+                EntityId = entityId,
+                EntityType = entityType,
+                Accessibility = uploadDto.AccessibilityLevel,
+                Checksum = CalculateChecksum(filePath),
+                Metadata = new List<AttachmentMetadata>
+            {
+                new() { Key = "UploadedBy", Value = uploadedByUserId },
+                new() { Key = "OriginalFileName", Value = file.FileName },
+                new() { Key = "FileSizeBytes", Value = file.Length.ToString() },
+                new() { Key = "ContentType", Value = file.ContentType }
+            }
             };
+
+
+            if (uploadDto.CustomMetadata != null)
+            {
+                foreach (var item in uploadDto.CustomMetadata)
+                {
+                    attachment.Metadata.Add(new AttachmentMetadata
+                    {
+                        Key = item.Key,
+                        Value = item.Value
+                    });
+                }
+            }
 
             await _context.Attachments.AddAsync(attachment);
             await _context.SaveChangesAsync();
@@ -61,6 +92,19 @@ namespace ProjectManagementSystem1.Services.AttachmentService
 
         }
 
+        private async Task<bool> ValidateEntityExists(string entityType, string entityId)
+        {
+            return entityType switch
+            {
+                "Project" => await _context.Projects.AnyAsync(p => p.Id.ToString() == entityId),
+                "ProjectTask" => await _context.ProjectTasks.AnyAsync(t => t.Id.ToString() == entityId),
+                "Milestone" => await _context.Milestones.AnyAsync(m => m.AssignedMemberId.ToString() == entityId),
+                "TodoItem" => await _context.TodoItems.AnyAsync(m => m.AssigneeId.ToString() == entityId),
+                _ => false
+            };
+        }
+
+       
         private string CalculateChecksum(string filePath)
         {
             using var stream = File.OpenRead(filePath);
@@ -79,7 +123,7 @@ namespace ProjectManagementSystem1.Services.AttachmentService
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public async Task<IEnumerable<Attachment>> GetAttachmentByEntityAsync(string entityType, Guid entityId)
+        public async Task<IEnumerable<Attachment>> GetAttachmentByEntityAsync(string entityType, string entityId)
         {
             return await _context.Attachments
                 .Where(a => a.EntityType == entityType && a.EntityId == entityId)
@@ -89,6 +133,15 @@ namespace ProjectManagementSystem1.Services.AttachmentService
 
         public async Task<AttachmentPermission> GrantPermissionAsync(Guid attachmentId, string userId, string roleId, ProjectManagementSystem1.Model.Entities.PermissionType permissionType)
         {
+            if (!string.IsNullOrEmpty(userId) && !await _context.Users.AnyAsync(u => u.Id == userId))
+                throw new ArgumentException("User not found");
+
+            if (!string.IsNullOrEmpty(roleId) && !await _context.Roles.AnyAsync(r => r.Id == roleId))
+                throw new ArgumentException("Role not found");
+
+            if (!await _context.Attachments.AnyAsync(a => a.Id == attachmentId))
+                throw new ArgumentException("Attachment not found");
+
             if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(roleId))
             {
                 return null;
@@ -170,35 +223,53 @@ namespace ProjectManagementSystem1.Services.AttachmentService
             }
 
             // If no direct user permission, check for role-based permissions
-            var userRoles = await _context.UserRoles
-                .Where(ur => ur.UserId == userId)
-                .Select(ur => ur.RoleId)
-                .ToListAsync();
+            var hasPermission = await _context.AttachmentPermissions
+            .AnyAsync(p => p.AttachmentId == attachmentId &&
+                (p.UserId == userId ||
+                 _context.UserRoles.Any(ur =>
+                     ur.UserId == userId &&
+                     ur.RoleId == p.RoleId)) &&
+                p.PermissionType == permissionType);
 
-            if (userRoles.Any())
-            {
-                var rolePermission = await _context.AttachmentPermissions.AnyAsync(
-                    p => p.AttachmentId == attachmentId &&
-                         userRoles.Contains(p.RoleId) &&
-                         p.PermissionType == permissionType);
-
-                if (rolePermission)
-                {
-                    return true;
-                }
-            }
-
-            return false; // No explicit permission found
+            return hasPermission; // No explicit permission found
         }
+
+        //public async Task<IEnumerable<AttachmentPermission>> GetPermissionsForAttachmentAsync(Guid attachmentId)
+        //{
+        //    return await _context.AttachmentPermissions
+        //.Where(p => p.AttachmentId == attachmentId)
+        //.Include(p => p.User)  // Ensure correct navigation
+        //.Include(p => p.Role)   // Ensure correct navigation
+        //.Select(p => new AttachmentPermission
+        //{
+        //    Id = p.Id,
+        //    AttachmentId = p.AttachmentId,
+        //    UserId = p.UserId,
+        //    RoleId = p.RoleId,
+        //    PermissionType = p.PermissionType,
+        //    User = p.User != null ? new ApplicationUser
+        //    {
+        //        Id = p.User.Id,
+        //        UserName = p.User.UserName,
+        //        Email = p.User.Email
+        //    } : null,
+        //    Role = p.Role != null ? new IdentityRole
+        //    {
+        //        Id = p.Role.Id,
+        //        Name = p.Role.Name
+        //    } : null
+        //})
+        //.ToListAsync();
+
+        //}
 
         public async Task<IEnumerable<AttachmentPermission>> GetPermissionsForAttachmentAsync(Guid attachmentId)
         {
             return await _context.AttachmentPermissions
-                   .Where(p => p.AttachmentId == attachmentId)
-                   .Include(p => p.User)
-                   .Include(p => p.Role)
-                   .ToListAsync();
-
+                .Where(p => p.AttachmentId == attachmentId)
+                .Include(p => p.User)
+                .Include(p => p.Role)
+                .ToListAsync();
         }
 
         public async Task<AttachmentPermission> GetPermissionByIdAsync(Guid id)
@@ -208,16 +279,173 @@ namespace ProjectManagementSystem1.Services.AttachmentService
                 .Include(p => p.Role)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
+
+      
+        public async Task<List<Attachment>> QueryAttachmentsAsync(AttachmentQueryDto query)
+        {
+            var baseQuery = _context.Attachments
+                .Include(a => a.Metadata)
+                .Include(a => a.UploadedBy) // If you need user data
+                .AsQueryable();
+
+            // Metadata filters
+            foreach (var filter in query.MetadataFilters)
+            {
+                baseQuery = baseQuery.Where(a =>
+                    a.Metadata.Any(m =>
+                        m.Key == filter.Key &&
+                        m.Value == filter.Value));
+            }
+
+            // Size filters
+            if (query.MinSizeBytes.HasValue || query.MaxSizeBytes.HasValue)
+            {
+                baseQuery = baseQuery.Where(a =>
+                    a.Metadata.Any(m => m.Key == "FileSizeBytes"));
+
+                if (query.MinSizeBytes.HasValue)
+                {
+                    baseQuery = baseQuery.Where(a =>
+                        int.Parse(a.Metadata.First(m => m.Key == "FileSizeBytes").Value) >= query.MinSizeBytes);
+                }
+
+                if (query.MaxSizeBytes.HasValue)
+                {
+                    baseQuery = baseQuery.Where(a =>
+                        int.Parse(a.Metadata.First(m => m.Key == "FileSizeBytes").Value) <= query.MaxSizeBytes);
+                }
+            }
+
+            // Content type filter
+            if (query.ContentTypes?.Any() == true)
+            {
+                baseQuery = baseQuery.Where(a =>
+                    a.Metadata.Any(m =>
+                        m.Key == "ContentType" &&
+                        query.ContentTypes.Contains(m.Value)));
+            }
+
+            return await baseQuery
+                .AsNoTracking()
+                .ToListAsync();
+        }
         public async Task SoftDeleteAttachmentAsync(Guid id)
         {
             var attachment = await _context.Attachments.FindAsync(id);
-            if (attachment != null && !attachment.IsDeleted)
+            if (attachment == null || attachment.IsDeleted) return;
+
+            attachment.IsDeleted = true;
+            attachment.UpdatedAt = DateTime.UtcNow;
+
+            try
             {
-                attachment.IsDeleted = true;
-                attachment.UpdatedAt = DateTime.UtcNow;
-                _context.Attachments.Update(attachment);
-                await _context.SaveChangesAsync();
+                System.IO.File.Delete(attachment.FilePhysicalPath); // Add this
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete physical file for attachment {Id}", id);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<(byte[] FileBytes, string ContentType, string FileName)>
+    GetFileForDownloadAsync(Guid id)
+        {
+            var attachment = await _context.Attachments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (attachment == null || attachment.IsDeleted)
+                throw new FileNotFoundException("Attachment not found");
+
+            return (
+                await File.ReadAllBytesAsync(attachment.FilePhysicalPath),
+                attachment.ContentType,
+                attachment.FileName
+            );
+        }
+
+        //public async Task<bool> CheckAccessAsync(Guid attachmentId, string userId, ProjectManagementSystem1.Model.Entities.PermissionType requiredPermission)
+        //{
+        //    var attachment = await _context.Attachments
+        //  .AsNoTracking()
+        //  .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
+        //    if (attachment == null) return false;
+
+        //    // Handle Public access
+        //    if (attachment.Accessibility == AccessibilityLevel.Public &&
+        //        requiredPermission == PermissionType.View)
+        //    {
+        //        return true;
+        //    }
+
+        //    // Handle Private access
+        //    if (attachment.Accessibility == AccessibilityLevel.Private)
+        //    {
+        //        return attachment.UploadedByUserId == userId;
+        //    }
+
+        //    // Handle Protected access
+        //    if (attachment.Accessibility == AccessibilityLevel.Protected)
+        //    {
+        //        return await CheckPermissionAsync(attachmentId, userId, requiredPermission);
+        //    }
+
+        //    // Handle Internal access
+        //    if (attachment.Accessibility == AccessibilityLevel.Internal)
+        //    {
+        //        // Simplified internal access check
+        //        return await _context.ProjectAssignments
+        //            .AnyAsync(pa => pa.ProjectId.ToString() == attachment.EntityId && pa.MemberId == userId);
+        //    }
+
+        //    return false;
+        //}
+
+        public async Task<bool> CheckAccessAsync(Guid attachmentId, string userId, PermissionType requiredPermission)
+        {
+            var attachment = await _context.Attachments
+              .FirstOrDefaultAsync(a => a.Id == attachmentId);
+
+            if (attachment == null) return false;
+
+            // Owner always has full access
+            if (attachment.UploadedByUserId == userId)
+                return true;
+
+           
+            var hasPermission = await _context.AttachmentPermissions
+                  .AnyAsync(p => p.AttachmentId == attachmentId &&
+                      (p.UserId == userId ||
+                       p.RoleId != null && _context.UserRoles
+                           .Any(ur => ur.UserId == userId && ur.RoleId == p.RoleId)) &&
+                      p.PermissionType == requiredPermission);
+
+
+            if (hasPermission) return true;
+
+            if (attachment.Accessibility == AccessibilityLevel.Internal)
+            {
+                return await IsEntityMemberAsync(attachment.EntityType, attachment.EntityId, userId);
+            }
+
+            return false;
+        }
+
+        private async Task<bool> IsEntityMemberAsync(string entityType, string entityId, string userId)
+        {
+            return entityType switch
+            {
+                "Project" => await _context.ProjectAssignments
+                    .AnyAsync(a => a.ProjectId.ToString() == entityId && a.MemberId == userId),
+                "ProjectTask" => await _context.ProjectTasks
+                    .AnyAsync(t => t.Id.ToString() == entityId && t.AssignedMemberId == userId),
+                "Milestone" => await _context.Milestones
+                    .AnyAsync(m => m.AssignedMemberId.ToString() == entityId && m.AssignedMemberId == userId),
+                _ => false
+            };
         }
     }
 }

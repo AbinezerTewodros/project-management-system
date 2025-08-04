@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjectManagementSystem1.Model.Entities
 {
-    public enum TodoItemStatus { Pending, Accepted, Rejected, InProgress, WaitingForReview, Completed, Approved }
+    public enum TodoItemStatus { Pending, Accepted, Rejected, InProgress, WaitingForReview, Completed, Approved, Reopened }
 
     public class TodoItem : IRemindable
     {
@@ -47,6 +47,7 @@ namespace ProjectManagementSystem1.Model.Entities
 
         public string? ReasonForLateCompletion { get; set; }
         public string? DetailsForLateCompletion { get; set; }
+        public string? CompletionDetails { get; set; }
         public DateTime? DueDate { get; set; }
         public string? RejectionReason { get; set; }
 

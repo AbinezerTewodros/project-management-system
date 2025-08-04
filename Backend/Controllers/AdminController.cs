@@ -159,5 +159,41 @@ namespace ProjectManagementSystem1.Controller
             return Ok("🗑️ User deactivated.");
         }
 
+        [HttpPost("archive/{employeeId}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> ArchiveUser(string employeeId)
+        {
+            var currentUser = User.Identity?.Name;
+
+            try
+            {
+                await _userService.ArchiveUserAsync(employeeId, currentUser);
+                return Ok(new { Message = "User archived successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+        [HttpPost("restore/{employeeId}")]
+        [Authorize(Policy = "AdminOnly")]
+        public async Task<IActionResult> RestoreUser(string employeeId)
+        {
+            var currentUser = User.Identity?.Name;
+
+            try
+            {
+                await _userService.RestoreUserAsync(employeeId, currentUser);
+                return Ok(new { Message = "User restored successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+
+
+
     }
 }
