@@ -48,6 +48,7 @@ using Polly; // For IAsyncPolicy, Policy
 using Polly.Extensions.Http; // For HttpPolicyExtensions
 using Microsoft.Extensions.Http; // For HttpClient builder extensions
 //using ProjectManagementSystem1.Services.ThumbnailService;
+using ProjectManagementSystem1.Services.UserProfile;
 
 
 
@@ -108,7 +109,6 @@ builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
 builder.Services.AddHttpContextAccessor();
 //builder.Services.AddHttpClient(); // for HttpClient injection
 builder.Services.AddScoped<IErpUserService, ErpUserService>();
-// Program.cs
 // Add this where you configure services
 builder.Services.AddScoped<DownloadTokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
@@ -119,6 +119,7 @@ builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<SkillDataSeeder>();
 builder.Services.AddHostedService<SkillUpdateBackgroundService>();
 
+builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.

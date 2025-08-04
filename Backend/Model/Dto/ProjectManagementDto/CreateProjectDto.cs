@@ -13,7 +13,10 @@ namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
         public string Description { get; set; }
         [EmailAddress]
         public string ProjectOwnerEmail { get; set; }
-        public string Priority { get; set; } 
+        public string Priority { get; set; }
+        public string? AssignedEmployeeId { get; set; } // new field for assignment
+        public string? AssignedRole { get; set; } // e.g. "ScrumMaster", "TeamLeader"
+
         public DateTime DueDate { get; set; }
         public string Status { get; set; } 
 
