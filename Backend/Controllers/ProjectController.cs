@@ -54,7 +54,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPost("create-project")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

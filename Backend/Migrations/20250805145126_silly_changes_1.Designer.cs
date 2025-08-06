@@ -12,8 +12,8 @@ using ProjectManagementSystem1.Data;
 namespace ProjectManagementSystem1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250731130558_AddManagerFieldToUser")]
-    partial class AddManagerFieldToUser
+    [Migration("20250805145126_silly_changes_1")]
+    partial class silly_changes_1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,8 +50,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -75,6 +76,12 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<int?>("ProjectTaskId")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("Thumbnail")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ThumbnailContentType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -236,6 +243,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreateUser")
                         .HasColumnType("nvarchar(max)");
 
@@ -251,6 +261,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsAutomateTodo")
                         .HasColumnType("bit");
@@ -304,6 +317,12 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("ApprovedById")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreateUser")
                         .HasColumnType("nvarchar(max)");
 
@@ -321,11 +340,14 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Role")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<double>("Status")
-                        .HasColumnType("float");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("UpdateUser")
                         .HasColumnType("nvarchar(max)");
@@ -386,6 +408,49 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("ActivityLogs");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EndorsementCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName");
+
+                    b.ToTable("AddSkills");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -396,6 +461,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<string>("AccessToken")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Company")
                         .IsRequired()
@@ -429,6 +497,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFirstLogin")
                         .HasColumnType("bit");
@@ -652,6 +723,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("IssueId")
+                        .HasColumnType("int");
+
                     b.Property<double>("Progress")
                         .HasColumnType("float");
 
@@ -677,7 +751,72 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
+                    b.HasIndex("IssueId");
+
                     b.ToTable("IndependentTasks");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssigneeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("IndependentTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PriorityValue")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReporterId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeId");
+
+                    b.HasIndex("IndependentTaskId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("Issues");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -914,17 +1053,25 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("AcceptedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<double?>("ActualHours")
                         .HasColumnType("float");
 
                     b.Property<string>("AssignedMemberId")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Depth")
                         .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(MAX)")
+                        .HasColumnName("Description");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
@@ -940,6 +1087,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<bool>("IsProjectRoot")
                         .HasColumnType("bit");
+
+                    b.Property<int?>("IssueId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("MilestoneId")
                         .HasColumnType("int");
@@ -981,13 +1131,25 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AssignedMemberId")
+                        .HasDatabaseName("IX_ProjectTask_Assignee");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("IssueId");
+
                     b.HasIndex("MilestoneId");
 
                     b.HasIndex("ParentTaskId");
 
-                    b.HasIndex("ProjectAssignmentId");
+                    b.HasIndex("Priority");
+
+                    b.HasIndex("ProjectAssignmentId")
+                        .HasDatabaseName("IX_ProjectTask_Assignment");
 
                     b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("Status");
 
                     b.ToTable("ProjectTasks");
                 });
@@ -1046,6 +1208,9 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("CompletionDetails")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1099,6 +1264,8 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("ProjectTaskId");
 
+                    b.HasIndex("Status");
+
                     b.ToTable("TodoItems");
                 });
 
@@ -1131,6 +1298,27 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("UserAccessTokens");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserSkill", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EndorsementCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Proficiency")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("UserSkills");
+                });
+
             modelBuilder.Entity("Attachment", b =>
                 {
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
@@ -1142,6 +1330,39 @@ namespace ProjectManagementSystem1.Migrations
                         .HasForeignKey("UploadedByUserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.OwnsMany("AttachmentMetadata", "Metadata", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("AttachmentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Key")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Value")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("AttachmentId");
+
+                            b1.HasIndex("Key", "Value");
+
+                            b1.ToTable("AttachmentMetadata", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("AttachmentId");
+                        });
+
+                    b.Navigation("Metadata");
 
                     b.Navigation("ProjectTask");
 
@@ -1270,9 +1491,52 @@ namespace ProjectManagementSystem1.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Issue", "Issue")
+                        .WithMany("IndependentTasks")
+                        .HasForeignKey("IssueId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("AssignedToUser");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Issue");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", "IndependentTask")
+                        .WithMany()
+                        .HasForeignKey("IndependentTaskId");
+
+                    b.HasOne("Project", "Project")
+                        .WithMany("Issues")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
+                        .WithMany()
+                        .HasForeignKey("ProjectTaskId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignee");
+
+                    b.Navigation("IndependentTask");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ProjectTask");
+
+                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -1355,6 +1619,11 @@ namespace ProjectManagementSystem1.Migrations
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
                 {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Issue", "Issue")
+                        .WithMany("ProjectTasks")
+                        .HasForeignKey("IssueId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("ProjectManagementSystem1.Model.Entities.Milestone", "Milestone")
                         .WithMany()
                         .HasForeignKey("MilestoneId");
@@ -1373,6 +1642,8 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", null)
                         .WithMany("Dependencies")
                         .HasForeignKey("ProjectTaskId");
+
+                    b.Navigation("Issue");
 
                     b.Navigation("Milestone");
 
@@ -1407,7 +1678,7 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
                         .WithMany("TodoItems")
                         .HasForeignKey("ProjectTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AssigningTeamLeader");
@@ -1428,14 +1699,52 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserSkill", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.AddSkill", "Skill")
+                        .WithMany("UserSkills")
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
+                        .WithMany("UserSkills")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Skill");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Project", b =>
                 {
+                    b.Navigation("Issues");
+
                     b.Navigation("ProjectAssignments");
                 });
 
             modelBuilder.Entity("ProjectAssignment", b =>
                 {
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
+                {
+                    b.Navigation("UserSkills");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("UserSkills");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.Navigation("IndependentTasks");
+
+                    b.Navigation("ProjectTasks");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>

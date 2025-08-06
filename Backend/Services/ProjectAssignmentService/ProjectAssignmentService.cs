@@ -19,17 +19,35 @@ public class ProjectAssignmentService : IProjectAssignmentService
 
     public async Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId, string requesterDept)
     {
-        var project = await _context.Projects.FindAsync(projectId);
+        var project = await _context.Projects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == projectId);
+
         if (project == null || project.Department != requesterDept)
             throw new UnauthorizedAccessException("Access denied. Department mismatch.");
 
         var assignments = await _context.ProjectAssignments
+            .AsNoTracking()
             .Include(p => p.Project)
             .Include(m => m.Member)
             .Where(a => a.ProjectId == projectId)
             .ToListAsync();
 
-        return _mapper.Map<List<AssignmentDto>>(assignments);
+        return assignments.Select(a => new AssignmentDto
+        {
+            // Map properties manually as a temporary workaround
+            Id = a.Project.Id,
+            ProjectId = a.ProjectId,
+            ProjectName = a.Project?.ProjectName,
+            MemberFullName = a.Member?.FullName,
+            MemberId = a.Member?.EmployeeId,
+            MemberRole = a.MemberRole,
+            UpdatedDate = DateTime.UtcNow,
+            CreateUser = a.CreateUser,
+            UpdateUser = a.UpdateUser
+
+            // Add all other properties here
+        }).ToList();
     }
 
     public async Task<List<UserProjectDto>> GetProjectsByEmployeeIdAsync(string employeeId, string requesterDept)

@@ -6,9 +6,9 @@ namespace ProjectManagementSystem1.Services.MilestoneService
 {
     public interface IMilestoneService
     {
-        Task<Milestone> GetMilestoneByIdAsync(int id);
-        Task<IEnumerable<Milestone>> GetAllMilestoneAsync();
-        Task<IEnumerable<Milestone>> GetMilestonesByProjectIdAsync(int projectId);
+        Task<MilestoneReadDto> GetMilestoneByIdAsync(int id);
+        Task<IEnumerable<MilestoneReadDto>> GetAllMilestoneAsync();
+        Task<IEnumerable<MilestoneReadDto>> GetMilestonesByProjectIdAsync(int projectId);
         Task<MilestoneReadDto> CreateAsync(CreateMilestoneDto dto);
         Task<MilestoneReadDto> UpdateMilestoneAsync(int id, UpdateMilestoneDto dto);
         Task<bool> DeleteMilestoneAsync(int id);

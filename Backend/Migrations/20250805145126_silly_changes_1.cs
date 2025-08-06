@@ -5,7 +5,7 @@
 namespace ProjectManagementSystem1.Migrations
 {
     /// <inheritdoc />
-    public partial class updates_1 : Migration
+    public partial class silly_changes_1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
