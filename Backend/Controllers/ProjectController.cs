@@ -66,7 +66,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPut("edit-project")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectDto dto)
         {
             var username = User.FindFirstValue(ClaimTypes.Name);
@@ -77,7 +77,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpDelete("delete-project")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _projectService.DeleteAsync(id);

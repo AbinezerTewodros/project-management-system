@@ -52,6 +52,7 @@ using Microsoft.Extensions.Http; // For HttpClient builder extensions
 using ProjectManagementSystem1.Services.UserProfile;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using ProjectManagementSystem1.Services.ArchiveService;
 
 
 
@@ -126,6 +127,7 @@ builder.Services.AddScoped<SkillDataSeeder>();
 builder.Services.AddHostedService<SkillUpdateBackgroundService>();
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IArchiveService, ArchiveService>();
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.

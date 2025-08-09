@@ -4,7 +4,7 @@ obj/
 *.user
 *.vs
 .vscode/
-.Migrations/
+Migrations/
 # Secrets
 
 # System files

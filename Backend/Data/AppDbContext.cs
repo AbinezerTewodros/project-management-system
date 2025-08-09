@@ -33,6 +33,7 @@ namespace ProjectManagementSystem1.Data
         public DbSet<PersonalTodo> PersonalTodo { get; set; }
         public DbSet<AddSkill> AddSkills { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
+        public DbSet<Archive> Archives { get; set; }
         public object TaskAssignments { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -227,7 +228,12 @@ namespace ProjectManagementSystem1.Data
 
             //// Limit hierarchy depth
             //entity.HasCheckConstraint("CK_MaxDepth", "Depth BETWEEN 0 AND 10");
+            modelBuilder
+                .Entity<Archive>()
+                .Property(a => a.EntityType)
+                .HasConversion<string>();
 
+            base.OnModelCreating(modelBuilder);
 
 
         }

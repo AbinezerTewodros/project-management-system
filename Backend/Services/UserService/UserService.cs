@@ -25,6 +25,7 @@ namespace ProjectManagementSystem1.Services.UserService
                 Email = registerDto.Email,
                 UserName = registerDto.Username,
                 Department = registerDto.Department,
+                Manager = registerDto.Manager,
                 EmployeeId = registerDto.EmployeeId,
                 Company = registerDto.Company,
                 Title = registerDto.Title,
@@ -80,41 +81,41 @@ namespace ProjectManagementSystem1.Services.UserService
                     u.EmployeeId == identifier || u.Email == identifier);
         }
 
-        public async Task ArchiveUserAsync(string userId, string currentUser)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        //public async Task ArchiveUserAsync(string userId, string currentUser)
+        //{
+        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
-                throw new Exception("User not found");
+        //    if (user == null)
+        //        throw new Exception("User not found");
 
-            if (user.IsArchived)
-                throw new InvalidOperationException("User is already archived");
+        //    if (user.IsArchived)
+        //        throw new InvalidOperationException("User is already archived");
 
-            user.IsArchived = true;
-            user.ArchiveDate = DateTime.UtcNow;
-            user.UpdatedDate = DateTime.UtcNow;
-            user.UpdatedBy = currentUser;
+        //    user.IsArchived = true;
+        //    user.ArchiveDate = DateTime.UtcNow;
+        //    user.UpdatedDate = DateTime.UtcNow;
+        //    user.UpdatedBy = currentUser;
 
-            await _context.SaveChangesAsync();
-        }
+        //    await _context.SaveChangesAsync();
+        //}
 
-        public async Task RestoreUserAsync(string userId, string currentUser)
-        {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        //public async Task RestoreUserAsync(string userId, string currentUser)
+        //{
+        //    var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
-            if (user == null)
-                throw new Exception("User not found");
+        //    if (user == null)
+        //        throw new Exception("User not found");
 
-            if (!user.IsArchived)
-                throw new InvalidOperationException("User is not archived");
+        //    if (!user.IsArchived)
+        //        throw new InvalidOperationException("User is not archived");
 
-            user.IsArchived = false;
-            user.ArchiveDate = null;
-            user.UpdatedDate = DateTime.UtcNow;
-            user.UpdatedBy = currentUser;
+        //    user.IsArchived = false;
+        //    user.ArchiveDate = null;
+        //    user.UpdatedDate = DateTime.UtcNow;
+        //    user.UpdatedBy = currentUser;
 
-            await _context.SaveChangesAsync();
-        }
+        //    await _context.SaveChangesAsync();
+        //}
 
 
 

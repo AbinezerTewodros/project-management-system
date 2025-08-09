@@ -10,6 +10,7 @@
         public string Department { get; set; }
         public string EmployeeId { get; set; }
         public string Title { get; set; }
+        public string? Manager { get; set; }
         public string Company { get; set; }
         public string PhoneNumber { get; set; }
     }
