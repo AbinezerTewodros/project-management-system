@@ -5,6 +5,8 @@ using ProjectManagementSystem1.Model.Dto.Issue;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.IssueService;
 using ProjectManagementSystem1.Helpers;
+using System.Security.Claims; // Ensure this namespace is included
+using Microsoft.AspNetCore.Authentication;
 using System;
 
 namespace YourProjectName.Controllers
@@ -35,7 +37,14 @@ namespace YourProjectName.Controllers
 
             try
             {
-                var createdIssue = await _issueService.CreateIssueAsync(issueCreateDto);
+                var reporterId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;//get current user Id
+
+                if (string.IsNullOrEmpty(reporterId))
+                {
+                    return Unauthorized("User not authenticated");
+                }
+
+                var createdIssue = await _issueService.CreateIssueAsync(issueCreateDto, reporterId);
                 return CreatedAtAction(nameof(GetIssueById), new { issueId = createdIssue.Id }, createdIssue);
             }
             catch (InvalidOperationException ex) // Catch specific business rule violations
@@ -57,13 +66,15 @@ namespace YourProjectName.Controllers
         /// <param name="issueId">The ID of the issue to update.</param>
         /// <param name="issueUpdateDto">The issue update data.</param>
         /// <returns>The updated issue.</returns>
-        [HttpPatch("{issueId}")]
+        [HttpPut("{issueId}")]
         [ProducesResponseType(typeof(IssueDto), 200)] // OK
         [ProducesResponseType(400)] // Bad Request
         [ProducesResponseType(404)] // Not Found
         [ProducesResponseType(500)] // Internal Server Error
         public async Task<IActionResult> UpdateIssue(int issueId, [FromBody] IssueUpdateDto issueUpdateDto)
         {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;//reporter id is current user id
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -182,6 +193,8 @@ namespace YourProjectName.Controllers
         [ProducesResponseType(500)] // Internal Server Error
         public async Task<IActionResult> SearchIssues([FromQuery] IssueSearchDto searchDto)
         {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;//reporter id is the current user id
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);

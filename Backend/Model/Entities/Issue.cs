@@ -56,7 +56,7 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required]
         public string? ReporterId { get; set; }
         [ForeignKey("ReporterId")]
-        public virtual ApplicationUser? Reporter { get; set; } // Navigation property
+        public virtual ApplicationUser Reporter { get; set; } // Navigation property
         public int? ProjectId { get; set; } // The foreign key property
         [ForeignKey("ProjectId")]
         public virtual Project? Project { get; set; } // The navigation property

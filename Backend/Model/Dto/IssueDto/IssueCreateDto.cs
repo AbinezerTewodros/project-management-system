@@ -17,8 +17,8 @@ namespace ProjectManagementSystem1.Model.Dto.Issue
 
         public IssuePriority? Priority { get; set; }
 
-        // Assuming ReporterId is always required for creation
-        [Required(ErrorMessage = "Reporter ID is required.")]
+        // Assuming AssigneeId is always required for creation
+        [Required(ErrorMessage = "Assignee ID is required.")]
         public string? ReporterId { get; set; }
 
         public string? AssigneeId { get; set; }

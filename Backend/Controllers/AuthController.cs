@@ -30,6 +30,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPost("register")]
+        //[AllowAnonymous]
         [Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
         public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {

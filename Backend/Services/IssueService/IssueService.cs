@@ -23,14 +23,12 @@ namespace ProjectManagementSystem1.Services.IssueService
         {
             if (issue == null) return null;
 
-            if (issue.Reporter == null && int.TryParse(issue.ReporterId, out int reporterId) && reporterId > 0)
-            {
-                issue.Reporter = await _context.Users.FindAsync(reporterId.ToString());
-            }
-            if (issue.Assignee == null && !string.IsNullOrEmpty(issue.AssigneeId) && int.TryParse(issue.AssigneeId, out int assigneeId) && assigneeId > 0)
-            {
-                issue.Assignee = await _context.Users.FindAsync(assigneeId.ToString());
-            }
+            // Explicitly load user data
+            if (issue.Reporter == null && !string.IsNullOrEmpty(issue.ReporterId))
+                issue.Reporter = await _context.Users.FindAsync(issue.ReporterId);
+
+            if (issue.Assignee == null && !string.IsNullOrEmpty(issue.AssigneeId))
+                issue.Assignee = await _context.Users.FindAsync(issue.AssigneeId);
 
             return new IssueDto
             {
@@ -41,10 +39,10 @@ namespace ProjectManagementSystem1.Services.IssueService
                 Priority = issue.Priority,
                 CreatedAt = issue.CreatedAt,
                 UpdatedAt = issue.UpdatedAt,
-                ReporterId = issue.ReporterId.ToString(),
-                ReporterUsername = issue.Reporter?.UserName, // Null-conditional operator
+                ReporterId = issue.ReporterId.ToString(), 
+                ReporterUsername = issue.Reporter?.UserName,
                 AssigneeId = issue.AssigneeId.ToString(),
-                AssigneeUsername = issue.Assignee?.UserName, // Null-conditional operator
+                AssigneeUsername = issue.Assignee?.UserName,
                 ProjectId = issue.ProjectId,
                 ProjectName = issue.Project?.ProjectName,
                 ProjectTaskId = issue.ProjectTaskId,
@@ -75,33 +73,20 @@ namespace ProjectManagementSystem1.Services.IssueService
 
         // POST /issues
         // AFTER (Fixed)
-        public async Task<IssueDto> CreateIssueAsync(IssueCreateDto issueCreateDto)
+        public async Task<IssueDto> CreateIssueAsync(IssueCreateDto issueCreateDto, string reporterId)
         {
-            // Validate Reporter ID
-            if (string.IsNullOrWhiteSpace(issueCreateDto.ReporterId) ||
-                !int.TryParse(issueCreateDto.ReporterId, out int reporterId) ||
-                reporterId <= 0)
-            {
-                throw new InvalidOperationException("Reporter ID must be a positive integer");
-            }
-
-            var reporterExists = await _context.Users.AnyAsync(u => u.Id == reporterId.ToString());
+            // Validate reporter exists
+            var reporterExists = await _context.Users.AnyAsync(u => u.Id == reporterId);
             if (!reporterExists)
-            {
-                throw new InvalidOperationException($"Reporter with ID {reporterId} does not exist.");
-            }
+                throw new InvalidOperationException("Reporter not found");
 
-            // Handle Assignee ID
-            int? assigneeId = null;
-            if (!string.IsNullOrWhiteSpace(issueCreateDto.AssigneeId) &&
-                int.TryParse(issueCreateDto.AssigneeId, out int parsedAssigneeId))
+
+            // Validate assignee (if provided)
+            if (!string.IsNullOrEmpty(issueCreateDto.AssigneeId))
             {
-                var assigneeExists = await _context.Users.AnyAsync(u => u.Id == parsedAssigneeId.ToString());
+                var assigneeExists = await _context.Users.AnyAsync(u => u.Id == issueCreateDto.AssigneeId);
                 if (!assigneeExists)
-                {
-                    throw new InvalidOperationException($"Assignee with ID {parsedAssigneeId} does not exist.");
-                }
-                assigneeId = parsedAssigneeId;
+                    throw new InvalidOperationException("Assignee not found");
             }
 
             // Project
@@ -151,9 +136,9 @@ namespace ProjectManagementSystem1.Services.IssueService
                 Priority = issueCreateDto.Priority ?? IssuePriority.Medium,
                 CreatedAt = DateTime.UtcNow,
                 ReporterId = reporterId.ToString(),  // FIX: Use parsed int value
-                AssigneeId = assigneeId.ToString(),    // FIX: Use parsed int? value
-                ProjectId = projectId,
-                ProjectTaskId = projectTaskId,
+                AssigneeId = issueCreateDto.AssigneeId.ToString(),
+                ProjectId = issueCreateDto.ProjectId,
+                ProjectTaskId = issueCreateDto.ProjectTaskId,
                 IndependentTaskId = issueCreateDto.IndependentTaskId
             };
 
@@ -223,26 +208,14 @@ namespace ProjectManagementSystem1.Services.IssueService
             }
 
             // Handle AssigneeId update
-            // Assuming issueUpdateDto.AssigneeId is string or string?
-            if (!string.IsNullOrWhiteSpace(issueUpdateDto.AssigneeId))
+            // Update assignee
+            if (issueUpdateDto.AssigneeId != null)
             {
-                if (int.TryParse(issueUpdateDto.AssigneeId, out int parsedAssigneeId)) // [1, 2, 3]
-                {
-                    var assigneeExists = await _context.Users.AnyAsync(u => u.Id == parsedAssigneeId.ToString());
-                    if (!assigneeExists)
-                    {
-                        throw new InvalidOperationException($"Assignee with ID {parsedAssigneeId} does not exist.");
-                    }
-                    issue.AssigneeId = parsedAssigneeId.ToString();
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Invalid format for Assignee ID: '{issueUpdateDto.AssigneeId}'. Must be an integer if provided.");
-                }
-            }
-            else if (issueUpdateDto.AssigneeId == null) // Explicitly allow unassigning if the DTO property is null
-            {
-                issue.AssigneeId = null;
+                var assigneeExists = await _context.Users.AnyAsync(u => u.Id == issueUpdateDto.AssigneeId);
+                if (!assigneeExists)
+                    throw new InvalidOperationException("Assignee not found");
+
+                issue.AssigneeId = issueUpdateDto.AssigneeId;
             }
 
 
@@ -306,25 +279,12 @@ namespace ProjectManagementSystem1.Services.IssueService
                 query = query.Where(i => i.Priority == searchDto.Priority.Value);
             }
 
-            // Handle AssigneeId search: Assuming searchDto.AssigneeId is a string
-            if (!string.IsNullOrWhiteSpace(searchDto.AssigneeId))
-            {
-                if (int.TryParse(searchDto.AssigneeId, out int parsedAssigneeId)) // [1, 2, 3]
-                {
-                    query = query.Where(i => i.AssigneeId == parsedAssigneeId.ToString());
-                }
-                // If parsing fails, the filter is simply not applied for AssigneeId.
-            }
+            // Use string IDs directly
+            if (!string.IsNullOrEmpty(searchDto.AssigneeId))
+                query = query.Where(i => i.AssigneeId == searchDto.AssigneeId);
 
-            // Handle ReporterId search: Assuming searchDto.ReporterId is a string
-            if (!string.IsNullOrWhiteSpace(searchDto.ReporterId))
-            {
-                if (int.TryParse(searchDto.ReporterId, out int parsedReporterId)) // [1, 2, 3]
-                {
-                    query = query.Where(i => i.ReporterId == parsedReporterId.ToString());
-                }
-                // If parsing fails, the filter is simply not applied for ReporterId.
-            }
+            if (!string.IsNullOrEmpty(searchDto.ReporterId))
+                query = query.Where(i => i.ReporterId == searchDto.ReporterId);
 
             if (!string.IsNullOrWhiteSpace(searchDto.Keywords))
             {

@@ -8,7 +8,7 @@ namespace ProjectManagementSystem1.Services.IssueService
     public interface IIssueService
     {
         // CRUD Operations
-        Task<IssueDto> CreateIssueAsync(IssueCreateDto issueCreateDto);
+        Task<IssueDto> CreateIssueAsync(IssueCreateDto issueCreateDto, string reporterId);
         Task<IssueDto> GetIssueByIdAsync(int issueId);
         Task<IEnumerable<IssueDto>> GetAllIssuesAsync();
         Task<IssueDto> UpdateIssueAsync(int issueId, IssueUpdateDto issueUpdateDto);

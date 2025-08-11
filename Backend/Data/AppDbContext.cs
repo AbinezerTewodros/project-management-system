@@ -219,6 +219,7 @@ namespace ProjectManagementSystem1.Data
 
             // Index for search optimization
             modelBuilder.Entity<AddSkill>()
+                .ToTable("AddSkills")
                 .HasIndex(s => s.NormalizedName);
             // or appropriate type for your DB
 

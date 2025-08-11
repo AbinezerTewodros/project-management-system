@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ProjectManagementSystem1.Migrations
 {
     /// <inheritdoc />
-    public partial class updates : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,6 +27,25 @@ namespace ProjectManagementSystem1.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ActivityLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AddSkills",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    NormalizedName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsApproved = table.Column<bool>(type: "bit", nullable: false),
+                    EndorsementCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AddSkills", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -52,6 +71,7 @@ namespace ProjectManagementSystem1.Migrations
                     EmployeeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Department = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Manager = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Company = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsFirstLogin = table.Column<bool>(type: "bit", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -59,6 +79,8 @@ namespace ProjectManagementSystem1.Migrations
                     UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsArchived = table.Column<bool>(type: "bit", nullable: false),
+                    ArchiveDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastLogin = table.Column<DateTime>(type: "datetime2", nullable: true),
                     LastPasswordChange = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
@@ -150,7 +172,9 @@ namespace ProjectManagementSystem1.Migrations
                     CreateUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UpdateUser = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
-                    IsAutomateTodo = table.Column<bool>(type: "bit", nullable: false)
+                    IsAutomateTodo = table.Column<bool>(type: "bit", nullable: false),
+                    IsArchived = table.Column<bool>(type: "bit", nullable: false),
+                    ArchiveDate = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -264,40 +288,6 @@ namespace ProjectManagementSystem1.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "IndependentTasks",
-                columns: table => new
-                {
-                    TaskId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Progress = table.Column<double>(type: "float", nullable: false),
-                    Weight = table.Column<int>(type: "int", nullable: false),
-                    CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    AssignedToUserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_IndependentTasks", x => x.TaskId);
-                    table.ForeignKey(
-                        name: "FK_IndependentTasks_AspNetUsers_AssignedToUserId",
-                        column: x => x.AssignedToUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_IndependentTasks_AspNetUsers_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "PersonalTodo",
                 columns: table => new
                 {
@@ -361,6 +351,32 @@ namespace ProjectManagementSystem1.Migrations
                     table.PrimaryKey("PK_UserAccessTokens", x => x.Id);
                     table.ForeignKey(
                         name: "FK_UserAccessTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserSkills",
+                columns: table => new
+                {
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    SkillId = table.Column<int>(type: "int", nullable: false),
+                    Proficiency = table.Column<int>(type: "int", nullable: true),
+                    EndorsementCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserSkills", x => new { x.UserId, x.SkillId });
+                    table.ForeignKey(
+                        name: "FK_UserSkills_AddSkills_SkillId",
+                        column: x => x.SkillId,
+                        principalTable: "AddSkills",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserSkills_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -439,170 +455,6 @@ namespace ProjectManagementSystem1.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProjectTasks",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    ProjectAssignmentId = table.Column<int>(type: "int", nullable: false),
-                    MilestoneId = table.Column<int>(type: "int", nullable: true),
-                    AssignedMemberId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ParentTaskId = table.Column<int>(type: "int", nullable: true),
-                    Depth = table.Column<int>(type: "int", nullable: false),
-                    IsLeaf = table.Column<bool>(type: "bit", nullable: false),
-                    Weight = table.Column<int>(type: "int", nullable: false),
-                    ActualHours = table.Column<double>(type: "float", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Priority = table.Column<int>(type: "int", nullable: false),
-                    Progress = table.Column<double>(type: "float", nullable: false),
-                    AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsProjectRoot = table.Column<bool>(type: "bit", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EstimatedHours = table.Column<double>(type: "float", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsAutoCreateTodo = table.Column<bool>(type: "bit", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(MAX)", maxLength: 4000, nullable: true),
-                    ProjectTaskId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProjectTasks", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ProjectTasks_Milestones_MilestoneId",
-                        column: x => x.MilestoneId,
-                        principalTable: "Milestones",
-                        principalColumn: "MilestoneId");
-                    table.ForeignKey(
-                        name: "FK_ProjectTasks_ProjectAssignments_ProjectAssignmentId",
-                        column: x => x.ProjectAssignmentId,
-                        principalTable: "ProjectAssignments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProjectTasks_ProjectTasks_ParentTaskId",
-                        column: x => x.ParentTaskId,
-                        principalTable: "ProjectTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_ProjectTasks_ProjectTasks_ProjectTaskId",
-                        column: x => x.ProjectTaskId,
-                        principalTable: "ProjectTasks",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Attachments",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Category = table.Column<int>(type: "int", nullable: false),
-                    FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    FilePhysicalPath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UploadedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Accessibility = table.Column<int>(type: "int", nullable: false),
-                    Checksum = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    Version = table.Column<int>(type: "int", nullable: false),
-                    EntityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    EntityType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Thumbnail = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                    ThumbnailContentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ProjectTaskId = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Attachments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Attachments_AspNetUsers_UploadedByUserId",
-                        column: x => x.UploadedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Attachments_ProjectTasks_ProjectTaskId",
-                        column: x => x.ProjectTaskId,
-                        principalTable: "ProjectTasks",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Comments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TaskId = table.Column<int>(type: "int", nullable: false),
-                    MemberId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Comments", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Comments_ProjectTasks_TaskId",
-                        column: x => x.TaskId,
-                        principalTable: "ProjectTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TodoItems",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ProjectTaskId = table.Column<int>(type: "int", nullable: false),
-                    AssigneeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AssignedBy = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                    Weight = table.Column<int>(type: "int", nullable: false),
-                    Progress = table.Column<double>(type: "float", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReasonForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DetailsForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CompletionDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IndependentTaskId = table.Column<int>(type: "int", nullable: true),
-                    Status = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TodoItems", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TodoItems_AspNetUsers_AssignedBy",
-                        column: x => x.AssignedBy,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_TodoItems_IndependentTasks_IndependentTaskId",
-                        column: x => x.IndependentTaskId,
-                        principalTable: "IndependentTasks",
-                        principalColumn: "TaskId");
-                    table.ForeignKey(
-                        name: "FK_TodoItems_ProjectTasks_ProjectTaskId",
-                        column: x => x.ProjectTaskId,
-                        principalTable: "ProjectTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AttachmentMetadata",
                 columns: table => new
                 {
@@ -614,12 +466,6 @@ namespace ProjectManagementSystem1.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AttachmentMetadata", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AttachmentMetadata_Attachments_AttachmentId",
-                        column: x => x.AttachmentId,
-                        principalTable: "Attachments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -645,12 +491,39 @@ namespace ProjectManagementSystem1.Migrations
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Attachments",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FileName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    ContentType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Category = table.Column<int>(type: "int", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    FilePhysicalPath = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UploadedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Accessibility = table.Column<int>(type: "int", nullable: false),
+                    Checksum = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    EntityId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    EntityType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Thumbnail = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    ThumbnailContentType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ProjectTaskId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attachments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AttachmentPermissions_Attachments_AttachmentId",
-                        column: x => x.AttachmentId,
-                        principalTable: "Attachments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        name: "FK_Attachments_AspNetUsers_UploadedByUserId",
+                        column: x => x.UploadedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -723,6 +596,219 @@ namespace ProjectManagementSystem1.Migrations
                         principalColumn: "MessageId",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Comments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TaskId = table.Column<int>(type: "int", nullable: false),
+                    MemberId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Comments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "IndependentTasks",
+                columns: table => new
+                {
+                    TaskId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Progress = table.Column<double>(type: "float", nullable: false),
+                    Weight = table.Column<int>(type: "int", nullable: false),
+                    CreatedByUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    AssignedToUserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IssueId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IndependentTasks", x => x.TaskId);
+                    table.ForeignKey(
+                        name: "FK_IndependentTasks_AspNetUsers_AssignedToUserId",
+                        column: x => x.AssignedToUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_IndependentTasks_AspNetUsers_CreatedByUserId",
+                        column: x => x.CreatedByUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Issues",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Priority = table.Column<int>(type: "int", nullable: false),
+                    PriorityValue = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AssigneeId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ReporterId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProjectId = table.Column<int>(type: "int", nullable: true),
+                    ProjectTaskId = table.Column<int>(type: "int", nullable: true),
+                    IndependentTaskId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Issues", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Issues_AspNetUsers_AssigneeId",
+                        column: x => x.AssigneeId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Issues_AspNetUsers_ReporterId",
+                        column: x => x.ReporterId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Issues_IndependentTasks_IndependentTaskId",
+                        column: x => x.IndependentTaskId,
+                        principalTable: "IndependentTasks",
+                        principalColumn: "TaskId");
+                    table.ForeignKey(
+                        name: "FK_Issues_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProjectTasks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    ProjectAssignmentId = table.Column<int>(type: "int", nullable: false),
+                    MilestoneId = table.Column<int>(type: "int", nullable: true),
+                    AssignedMemberId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ParentTaskId = table.Column<int>(type: "int", nullable: true),
+                    Depth = table.Column<int>(type: "int", nullable: false),
+                    IsLeaf = table.Column<bool>(type: "bit", nullable: false),
+                    Weight = table.Column<int>(type: "int", nullable: false),
+                    ActualHours = table.Column<double>(type: "float", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Priority = table.Column<int>(type: "int", nullable: false),
+                    Progress = table.Column<double>(type: "float", nullable: false),
+                    AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsProjectRoot = table.Column<bool>(type: "bit", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EstimatedHours = table.Column<double>(type: "float", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsAutoCreateTodo = table.Column<bool>(type: "bit", nullable: false),
+                    IssueId = table.Column<int>(type: "int", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(MAX)", maxLength: 4000, nullable: true),
+                    ProjectTaskId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProjectTasks", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProjectTasks_Issues_IssueId",
+                        column: x => x.IssueId,
+                        principalTable: "Issues",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProjectTasks_Milestones_MilestoneId",
+                        column: x => x.MilestoneId,
+                        principalTable: "Milestones",
+                        principalColumn: "MilestoneId");
+                    table.ForeignKey(
+                        name: "FK_ProjectTasks_ProjectAssignments_ProjectAssignmentId",
+                        column: x => x.ProjectAssignmentId,
+                        principalTable: "ProjectAssignments",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProjectTasks_ProjectTasks_ParentTaskId",
+                        column: x => x.ParentTaskId,
+                        principalTable: "ProjectTasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_ProjectTasks_ProjectTasks_ProjectTaskId",
+                        column: x => x.ProjectTaskId,
+                        principalTable: "ProjectTasks",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TodoItems",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProjectTaskId = table.Column<int>(type: "int", nullable: false),
+                    AssigneeId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AssignedBy = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    Weight = table.Column<int>(type: "int", nullable: false),
+                    Progress = table.Column<double>(type: "float", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AcceptedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReasonForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DetailsForLateCompletion = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CompletionDetails = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectionReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IndependentTaskId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TodoItems", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TodoItems_AspNetUsers_AssignedBy",
+                        column: x => x.AssignedBy,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TodoItems_IndependentTasks_IndependentTaskId",
+                        column: x => x.IndependentTaskId,
+                        principalTable: "IndependentTasks",
+                        principalColumn: "TaskId");
+                    table.ForeignKey(
+                        name: "FK_TodoItems_ProjectTasks_ProjectTaskId",
+                        column: x => x.ProjectTaskId,
+                        principalTable: "ProjectTasks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AddSkills_NormalizedName",
+                table: "AddSkills",
+                column: "NormalizedName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -814,6 +900,36 @@ namespace ProjectManagementSystem1.Migrations
                 column: "CreatedByUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_IndependentTasks_IssueId",
+                table: "IndependentTasks",
+                column: "IssueId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Issues_AssigneeId",
+                table: "Issues",
+                column: "AssigneeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Issues_IndependentTaskId",
+                table: "Issues",
+                column: "IndependentTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Issues_ProjectId",
+                table: "Issues",
+                column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Issues_ProjectTaskId",
+                table: "Issues",
+                column: "ProjectTaskId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Issues_ReporterId",
+                table: "Issues",
+                column: "ReporterId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MessageReadStatuses_MessageId",
                 table: "MessageReadStatuses",
                 column: "MessageId");
@@ -884,6 +1000,11 @@ namespace ProjectManagementSystem1.Migrations
                 column: "DueDate");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ProjectTasks_IssueId",
+                table: "ProjectTasks",
+                column: "IssueId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ProjectTasks_MilestoneId",
                 table: "ProjectTasks",
                 column: "MilestoneId");
@@ -937,11 +1058,94 @@ namespace ProjectManagementSystem1.Migrations
                 name: "IX_UserAccessTokens_UserId",
                 table: "UserAccessTokens",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserSkills_SkillId",
+                table: "UserSkills",
+                column: "SkillId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AttachmentMetadata_Attachments_AttachmentId",
+                table: "AttachmentMetadata",
+                column: "AttachmentId",
+                principalTable: "Attachments",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_AttachmentPermissions_Attachments_AttachmentId",
+                table: "AttachmentPermissions",
+                column: "AttachmentId",
+                principalTable: "Attachments",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Attachments_ProjectTasks_ProjectTaskId",
+                table: "Attachments",
+                column: "ProjectTaskId",
+                principalTable: "ProjectTasks",
+                principalColumn: "Id");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Comments_ProjectTasks_TaskId",
+                table: "Comments",
+                column: "TaskId",
+                principalTable: "ProjectTasks",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_IndependentTasks_Issues_IssueId",
+                table: "IndependentTasks",
+                column: "IssueId",
+                principalTable: "Issues",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Cascade);
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Issues_ProjectTasks_ProjectTaskId",
+                table: "Issues",
+                column: "ProjectTaskId",
+                principalTable: "ProjectTasks",
+                principalColumn: "Id");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_IndependentTasks_AspNetUsers_AssignedToUserId",
+                table: "IndependentTasks");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_IndependentTasks_AspNetUsers_CreatedByUserId",
+                table: "IndependentTasks");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Issues_AspNetUsers_AssigneeId",
+                table: "Issues");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Issues_AspNetUsers_ReporterId",
+                table: "Issues");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Milestones_AspNetUsers_AssignedMemberId",
+                table: "Milestones");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_ProjectAssignments_AspNetUsers_MemberId",
+                table: "ProjectAssignments");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_Issues_ProjectTasks_ProjectTaskId",
+                table: "Issues");
+
+            migrationBuilder.DropForeignKey(
+                name: "FK_IndependentTasks_Issues_IssueId",
+                table: "IndependentTasks");
+
             migrationBuilder.DropTable(
                 name: "ActivityLogs");
 
@@ -991,16 +1195,22 @@ namespace ProjectManagementSystem1.Migrations
                 name: "UserAccessTokens");
 
             migrationBuilder.DropTable(
+                name: "UserSkills");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "Messages");
 
             migrationBuilder.DropTable(
-                name: "IndependentTasks");
+                name: "AddSkills");
 
             migrationBuilder.DropTable(
                 name: "Attachments");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "ProjectTasks");
@@ -1012,7 +1222,10 @@ namespace ProjectManagementSystem1.Migrations
                 name: "ProjectAssignments");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Issues");
+
+            migrationBuilder.DropTable(
+                name: "IndependentTasks");
 
             migrationBuilder.DropTable(
                 name: "Projects");

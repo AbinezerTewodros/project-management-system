@@ -26,9 +26,14 @@ namespace ProjectManagementSystem1.Data.Seeders
 
         public async Task SeedAsync()
         {
+            // Ensure database is created and migrated first
+            await _context.Database.EnsureCreatedAsync();
+            await _context.Database.MigrateAsync();  // Critical: Applies pending migrations
+
+            // Now safely check for existing skills
             if (await _context.AddSkills.AnyAsync()) return;
 
-            var skills = await _skillService.LoadSkillsFromEscoApi(limit: 500); // Load first 500 skills
+            var skills = await _skillService.LoadSkillsFromEscoApi(limit: 500);
             await _context.AddSkills.AddRangeAsync(skills);
             await _context.SaveChangesAsync();
         }

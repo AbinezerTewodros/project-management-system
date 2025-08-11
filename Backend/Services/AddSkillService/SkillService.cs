@@ -6,6 +6,7 @@ using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Data.Seeders;
 using ProjectManagementSystem1.Model.Dto.AddSkill;
 using ProjectManagementSystem1.Model.Entities;
+using ProjectManagementSystem1.Services.AddSkillService;
 using System.Net.Http;
 using System.Text.Json;
 
@@ -251,7 +252,8 @@ namespace ProjectManagementSystem1.Services.AddSkillService
             {
                 ["offset"] = "0",
                 ["limit"] = limit.ToString(),
-                ["language"] = "en"
+                ["language"] = "en",
+                ["isInScheme"] = "http://data.europa.eu/esco/concept-scheme/member-skills" // Hardcoded scheme
             };
 
             if (!string.IsNullOrEmpty(query))
@@ -280,6 +282,31 @@ namespace ProjectManagementSystem1.Services.AddSkillService
                 IsApproved = true
             }).ToList() ?? new List<AddSkill>();
         }
+        public async Task<List<AddSkill>> FetchSkillsFromEsco()
+        {
+            const string schemeUri = "http://data.europa.eu/esco/concept-scheme/member-skills";
+            var apiUrl = $"resource/skill?isInScheme={Uri.EscapeDataString(schemeUri)}&language=en";
+
+            var client = _httpClientFactory.CreateClient("EscoClient");
+            var response = await client.GetAsync(apiUrl);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("ESCO API Error: {StatusCode} - {ErrorContent}", response.StatusCode, errorContent);
+                return new List<AddSkill>();
+            }
+
+            var content = await response.Content.ReadFromJsonAsync<EscoApiResponse>();
+            return content?._embedded?.skills.Select(s => new AddSkill
+            {
+                Name = s.title,
+                NormalizedName = s.title.ToLowerInvariant(),
+                Description = s.description ?? string.Empty,
+                Category = s.skillType ?? "General",
+                IsApproved = true
+            }).ToList() ?? new List<AddSkill>();
+        } 
         public async Task<IEnumerable<SkillDto>> GetPendingSkillsAsync()
         {
             try

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProjectManagementSystem1.Data;
@@ -14,6 +15,7 @@ using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore;
 using MailKit.Net.Smtp;
 using MimeKit;
 using Microsoft.Extensions.Configuration;
@@ -68,6 +70,12 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// suppress migration status messages
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -157,12 +165,17 @@ builder.Services.AddHangfire(configuration => configuration
         SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
         QueuePollInterval = TimeSpan.Zero,
         UseRecommendedIsolationLevel = true,
-        DisableGlobalLocks = true
+        DisableGlobalLocks = true,
+        PrepareSchemaIfNecessary = false // Add this critical line
     }));
 
 GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
 // Add the processing server as IHostedService
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.StopTimeout = TimeSpan.FromSeconds(15);
+    options.SchedulePollingInterval = TimeSpan.FromMinutes(5);
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -302,8 +315,23 @@ using (var scope = app.Services.CreateScope())
 
 using (var scope = app.Services.CreateScope())
 {
-    var seeder = scope.ServiceProvider.GetRequiredService<SkillDataSeeder>();
-    await seeder.SeedAsync(); // Make sure this runs
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        // Apply migrations BEFORE seeding
+        await context.Database.MigrateAsync();
+
+        // Now run seeders
+        var seeder = scope.ServiceProvider.GetRequiredService<SkillDataSeeder>();
+        await seeder.SeedAsync();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Migration/seeding failed");
+    }
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var skillCount = await db.AddSkills.CountAsync();
     Console.WriteLine($"Database contains {skillCount} skills"); // Should be > 0
