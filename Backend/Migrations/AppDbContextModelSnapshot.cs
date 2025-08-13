@@ -96,7 +96,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("Attachments", (string)null);
+                    b.ToTable("Attachments");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -303,7 +303,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("ProjectAssignment", b =>
@@ -364,7 +364,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectAssignments", (string)null);
+                    b.ToTable("ProjectAssignments");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ActivityLog", b =>
@@ -402,7 +402,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ActivityLogs", (string)null);
+                    b.ToTable("ActivityLogs");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
@@ -445,7 +445,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("NormalizedName");
 
-                    b.ToTable("AddSkills", (string)null);
+                    b.ToTable("AddSkills");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
@@ -533,6 +533,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ReportsToUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -572,6 +575,8 @@ namespace ProjectManagementSystem1.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("ReportsToUserId");
+
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
@@ -604,7 +609,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Archives", (string)null);
+                    b.ToTable("Archives");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
@@ -635,7 +640,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AttachmentPermissions", (string)null);
+                    b.ToTable("AttachmentPermissions");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Comment", b =>
@@ -664,7 +669,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("TaskId");
 
-                    b.ToTable("Comments", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ErpUser", b =>
@@ -723,7 +728,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ErpUsers", (string)null);
+                    b.ToTable("ErpUsers");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.IndependentTask", b =>
@@ -782,7 +787,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("IssueId");
 
-                    b.ToTable("IndependentTasks", (string)null);
+                    b.ToTable("IndependentTasks");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
@@ -845,7 +850,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("ReporterId");
 
-                    b.ToTable("Issues", (string)null);
+                    b.ToTable("Issues");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -907,7 +912,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.MessageReadStatus", b =>
@@ -935,7 +940,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("MessageReadStatuses", (string)null);
+                    b.ToTable("MessageReadStatuses");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Milestone", b =>
@@ -986,7 +991,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Milestones", (string)null);
+                    b.ToTable("Milestones");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Notification", b =>
@@ -1039,7 +1044,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.PersonalTodo", b =>
@@ -1074,7 +1079,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("PersonalTodo", (string)null);
+                    b.ToTable("PersonalTodo");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
@@ -1183,7 +1188,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("ProjectTasks", (string)null);
+                    b.ToTable("ProjectTasks");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.RefreshToken", b =>
@@ -1218,7 +1223,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TodoItem", b =>
@@ -1298,7 +1303,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("TodoItems", (string)null);
+                    b.ToTable("TodoItems");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserAccessToken", b =>
@@ -1327,7 +1332,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("UserAccessTokens", (string)null);
+                    b.ToTable("UserAccessTokens");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserSkill", b =>
@@ -1348,7 +1353,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("SkillId");
 
-                    b.ToTable("UserSkills", (string)null);
+                    b.ToTable("UserSkills");
                 });
 
             modelBuilder.Entity("Attachment", b =>
@@ -1469,6 +1474,16 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("Member");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "ReportsTo")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ReportsToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReportsTo");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
@@ -1769,6 +1784,8 @@ namespace ProjectManagementSystem1.Migrations
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("DirectReports");
+
                     b.Navigation("UserSkills");
                 });
 
