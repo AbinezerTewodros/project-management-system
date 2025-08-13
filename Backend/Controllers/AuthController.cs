@@ -29,19 +29,19 @@ namespace ProjectManagementSystem1.Controllers
 
         }
 
-        [HttpPost("register")]
-        [Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
-        public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
-        {
-            var result = await _userService.RegisterUserAsync(dto);
+        //[HttpPost("register")]
+        //[Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
+        //public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
+        //{
+        //    var result = await _userService.RegisterUserAsync(dto);
 
-            if (!result.Success)
-            {
-                return BadRequest(new { errors = result.Errors });
-            }
+        //    if (!result.Success)
+        //    {
+        //        return BadRequest(new { errors = result.Errors });
+        //    }
 
-            return Ok(new { message = "User registered successfully." });
-        }
+        //    return Ok(new { message = "User registered successfully." });
+        //}
 
         [HttpPost("login")]
         [AllowAnonymous]

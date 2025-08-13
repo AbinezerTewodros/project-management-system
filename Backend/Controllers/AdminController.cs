@@ -159,39 +159,53 @@ namespace ProjectManagementSystem1.Controller
             return Ok("🗑️ User deactivated.");
         }
 
-        [HttpPost("archive/{employeeId}")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> ArchiveUser(string employeeId)
+        [HttpPost("register")]
+        [Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
+        public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
         {
-            var currentUser = User.Identity?.Name;
+            var result = await _userService.RegisterUserAsync(dto);
 
-            try
+            if (!result.Success)
             {
-                await _userService.ArchiveUserAsync(employeeId, currentUser);
-                return Ok(new { Message = "User archived successfully" });
+                return BadRequest(new { errors = result.Errors });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
+
+            return Ok(new { message = "User registered successfully." });
         }
 
-        [HttpPost("restore/{employeeId}")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> RestoreUser(string employeeId)
-        {
-            var currentUser = User.Identity?.Name;
+        //[HttpPost("archive/{employeeId}")]
+        //[Authorize(Policy = "AdminOnly")]
+        //public async Task<IActionResult> ArchiveUser(string employeeId)
+        //{
+        //    var currentUser = User.Identity?.Name;
 
-            try
-            {
-                await _userService.RestoreUserAsync(employeeId, currentUser);
-                return Ok(new { Message = "User restored successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Error = ex.Message });
-            }
-        }
+        //    try
+        //    {
+        //        await _userService.ArchiveUserAsync(employeeId, currentUser);
+        //        return Ok(new { Message = "User archived successfully" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { Error = ex.Message });
+        //    }
+        //}
+
+        //[HttpPost("restore/{employeeId}")]
+        //[Authorize(Policy = "AdminOnly")]
+        //public async Task<IActionResult> RestoreUser(string employeeId)
+        //{
+        //    var currentUser = User.Identity?.Name;
+
+        //    try
+        //    {
+        //        await _userService.RestoreUserAsync(employeeId, currentUser);
+        //        return Ok(new { Message = "User restored successfully" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { Error = ex.Message });
+        //    }
+        //}
 
 
 

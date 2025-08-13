@@ -23,13 +23,18 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpGet("All-projects")]
-        [Authorize(Roles = "Manager")]
+        [Authorize(Roles = "Admin,President,Vice-President,Director,Manager,Supervisor")] // broader visibility controllers; filtering still applied in service
         public async Task<IActionResult> GetAll()
         {
-            var userDept = User.FindFirst("Department")?.Value;
-            if (userDept == null) return Forbid();
+            // var userDept = User.FindFirst("Department")?.Value;
+            // if (userDept == null) return Forbid();
 
-            var projects = await _projectService.GetAllAsync(userDept);
+            // var projects = await _projectService.GetAllAsync(userDept);
+            // return Ok(projects);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Forbid();
+
+            var projects = await _projectService.GetAllVisibleAsync(userId);
             return Ok(projects);
         }
 
@@ -66,7 +71,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpPut("edit-project")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectDto dto)
         {
             var username = User.FindFirstValue(ClaimTypes.Name);
@@ -77,7 +82,7 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpDelete("delete-project")]
-        [Authorize(Roles = "Manager")]
+        //[Authorize(Roles = "Manager")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _projectService.DeleteAsync(id);
