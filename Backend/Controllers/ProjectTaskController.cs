@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium;
 using ProjectManagementSystem1.Model.Dto;
+using ProjectManagementSystem1.Model.Dto.Milestone;
 using ProjectManagementSystem1.Model.Dto.ProjectTaskDto;
 using ProjectManagementSystem1.Model.Dto.TodoItemsDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.CommentService;
+using ProjectManagementSystem1.Services.MilestoneService;
 using ProjectManagementSystem1.Services.NotificationService;
 using ProjectManagementSystem1.Services.ProjectTaskService;
 using System.Security.Claims;
@@ -23,13 +25,19 @@ namespace ProjectManagementSystem1.Controllers
         private readonly ICommentService _commentService;
         private readonly INotificationService _notification;
         private readonly ILogger<ProjectTaskController> _logger;
-        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService, INotificationService notificationService, ILogger<ProjectTaskController> logger)
+        private readonly MilestoneTaskValidator _milestoneValidator;
+
+        public ProjectTaskController(IProjectTaskService projectTaskService, ICommentService commentService, 
+            INotificationService notificationService, ILogger<ProjectTaskController> logger,
+            MilestoneTaskValidator milestoneValidator)
         {
             _projectTaskService = projectTaskService;
             _commentService = commentService;
             _notification = notificationService;
             _logger = logger;
+            _milestoneValidator = milestoneValidator;
         }
+
 
         //[Authorize(Policy = "SupervisorOnly")]
         [HttpPost("create-task")]
@@ -43,6 +51,21 @@ namespace ProjectManagementSystem1.Controllers
             try
             {
                 var task = await _projectTaskService.CreateTaskAsync(dto, memberId);
+
+                if (dto.MilestoneId.HasValue)
+                {
+                    await _notification.CreateNotificationAsync(
+                        recipientUserId: memberId,
+                        subject: "Task Added to Milestone",
+                        message: $"Task '{task.Title}' was added to milestone",
+                        relatedEntityType: "Milestone",
+                        relatedEntityId: dto.MilestoneId.Value,
+                        deliveryMethod: NotificationDeliveryMethod.InApp
+                    );
+                }
+
+
+
                 try
                 {
                     await _notification.CreateNotificationAsync(
@@ -59,7 +82,9 @@ namespace ProjectManagementSystem1.Controllers
                     // Log the error but don't break the task creation
                     _logger.LogError($"Error sending test email: {ex.Message}");
                 }
-                return Ok(MapToResponseDto(task));
+                //return Ok(MapToResponseDto(task));
+                return CreatedAtAction(nameof(GetTaskById), new { id = task.Id }, MapToResponseDto(task));
+
             }
             catch (InvalidOperationException ex)
             {
@@ -94,9 +119,18 @@ namespace ProjectManagementSystem1.Controllers
         public async Task<IActionResult> FilterTasks([FromBody] ProjectTaskFilterDto filter)
         {
             var result = await _projectTaskService.GetFilteredTasksAsync(filter);
-            return Ok(result);
-        }
 
+            // Map items to DTOs
+            var mappedItems = result.Items.Select(MapToResponseDto).ToList();
+
+            // Return with mapped items
+            return Ok(new PaginatedResult<ProjectTaskReadDto>(
+                mappedItems,
+                result.TotalCount,
+                result.PageNumber,
+                result.PageSize
+            ));
+        }
         // Specialized endpoints for common cases
         [HttpGet("by-assignment/{assignmentId}")]
         public async Task<IActionResult> GetTasksByAssignment(int assignmentId,
@@ -163,6 +197,24 @@ namespace ProjectManagementSystem1.Controllers
                 SubTasks = task.SubTasks.Select(MapToResponseDto).ToList(),
                 TodoItems = task.TodoItems.Select(MapTodoItemToReadDto).ToList()
             };
+        }
+
+        [HttpPost("validate-milestone-dates")]
+        public async Task<IActionResult> ValidateMilestoneDates([FromBody] ValidateMilestoneDatesDto dto)
+        {
+            try
+            {
+                await _milestoneValidator.ValidateTaskDatesAgainstMilestone(
+                    dto.MilestoneId,
+                    dto.TaskStartDate,
+                    dto.TaskDueDate);
+
+                return Ok(new { Valid = true });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Valid = false, Error = ex.Message });
+            }
         }
 
         private TodoItemReadDto MapTodoItemToReadDto(TodoItem todoItem)
@@ -368,6 +420,12 @@ namespace ProjectManagementSystem1.Controllers
             var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader is the logged-in user
             try
             {
+                var task = await _projectTaskService.GetTaskByIdAsync(id);
+
+                if (task?.MilestoneId != null)
+                {
+
+                }
                 await _projectTaskService.AcceptProjectTaskCompletionAsync(id, teamLeaderId);
                 return NoContent();
             }
@@ -390,7 +448,21 @@ namespace ProjectManagementSystem1.Controllers
             catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the project task completion."); }
         }
 
-       
+        //[HttpGet("milestone/{milestoneId}/progress")]
+        //public async Task<ActionResult<double>> GetMilestoneProgress(int milestoneId)
+        //{
+        //    try
+        //    {
+        //        // This would call a new service method that calculates milestone progress
+        //        var progress = await _projectTaskService.CalculateMilestoneProgress(milestoneId);
+        //        return Ok(new { Progress = progress });
+        //    }
+        //    catch (NotFoundException)
+        //    {
+        //        return NotFound();
+        //    }
+        //}
+
         // DELETE: api/ProjectTask/{id}
 
         [HttpDelete("Delete-task")]

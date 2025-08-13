@@ -935,6 +935,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1128,14 +1131,12 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
-
-                    b.HasIndex("IssueId");
-
                     b.HasIndex("AssignedMemberId")
                         .HasDatabaseName("IX_ProjectTask_Assignee");
 
                     b.HasIndex("DueDate");
 
+                    b.HasIndex("IssueId");
 
                     b.HasIndex("MilestoneId");
 
@@ -1728,11 +1729,6 @@ namespace ProjectManagementSystem1.Migrations
                 {
                     b.Navigation("Tasks");
                 });
-            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
-                {
-                    b.Navigation("IndependentTasks");
-
-                    b.Navigation("ProjectTasks");
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
                 {
@@ -1742,7 +1738,13 @@ namespace ProjectManagementSystem1.Migrations
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
                 {
                     b.Navigation("UserSkills");
+                });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.Navigation("IndependentTasks");
+
+                    b.Navigation("ProjectTasks");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>

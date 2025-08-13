@@ -42,7 +42,7 @@ namespace ProjectManagementSystem1.Model.Entities
         public string AssignedToUserId { get; set; }
 
         public static readonly string[] AllowedStatuses =
-        {    
+        {
         "Not Started", "In Progress", "Completed", "On Hold", "Cancelled"
         };
         // Navigation properties

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ProjectManagementSystem1.Services
 {
-   
+
     public class IndependentTaskService : IIndependentTaskService
     {
         private readonly AppDbContext _context;
@@ -95,6 +95,6 @@ namespace ProjectManagementSystem1.Services
             return true;
         }
 
-        
+
     }
 }

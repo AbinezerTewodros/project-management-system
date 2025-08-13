@@ -50,6 +50,8 @@ using Polly.Extensions.Http; // For HttpPolicyExtensions
 using Microsoft.Extensions.Http; // For HttpClient builder extensions
 //using ProjectManagementSystem1.Services.ThumbnailService;
 using ProjectManagementSystem1.Services.UserProfile;
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 
 
@@ -112,7 +114,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IErpUserService, ErpUserService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 builder.Services.AddScoped<IADAuthService, ADAuthService>();
-
+builder.Services.AddScoped<IMilestoneTaskValidator, MilestoneTaskValidator>();
+builder.Services.AddScoped<MilestoneTaskValidator>();
 // Add this where you configure services
 builder.Services.AddScoped<DownloadTokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
@@ -141,7 +144,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add(new AuthorizeFilter()); // ? This enforces auth globally
+});
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 //builder.Services.AddControllers();
@@ -233,6 +240,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 
+
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
 
 if (!jwtSection.Exists() || string.IsNullOrEmpty(jwtSection["SecretKey"]))
@@ -283,7 +291,13 @@ builder.Services.AddAuthorization(options =>
     ));
 });
 
+var mapperConfig = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+});
 
+
+builder.Services.AddSingleton(mapperConfig.CreateMapper());
 
 var app = builder.Build();
 
@@ -324,7 +338,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHangfireDashboard();
-
+app.UseExceptionHandler("/error");
+app.UseStatusCodePagesWithReExecute("/error/{0}");
 //app.UseMiddleware<JwtErrorHandlingMiddleware>();
 
 app.UseSwagger();
@@ -337,6 +352,7 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 
+app.UseMiddleware<JwtErrorHandlingMiddleware>();
 app.UseCors("AllowFrontendDev");
 
 app.UseJwtErrorHandling();

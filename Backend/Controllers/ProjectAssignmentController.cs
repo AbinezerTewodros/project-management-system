@@ -10,7 +10,7 @@ namespace ProjectManagementSystem1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Manager")]
+    [Authorize]
     public class ProjectAssignmentController : ControllerBase
     {
         private readonly IProjectAssignmentService _assignmentService;
@@ -126,7 +126,7 @@ namespace ProjectManagementSystem1.Controllers
 
         // DELETE: Delete member from the project
         [HttpDelete("delete-member")]
-        [Authorize(Policy = "ManagerOnly")]
+        //[Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> DeleteMember([FromBody] UpdateAssignmentDto dto)
         {
             var user = await _userService.GetUserByEmployeeIdAsync(dto.EmployeeId);
