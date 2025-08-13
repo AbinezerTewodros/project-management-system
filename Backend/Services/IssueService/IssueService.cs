@@ -86,10 +86,10 @@ namespace ProjectManagementSystem1.Services.IssueService
             }
 
             var reporterExists = await _context.Users.AnyAsync(u => u.Id == reporterId.ToString());
-            if (!reporterExists)
-            {
-                throw new InvalidOperationException($"Reporter with ID {reporterId} does not exist.");
-            }
+            //if (!reporterExists)
+            //{
+            //    throw new InvalidOperationException($"Reporter with ID {reporterId} does not exist.");
+            //}
 
             // Handle Assignee ID
             int? assigneeId = null;
@@ -97,10 +97,10 @@ namespace ProjectManagementSystem1.Services.IssueService
                 int.TryParse(issueCreateDto.AssigneeId, out int parsedAssigneeId))
             {
                 var assigneeExists = await _context.Users.AnyAsync(u => u.Id == parsedAssigneeId.ToString());
-                if (!assigneeExists)
-                {
-                    throw new InvalidOperationException($"Assignee with ID {parsedAssigneeId} does not exist.");
-                }
+                //if (!assigneeExists)
+                //{
+                //    throw new InvalidOperationException($"Assignee with ID {parsedAssigneeId} does not exist.");
+                //}
                 assigneeId = parsedAssigneeId;
             }
 

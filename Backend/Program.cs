@@ -53,6 +53,7 @@ using ProjectManagementSystem1.Services.UserProfile;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using ProjectManagementSystem1.Services.ArchiveService;
+using ProjectManagementSystem1.Services.AccessControl;
 
 
 
@@ -96,6 +97,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IADService, ADService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddHostedService<RefreshTokenCleanupService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();

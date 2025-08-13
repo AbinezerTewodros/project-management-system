@@ -39,6 +39,14 @@ namespace ProjectManagementSystem1.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ApplicationUser self-reference
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.ReportsTo)
+                .WithMany(u => u.DirectReports)
+                .HasForeignKey(u => u.ReportsToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ProjectTask relationships
             modelBuilder.Entity<ProjectTask>(entity =>
             {
@@ -124,7 +132,7 @@ namespace ProjectManagementSystem1.Data
 
             modelBuilder.Entity<MessageReadStatus>()
                 .HasOne(mrs => mrs.Message)
-                .WithMany(m => m.ReadStatuses)
+                .WithMany(message => message.ReadStatuses)
                 .HasForeignKey(mrs => mrs.MessageId)
                 .OnDelete(DeleteBehavior.Restrict); // 👈 prevent cascade delete
 

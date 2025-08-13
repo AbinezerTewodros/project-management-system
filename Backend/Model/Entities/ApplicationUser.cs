@@ -5,7 +5,7 @@ namespace ProjectManagementSystem1.Model.Entities
 {
     public class ApplicationUser : IdentityUser
     {
-        public string FullName { get; set; } 
+        public string FullName { get; set; }
         
         public string EmployeeId { get; set; }
         public string Department { get; set; }
@@ -30,5 +30,10 @@ namespace ProjectManagementSystem1.Model.Entities
         public string? AccessToken { get; set; } //  Add this
 
         public virtual ICollection<UserSkill> UserSkills { get; set; } = new List<UserSkill>();
+
+        // Org hierarchy
+        public string? ReportsToUserId { get; set; }
+        public virtual ApplicationUser? ReportsTo { get; set; }
+        public virtual ICollection<ApplicationUser> DirectReports { get; set; } = new List<ApplicationUser>();
     }
 }
