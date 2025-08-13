@@ -114,7 +114,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IErpUserService, ErpUserService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 builder.Services.AddScoped<IADAuthService, ADAuthService>();
-
+builder.Services.AddScoped<IMilestoneTaskValidator, MilestoneTaskValidator>();
+builder.Services.AddScoped<MilestoneTaskValidator>();
 // Add this where you configure services
 builder.Services.AddScoped<DownloadTokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
@@ -239,6 +240,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 
+
 var jwtSection = builder.Configuration.GetSection("JwtSettings");
 
 if (!jwtSection.Exists() || string.IsNullOrEmpty(jwtSection["SecretKey"]))
@@ -350,6 +352,7 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 
+app.UseMiddleware<JwtErrorHandlingMiddleware>();
 app.UseCors("AllowFrontendDev");
 
 app.UseJwtErrorHandling();

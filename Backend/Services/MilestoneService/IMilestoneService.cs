@@ -12,5 +12,7 @@ namespace ProjectManagementSystem1.Services.MilestoneService
         Task<MilestoneReadDto> CreateAsync(CreateMilestoneDto dto);
         Task<MilestoneReadDto> UpdateMilestoneAsync(int id, UpdateMilestoneDto dto);
         Task<bool> DeleteMilestoneAsync(int id);
+        Task<double> CalculateMilestoneProgress(int milestoneId);
+        Task UpdateMilestoneProgress(int milestoneId);
     }
 }

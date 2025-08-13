@@ -29,12 +29,26 @@ namespace ProjectManagementSystem1.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Milestone>>> GetAllMilestones()
+        [ProducesResponseType(typeof(IEnumerable<MilestoneReadDto>), 200)]
+        public async Task<ActionResult<IEnumerable<MilestoneReadDto>>> GetAllMilestones()
         {
             var milestones = await _milestoneService.GetAllMilestoneAsync();
             return Ok(milestones);
         }
 
+        [HttpGet("{milestoneId}/progress")]
+        public async Task<ActionResult<double>> GetMilestoneProgress(int milestoneId)
+        {
+            try
+            {
+                var progress = await _milestoneService.CalculateMilestoneProgress(milestoneId);
+                return Ok(new { Progress = progress });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error calculating progress: {ex.Message}");
+            }
+        }
         [HttpGet("project/{projectId}")]
         [ProducesResponseType(typeof(IEnumerable<MilestoneReadDto>), 200)]
         public async Task<ActionResult<IEnumerable<MilestoneReadDto>>> GetMilestonesByProjectId(int projectId)
@@ -63,14 +77,15 @@ namespace ProjectManagementSystem1.Controllers
             }
             if (id != dto.MilestoneId)
             {
-                return BadRequest("The ID in the URL does not match the ID in the request body.");
+                ModelState.AddModelError("MilestoneId", "URL ID doesn't match body ID");
             }
+
             var updatedMilestone = await _milestoneService.UpdateMilestoneAsync(id, dto);
             if (updatedMilestone == null)
             {
                 return NotFound();
             }
-            return NoContent();
+            return Ok(updatedMilestone);
         }
 
         [HttpDelete("{id}")]

@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using OpenQA.Selenium;
 
 namespace ProjectManagementSystem1.Middleware
 {
@@ -20,33 +21,34 @@ namespace ProjectManagementSystem1.Middleware
         {
             try
             {
-                await _next(context); // Proceed to next middleware
+                await _next(context);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception occurred. ");
+                _logger.LogError(ex, "Unhandled exception occurred.");
                 context.Response.ContentType = "application/json";
 
                 var statusCode = ex switch
                 {
                     UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
-                    ArgumentException => (int)HttpStatusCode.BadRequest,
-                    KeyNotFoundException => (int)HttpStatusCode.NotFound,
+                    ArgumentException or
+                    InvalidOperationException => (int)HttpStatusCode.BadRequest, // Add our validation exceptions
+                    KeyNotFoundException or
+                    NotFoundException => (int)HttpStatusCode.NotFound,
                     _ => (int)HttpStatusCode.InternalServerError
                 };
-
-                context.Response.StatusCode = statusCode;
 
                 var errorResponse = new
                 {
                     error = ex.GetType().Name,
                     message = ex.Message,
-                    statusCode = statusCode
+                    statusCode,
+                    stackTrace = context.RequestServices.GetService<IWebHostEnvironment>().IsDevelopment()
+                        ? ex.StackTrace
+                        : null
                 };
 
-                var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                var json = JsonSerializer.Serialize(errorResponse);
-                await context.Response.WriteAsync(json);
+                await context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
             }
         }
 

@@ -158,6 +158,10 @@ namespace ProjectManagementSystem1.Data
                 .HasForeignKey(it => it.IssueId) // Foreign key in IndependentTask
                 .OnDelete(DeleteBehavior.Cascade); // Or another behavior you prefer
 
+            modelBuilder.Entity<Milestone>()
+                .Property(m => m.Status)
+                .HasConversion<string>();
+
             // In your DbContext's OnModelCreating
             modelBuilder.Entity<ProjectTask>()
                 .HasIndex(t => t.Status);

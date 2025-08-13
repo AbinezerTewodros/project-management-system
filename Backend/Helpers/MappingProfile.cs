@@ -66,7 +66,8 @@ namespace ProjectManagementSystem1.Helpers
             .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.Sender.EmployeeId));
 
             CreateMap<CreateMilestoneDto, Milestone>();
-            CreateMap<Milestone, MilestoneReadDto>();
+            CreateMap<Milestone, MilestoneReadDto>()
+                .ReverseMap();
             CreateMap<UpdateMilestoneDto, Milestone>()
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => System.DateTime.UtcNow))
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));

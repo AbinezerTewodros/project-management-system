@@ -30,7 +30,7 @@ namespace ProjectManagementSystem1.Model.Entities
         public int? MilestoneId { get; set; }
 
         [ForeignKey("MilestoneId")]
-        public Milestone Milestone { get; set; }
+        public virtual Milestone Milestone { get; set; }
         public string? AssignedMemberId { get; set; }
 
         public int? ParentTaskId { get; set; }
@@ -79,10 +79,26 @@ namespace ProjectManagementSystem1.Model.Entities
         public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
+            if (MilestoneId != null && !IsWithinMilestoneDates())
+            {
+                yield return new ValidationResult(
+                    "Task dates must fall within milestone date range",
+                    new[] { nameof(StartDate), nameof(DueDate) });
+            }
+
             if ((Priority == TaskPriority.High || Priority == TaskPriority.Critical) && !DueDate.HasValue)
                 yield return new ValidationResult("High/Critical tasks require due dates", [nameof(DueDate)]);
         }
 
+        public bool IsWithinMilestoneDates()
+        {
+            if (MilestoneId == null) return true;
+
+            return (!StartDate.HasValue || StartDate >= Milestone.StartDate) &&
+                   (!DueDate.HasValue || DueDate <= Milestone.DueDate);
+        }
+
+        
         public void UpdateHierarchy()
         {
 
@@ -93,7 +109,7 @@ namespace ProjectManagementSystem1.Model.Entities
             {
                 foreach (var subtask in SubTasks)
                 {
-                    if (subtask.ParentTask != this) subtask.ParentTask = this;
+                    subtask.ParentTask = this;
                     subtask.UpdateHierarchy();
                 }
             }

@@ -105,7 +105,7 @@ namespace ProjectManagementSystem1.Services.TodoItems
             return true;
         }
 
-        
+
 
         public async Task AcceptAssignmentAsync(int id, string memberId)
         {
@@ -116,19 +116,26 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
             }
 
-            if (todoItem.Status == TodoItemStatus.Pending)
+            if (todoItem.Status == TodoItemStatus.Pending || todoItem.Status == TodoItemStatus.Rejected)
             {
                 todoItem.Status = TodoItemStatus.Accepted;
                 todoItem.AcceptedDate = DateTime.UtcNow;
 
+                // Clear the rejection reason if it was rejected
+                if (todoItem.Status == TodoItemStatus.Rejected)
+                {
+                    todoItem.RejectionReason = null; // Set to null or "" as needed
+                }
+
+                // Log the changes for debugging
+                Console.WriteLine($"Updating TodoItem ID: {todoItem.Id}, Status: {todoItem.Status}, RejectionReason: {todoItem.RejectionReason}");
+
                 await _context.SaveChangesAsync();
                 await _projectTaskService.UpdateParentTaskProgressAsync(todoItem.ProjectTaskId);
-                // Update parent ProjectTask status (logic remains the same as before)
-                // Accept sub-assignments (logic remains the same as before)
             }
             else
             {
-                throw new InvalidOperationException($"TodoItem with ID '{id}' cannot be accepted as its current status is '{todoItem.Status}'. It should be '{TodoItemStatus.Pending}'.");
+                throw new InvalidOperationException($"TodoItem with ID '{id}' cannot be accepted as its current status is '{todoItem.Status}'. It should be '{TodoItemStatus.Pending}' or '{TodoItemStatus.Rejected}'.");
             }
         }
         public async Task AcceptTodoAfterApprovalAsync(int id, string memberId)
@@ -140,7 +147,8 @@ namespace ProjectManagementSystem1.Services.TodoItems
             }
 
             // Optional: Verify memberId matches assigned member
-
+            if (todoItem.AssigneeId != memberId)
+                throw new UnauthorizedAccessException("Approval only permitted for Team Leader");
             if (todoItem.Status == TodoItemStatus.Approved)
             {
                 // This action might just set the StartDate or trigger another workflow step
@@ -195,17 +203,24 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
             }
 
-            if (todoItem.Status == TodoItemStatus.Completed || todoItem.Status == TodoItemStatus.Approved || todoItem.Status == TodoItemStatus.WaitingForReview) // Allow rejection even after approval
+            if (todoItem.AssignedBy != teamLeaderId)
+            {
+                throw new UnauthorizedAccessException("Only the team leader who assigned this task can reject completion");
+            }
+            if (todoItem.Status != TodoItemStatus.WaitingForReview)
+                throw new InvalidOperationException("Only items waiting for review can be rejected");
+
+            if (todoItem.Status == TodoItemStatus.WaitingForReview) // Allow rejection even after approval
             {
                 todoItem.Status = TodoItemStatus.Rejected;
-                todoItem.ReasonForLateCompletion = reason; // Or a dedicated RejectionReason field
+                todoItem.RejectionReason = reason; // Or a dedicated RejectionReason field
                 await _context.SaveChangesAsync();
                 _activityLogService.LogActivityAsync(teamLeaderId, "TodoItem", id, "Rejected", $"Todo item '{todoItem.Title}' rejected after completion with reason: '{reason}'.");
                 // Notify the member
             }
             else
             {
-                throw new InvalidOperationException($"TodoItem with ID '{id}' cannot be rejected after completion as its current status is '{todoItem.Status}'. It should be '{TodoItemStatus.Completed}' or '{TodoItemStatus.Approved}'.");
+                throw new InvalidOperationException($"TodoItem with ID '{id}' cannot be rejected after completion as its current status is '{todoItem.Status}'. It should be '{TodoItemStatus.WaitingForReview}' or '{TodoItemStatus.Approved}'.");
             }
         }
 
@@ -236,7 +251,7 @@ namespace ProjectManagementSystem1.Services.TodoItems
                 throw new InvalidOperationException("Invalid progress value");
 
 
-            if (todoItem.Status == TodoItemStatus.InProgress)
+            if (todoItem.Status == TodoItemStatus.InProgress )
             {
                 if (progress >= 0 && progress <= 100)
                 {
@@ -263,10 +278,7 @@ namespace ProjectManagementSystem1.Services.TodoItems
 
                     }
 
-                    //if (!todoItem.StartDate.HasValue) // Set StartDate automatically upon completion
-                    //{
-                    //    todoItem.StartDate = DateTime.UtcNow;
-                    //}
+                   
 
                     await _context.SaveChangesAsync();
                     await _projectTaskService.UpdateParentTaskProgressAsync(todoItem.ProjectTaskId);
@@ -276,13 +288,7 @@ namespace ProjectManagementSystem1.Services.TodoItems
                         .Include(pt => pt.TodoItems)
                         .FirstOrDefaultAsync(pt => pt.Id == todoItem.ProjectTaskId);
 
-                    //    if (projectTask != null && projectTask.TodoItems.All(ti => ti.Status == TodoItemStatus.Completed))
-                    //    {
-                    //        projectTask.Status = TaskStatus.WaitingForReview;
-                    //        await _context.SaveChangesAsync();
-                    //    }
-                    //}
-
+                    
                     if (projectTask != null)
                     {
                         // Calculate new progress based on all todos
@@ -350,10 +356,19 @@ namespace ProjectManagementSystem1.Services.TodoItems
         public async Task ApproveTodoItemAsync(int id, string teamLeaderId)
         {
             var todoItem = await _context.TodoItems.FindAsync(id);
+            
             if (todoItem == null)
             {
                 throw new NotFoundException($"TodoItem with Id '{id}' not found.");
             }
+
+            if (todoItem.AssigneeId != teamLeaderId)
+            {
+                throw new UnauthorizedAccessException("Only team leaders or task assigners can approve");
+            }
+
+            if (todoItem.Status != TodoItemStatus.WaitingForReview)
+                throw new InvalidOperationException("Only items waiting for review can be approved");
 
             if (todoItem.Status == TodoItemStatus.WaitingForReview)
             {
@@ -378,6 +393,9 @@ namespace ProjectManagementSystem1.Services.TodoItems
             var todoItem = await _context.TodoItems.FindAsync(id);
             if (todoItem == null)
                 throw new NotFoundException($"TodoItem with ID '{id}' not found.");
+
+            if (todoItem.AssigneeId != memberId)
+                throw new UnauthorizedAccessException("Only the assigned member can reopen this task");
 
             if (todoItem.Status != TodoItemStatus.Rejected)
                 throw new InvalidOperationException("Only rejected todo items can be reopened");

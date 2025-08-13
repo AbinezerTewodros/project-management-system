@@ -82,10 +82,11 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPut("{id}/acceptapproval")]
         public async Task<IActionResult> AcceptTodoAfterApproval(int id)
         {
-            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader makes this action
+
             try
             {
-                await _todoItemService.ApproveTodoItemAsync(id, memberId);
+                await _todoItemService.ApproveTodoItemAsync(id, teamLeaderId);
                 return NoContent();
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }

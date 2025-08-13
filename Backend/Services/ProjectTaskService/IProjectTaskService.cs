@@ -15,7 +15,7 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
         Task<ProjectTask> UpdateTaskAsync(int id, string memberIdFromToken, ProjectTaskUpdateDto dto, bool isSupervisor);
         Task AcceptProjectTaskCompletionAsync(int id, string teamLeaderId);
         Task RejectProjectTaskCompletionAsync(int id, string teamLeaderId, string reason);
-
+        //Task<double> CalculateMilestoneProgress(Milestone milestone);
         Task AcceptTaskAssignmentAsync(int taskId, string memberId);
         Task RejectTaskAssignmentAsync(int taskId, string memberId, string reason);
         Task UpdateTaskActualHoursAsync(int taskId, string memberId, double actualHours);
@@ -26,8 +26,11 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
             //Task RemoveDependencyAsync(int predecessorTaskId, int successorTaskId);
             //Task<IEnumerable<ProjectTaskReadDto>> GetPredecessorsAsync(int taskId);
             //Task<IEnumerable<ProjectTaskReadDto>> GetSuccessorsAsync(int taskId);
-            Task<bool> DeleteTaskAsync(int taskId);
-
+        Task<bool> DeleteTaskAsync(int taskId);
+        Task ValidateHierarchyRules(int taskId, int? newParentId);
+        Task<IEnumerable<ProjectTask>> GetFullHierarchy(int rootTaskId);
+        Task RecalculateWeights(int parentTaskId);
+        //Task CalculateMilestoneProgress(int milestoneId);
     }
 }
 
