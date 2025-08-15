@@ -12,7 +12,7 @@ namespace ProjectManagementSystem1.Model.Dto.IndependentTaskDto
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime DueDate { get; set; }
-        public string Status { get; set; }
+        public IndependentTaskStatus Status { get; set; }
         public double Progress { get; set; }
         public int Weight { get; set; }
         public string CreatedByUserId { get; set; }

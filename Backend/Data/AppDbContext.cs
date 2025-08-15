@@ -30,6 +30,7 @@ namespace ProjectManagementSystem1.Data
 
 
         public DbSet<IndependentTask> IndependentTasks { get; set; }
+        public DbSet<TaskStatusHistory> TaskStatusHistories { get; set; }
         public DbSet<PersonalTodo> PersonalTodo { get; set; }
         public DbSet<AddSkill> AddSkills { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
@@ -114,6 +115,14 @@ namespace ProjectManagementSystem1.Data
                 .WithMany()
                 .HasForeignKey(t => t.AssignedToUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<IndependentTask>()
+                .Property(t => t.Status)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<IndependentTask>()
+              .Property(t => t.Priority)
+              .HasConversion<string>();
 
             modelBuilder.Entity<PersonalTodo>()
                 .HasOne(pt => pt.User)
