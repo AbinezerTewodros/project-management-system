@@ -16,14 +16,15 @@ namespace ProjectManagementSystem1.Model.Dto.IndependentTaskDto
         public DateTime DueDate { get; set; }
 
         [Required]
-        [MaxLength(50)]
-        public string Status { get; set; } = "NotStarted"; // Use enum
+        public IndependentTaskStatus Status { get; set; } = IndependentTaskStatus.Pending;// Use enum
+
+        [Range(1, 100)]
+        public int Weight { get; set; } = 0;
+        public IndependentTaskPriority Priority { get; set; } = IndependentTaskPriority.Medium;
 
         [Range(0, 100)]
         public double Progress { get; set; }
 
-        [Range(1, 100)]
-        public double Weight { get; set; }
         [Required]
         public string AssignedToUserId { get; set; }
     }
