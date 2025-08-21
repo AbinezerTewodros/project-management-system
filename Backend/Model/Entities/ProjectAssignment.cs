@@ -46,5 +46,14 @@ public class ProjectAssignment
     public string? ApprovedById { get; set; }
     public DateTime? ApprovedDate { get; set; }
     public string? RejectionReason { get; set; }
+    
+    // Phase 2B: Enhanced Assignment System
+    public bool IsPrimaryScrumMaster { get; set; } = false; // For multiple scrum masters
+    public double WorkloadPercentage { get; set; } = 100.0; // How much time allocated to this project
+    public DateTime? AssignmentStartDate { get; set; }
+    public DateTime? AssignmentEndDate { get; set; }
+    public string? AssignmentNotes { get; set; }
+    public bool IsActive { get; set; } = true; // For soft deletion/reassignment
+    
     public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>(); // navigation property
 }

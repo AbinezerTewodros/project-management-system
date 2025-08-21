@@ -34,6 +34,11 @@
             if (File.Exists(filePath)) File.Delete(filePath);
             return Task.CompletedTask;
         }
+
+        public string GetStoragePath()
+        {
+            return _basePath;
+        }
     }
 
 }

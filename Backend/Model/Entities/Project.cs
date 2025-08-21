@@ -39,6 +39,15 @@ public class Project
     public bool IsAutomateTodo { get; set; } = true; // Default to true
     public bool IsArchived { get; set; } = false; // default to not archived
     public DateTime? ArchiveDate { get; internal set; }
+    
+    // Phase 2A: Project Approval Workflow
+    public ProjectApprovalStatus ApprovalStatus { get; set; } = ProjectApprovalStatus.Pending;
+    public string? CreatedByUserId { get; set; }
+    public string? ApprovedByUserId { get; set; }
+    public DateTime? ApprovalDate { get; set; }
+    public string? ApprovalNotes { get; set; }
+    public string? RejectionReason { get; set; }
+    
     public ICollection<ProjectAssignment> ProjectAssignments { get; set; }
     public virtual ICollection<Issue> Issues { get; set; } = new List<Issue>(); // Navigation property
 }

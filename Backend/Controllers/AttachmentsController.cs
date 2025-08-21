@@ -18,14 +18,16 @@ namespace ProjectManagementSystem1.Controllers
     {
         private readonly IAttachmentService _attachmentService;
         private readonly DownloadTokenService _downloadTokenService;
+        private readonly IAttachmentPreviewService _previewService;
         private readonly ILogger<AttachmentsController> _logger;
         private readonly AppDbContext _context;
 
-        public AttachmentsController(IAttachmentService attachmentService, DownloadTokenService downloadTokenService, ILogger<AttachmentsController> logger,
-            AppDbContext context)
+        public AttachmentsController(IAttachmentService attachmentService, DownloadTokenService downloadTokenService, 
+            IAttachmentPreviewService previewService, ILogger<AttachmentsController> logger, AppDbContext context)
         {
             _attachmentService = attachmentService;
             _downloadTokenService = downloadTokenService;
+            _previewService = previewService;
             _logger = logger;
             _context = context;
         }
@@ -101,6 +103,81 @@ namespace ProjectManagementSystem1.Controllers
             }
 
             return Ok(permission);
+        }
+
+        // New Phase 1: Attachment Preview Endpoints
+        [HttpGet("preview/{fileName}")]
+        public async Task<IActionResult> GetAttachmentPreview(string fileName)
+        {
+            try
+            {
+                var attachment = await _context.Attachments
+                    .FirstOrDefaultAsync(a => a.FileName == fileName);
+
+                if (attachment == null)
+                {
+                    return NotFound("Attachment not found");
+                }
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!await _attachmentService.CheckPermissionAsync(attachment.Id, userId, PermissionType.View))
+                {
+                    return Forbid();
+                }
+
+                var filePath = Path.Combine(_attachmentService.GetStoragePath(), attachment.FileName);
+                var preview = await _previewService.GeneratePreviewAsync(filePath, attachment.FileName, attachment.ContentType);
+
+                return Ok(preview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating preview for file: {FileName}", fileName);
+                return StatusCode(500, "Error generating preview");
+            }
+        }
+
+        [HttpGet("thumbnail/{fileName}")]
+        public async Task<IActionResult> GetThumbnail(string fileName, [FromQuery] int width = 200, [FromQuery] int height = 200)
+        {
+            try
+            {
+                var attachment = await _context.Attachments
+                    .FirstOrDefaultAsync(a => a.FileName == fileName);
+
+                if (attachment == null)
+                {
+                    return NotFound("Attachment not found");
+                }
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!await _attachmentService.CheckPermissionAsync(attachment.Id, userId, PermissionType.View))
+                {
+                    return Forbid();
+                }
+
+                var filePath = Path.Combine(_attachmentService.GetStoragePath(), attachment.FileName);
+                var thumbnailBytes = await _previewService.GetThumbnailAsync(filePath, attachment.ContentType, width, height);
+
+                return File(thumbnailBytes, "image/jpeg");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating thumbnail for file: {FileName}", fileName);
+                return StatusCode(500, "Error generating thumbnail");
+            }
+        }
+
+        [HttpGet("previewable")]
+        public async Task<IActionResult> CheckPreviewable([FromQuery] string contentType)
+        {
+            if (string.IsNullOrEmpty(contentType))
+            {
+                return BadRequest("Content type is required");
+            }
+
+            var isPreviewable = await _previewService.IsPreviewableAsync(contentType);
+            return Ok(new { IsPreviewable = isPreviewable });
         }
 
         //[HttpPost("Upload-File")]

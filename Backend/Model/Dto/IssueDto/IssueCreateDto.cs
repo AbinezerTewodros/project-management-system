@@ -17,6 +17,8 @@ namespace ProjectManagementSystem1.Model.Dto.Issue
 
         public IssuePriority? Priority { get; set; }
 
+        public IssueType? Type { get; set; }
+
         // Assuming ReporterId is always required for creation
         [Required(ErrorMessage = "Reporter ID is required.")]
         public string? ReporterId { get; set; }

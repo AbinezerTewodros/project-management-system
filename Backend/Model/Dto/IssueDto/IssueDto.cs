@@ -12,6 +12,7 @@ namespace ProjectManagementSystem1.Model.Dto.Issue
         public string Description { get; set; }
         public IssueStatus Status { get; set; }
         public IssuePriority Priority { get; set; }
+        public IssueType Type { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string? ReporterId { get; set; }

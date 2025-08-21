@@ -11,12 +11,14 @@ namespace ProjectManagementSystem1.Services.ProjectService
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IProjectAssignmentService _projectAssignmentService;
+        private readonly IProjectApprovalService _projectApprovalService;
 
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService)
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IProjectApprovalService projectApprovalService)
         {
             _context = context;
             _mapper = mapper;
             _projectAssignmentService = projectAssignmentService;
+            _projectApprovalService = projectApprovalService;
         }
 
         public async Task<List<ProjectDto>> GetAllAsync(string department)
@@ -38,9 +40,24 @@ namespace ProjectManagementSystem1.Services.ProjectService
 
             // Set project metadata
             project.CreateUser = currentUser;
+            project.CreatedByUserId = currentUser;
             project.CreatedDate = now;
             project.UpdateUser = currentUser;
             project.UpdatedDate = now;
+
+            // Phase 2A: Handle approval workflow
+            if (await _projectApprovalService.IsUserManagerOrAboveAsync(currentUser))
+            {
+                // Manager or above - auto approve
+                project.ApprovalStatus = ProjectApprovalStatus.AutoApproved;
+                project.Status = "Active";
+            }
+            else
+            {
+                // Regular user - needs approval
+                project.ApprovalStatus = ProjectApprovalStatus.Pending;
+                project.Status = "Pending Approval";
+            }
 
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();

@@ -19,5 +19,6 @@ namespace ProjectManagementSystem1.Services.AttachmentService
         Task<IEnumerable<AttachmentPermission>> GetPermissionsForAttachmentAsync(Guid attachmentId); // Add this
         Task SoftDeleteAttachmentAsync(Guid id);
         Task<(byte[] FileBytes, string ContentType, string FileName)> GetFileForDownloadAsync(Guid id);
+        string GetStoragePath();
     }
 }
