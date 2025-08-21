@@ -1,0 +1,20 @@
+[
+    {
+        "employeeId": "111101",
+        "fullName": "John Doe",
+        "department": "Finance",
+        "jobTitle": "Accountant",
+        "company": "CBE",
+        "email": "john.doe@cbe.com",
+        "phoneNumber": "0911111111"
+    },
+    {
+        "employeeId": "111102",
+        "fullName": "Sara Smith",
+        "department": "IT",
+        "jobTitle": "Software Engineer",
+        "company": "CBE",
+        "email": "sara.smith@cbe.com",
+        "phoneNumber": "0922222222"
+    }
+]
