@@ -85,13 +85,13 @@ namespace ProjectManagementSystem1.Services.ProjectService
                     throw new ArgumentException("Assigned employee not found.");
 
                 // Check if role is ScrumMaster and already exists
-                if (dto.AssignedRole == "ScrumMaster")
-                {
-                    var exists = await _context.ProjectAssignments
-                        .AnyAsync(a => a.ProjectId == project.Id && a.MemberRole == "ScrumMaster");
-                    if (exists)
-                        throw new InvalidOperationException("Project already has a ScrumMaster.");
-                }
+                //if (dto.AssignedRole == "ScrumMaster")
+                //{
+                //    var exists = await _context.ProjectAssignments
+                //        .AnyAsync(a => a.ProjectId == project.Id && a.MemberRole == "ScrumMaster");
+                //    if (exists)
+                //        throw new InvalidOperationException("Project already has a ScrumMaster.");
+                //}
 
                 projectAssignment = new ProjectAssignment
                 {
