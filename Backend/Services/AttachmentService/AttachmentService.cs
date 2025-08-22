@@ -447,5 +447,10 @@ namespace ProjectManagementSystem1.Services.AttachmentService
                 _ => false
             };
         }
+
+        public string GetStoragePath()
+        {
+            return _fileStorageService.GetStoragePath();
+        }
     }
 }

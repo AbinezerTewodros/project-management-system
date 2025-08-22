@@ -42,6 +42,8 @@ using ProjectManagementSystem1.Services.AttachmentDownloadSercvice;
 using ProjectManagementSystem1.Services.ResourceAcessService;
 using ProjectManagementSystem1.Services.Validation;
 using ProjectManagementSystem1.Services.AddSkillService;
+using ProjectManagementSystem1.Services.Common;
+using ProjectManagementSystem1.Services.ReportService;
 using System.Net.Http.Headers;
 using System.Threading.RateLimiting;
 using System.Net.Http; // For HttpResponseMessage
@@ -100,6 +102,8 @@ builder.Services.AddHostedService<RefreshTokenCleanupService>();
 builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IProjectApprovalService, ProjectApprovalService>();
+builder.Services.AddScoped<IEnhancedAssignmentService, EnhancedAssignmentService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
 builder.Services.AddScoped<IMilestoneService, MilestoneService>();
@@ -125,6 +129,16 @@ builder.Services.AddScoped<DownloadTokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<IEntityValidator,  EntityValidator>();
 //builder.Services.AddScoped<IThumbnailGeneratorService, ThumbnailGeneratorService>();
+
+// Add new Phase 1 services
+builder.Services.AddScoped<IPaginationService, PaginationService>();
+builder.Services.AddScoped<IAttachmentPreviewService, AttachmentPreviewService>();
+
+// Add Phase 2C: Advanced Filtering Service
+builder.Services.AddScoped<IAdvancedFilterService, AdvancedFilterService>();
+
+// Add Phase 2D: Report Service
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<ISkillService, SkillService>();
 builder.Services.AddScoped<SkillDataSeeder>();
@@ -319,6 +333,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Temporarily disabled skill seeding for testing
+/*
 using (var scope = app.Services.CreateScope())
 {
     var seeder = scope.ServiceProvider.GetRequiredService<SkillDataSeeder>();
@@ -327,6 +343,7 @@ using (var scope = app.Services.CreateScope())
     var skillCount = await db.AddSkills.CountAsync();
     Console.WriteLine($"Database contains {skillCount} skills"); // Should be > 0
 }
+*/
 
 using (var scope = app.Services.CreateScope())
 {

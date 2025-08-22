@@ -20,6 +20,18 @@ namespace ProjectManagementSystem1.Model.Entities
         Critical
     }
 
+    public enum IssueType
+    {
+        Bug,
+        Feature,
+        Enhancement,
+        Documentation,
+        Performance,
+        Security,
+        Usability,
+        Other
+    }
+
     public class Issue
     {
         [Key]
@@ -36,6 +48,10 @@ namespace ProjectManagementSystem1.Model.Entities
 
         [Required]
         public IssuePriority Priority { get; set; } = IssuePriority.Medium;
+
+        [Required]
+        public IssueType Type { get; set; } = IssueType.Other;
+
         public int PriorityValue
         {
             get => (int)Priority;

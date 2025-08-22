@@ -39,6 +39,7 @@ namespace ProjectManagementSystem1.Services.IssueService
                 Description = issue.Description,
                 Status = issue.Status,
                 Priority = issue.Priority,
+                Type = issue.Type,
                 CreatedAt = issue.CreatedAt,
                 UpdatedAt = issue.UpdatedAt,
                 ReporterId = issue.ReporterId.ToString(),
@@ -149,6 +150,7 @@ namespace ProjectManagementSystem1.Services.IssueService
                 Description = issueCreateDto.Description,
                 Status = issueCreateDto.Status ?? IssueStatus.Open,
                 Priority = issueCreateDto.Priority ?? IssuePriority.Medium,
+                Type = issueCreateDto.Type ?? IssueType.Other,
                 CreatedAt = DateTime.UtcNow,
                 ReporterId = reporterId.ToString(),  // FIX: Use parsed int value
                 AssigneeId = assigneeId.ToString(),    // FIX: Use parsed int? value

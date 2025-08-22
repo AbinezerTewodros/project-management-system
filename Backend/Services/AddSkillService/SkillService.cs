@@ -130,7 +130,7 @@ namespace ProjectManagementSystem1.Services.AddSkillService
             // Normalize the name for comparison
             var normalizedName = dto.Name.Trim().ToLowerInvariant();
 
-            // Check if skill already exists (case insensitive)
+            // Check if skill already exists (case insensitmbeddive)
             var existingSkill = await _context.AddSkills
                 .FirstOrDefaultAsync(s => s.NormalizedName == normalizedName);
 
@@ -245,40 +245,53 @@ namespace ProjectManagementSystem1.Services.AddSkillService
         // In SkillService.cs
         public async Task<List<AddSkill>> LoadSkillsFromEscoApi(string query = "", int limit = 100)
         {
-            var client = _httpClientFactory.CreateClient("EscoClient");
-
-            var queryParams = new Dictionary<string, string>
+            try
             {
-                ["offset"] = "0",
-                ["limit"] = limit.ToString(),
-                ["language"] = "en"
-            };
+                var client = _httpClientFactory.CreateClient("EscoClient");
 
-            if (!string.IsNullOrEmpty(query))
-            {
-                queryParams["text"] = query;
+                var queryParams = new Dictionary<string, string>
+                {
+                    ["offset"] = "0",
+                    ["limit"] = limit.ToString(),
+                    ["language"] = "en"
+                };
+
+                if (!string.IsNullOrEmpty(query))
+                {
+                    queryParams["text"] = query;
+                }
+
+                var requestUri = QueryHelpers.AddQueryString("resource/skill", queryParams);
+
+                var response = await client.GetAsync(requestUri);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"ESCO API Error: {response.StatusCode} - {errorContent}");
+                    return new List<AddSkill>(); // Return empty rather than throwing
+                }
+
+                var content = await response.Content.ReadFromJsonAsync<EscoApiResponse>();
+                return content?._embedded?.skills.Select(s => new AddSkill
+                {
+                    Name = s.title,
+                    NormalizedName = s.title.ToLowerInvariant(),
+                    Description = s.description ?? string.Empty,
+                    Category = s.skillType ?? "General",
+                    IsApproved = true
+                }).ToList() ?? new List<AddSkill>();
             }
-
-            var requestUri = QueryHelpers.AddQueryString("resource/skill", queryParams);
-
-            var response = await client.GetAsync(requestUri);
-
-            if (!response.IsSuccessStatusCode)
+            catch (JsonException ex)
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError($"ESCO API Error: {response.StatusCode} - {errorContent}");
-                return new List<AddSkill>(); // Return empty rather than throwing
+                _logger.LogError(ex, "Failed to parse JSON response from ESCO API. API might be returning HTML instead of JSON.");
+                return new List<AddSkill>();
             }
-
-            var content = await response.Content.ReadFromJsonAsync<EscoApiResponse>();
-            return content?._embedded?.skills.Select(s => new AddSkill
+            catch (Exception ex)
             {
-                Name = s.title,
-                NormalizedName = s.title.ToLowerInvariant(),
-                Description = s.description ?? string.Empty,
-                Category = s.skillType ?? "General",
-                IsApproved = true
-            }).ToList() ?? new List<AddSkill>();
+                _logger.LogError(ex, "Unexpected error while calling ESCO API");
+                return new List<AddSkill>();
+            }
         }
         public async Task<IEnumerable<SkillDto>> GetPendingSkillsAsync()
         {

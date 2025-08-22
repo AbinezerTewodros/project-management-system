@@ -245,10 +245,25 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovalNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("ArchiveDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreateUser")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedByUserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("CreatedDate")
@@ -290,6 +305,9 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -325,11 +343,26 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<DateTime?>("ApprovedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("AssignmentEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignmentNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AssignmentStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreateUser")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimaryScrumMaster")
+                        .HasColumnType("bit");
 
                     b.Property<string>("MemberId")
                         .IsRequired()
@@ -362,6 +395,9 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<double>("WorkloadPercentage")
+                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -873,6 +909,9 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired()
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");

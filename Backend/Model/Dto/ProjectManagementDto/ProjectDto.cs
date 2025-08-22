@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using ProjectManagementSystem1.Model.Entities;
 
 namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
 {
@@ -7,6 +8,7 @@ namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
         public int Id { get; set; }
         public string? Description { get; set; }
         public string ProjectName { get; set; }
+        public string Department { get; set; }
         public string ProjectOwner { get; set; }
 
         [Phone]
@@ -24,5 +26,12 @@ namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
         public string UpdateUser { get; set; }
         public byte[] Version { get; set; }
 
+        // Phase 2A: Project Approval Workflow
+        public ProjectApprovalStatus ApprovalStatus { get; set; }
+        public string? CreatedByUserId { get; set; }
+        public string? ApprovedByUserId { get; set; }
+        public DateTime? ApprovalDate { get; set; }
+        public string? ApprovalNotes { get; set; }
+        public string? RejectionReason { get; set; }
     }
 }
