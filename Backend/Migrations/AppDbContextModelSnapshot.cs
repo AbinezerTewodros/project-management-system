@@ -574,6 +574,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ReportsToUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -613,7 +616,41 @@ namespace ProjectManagementSystem1.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("ReportsToUserId");
+
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Archive", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ArchivedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ArchivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Version")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Archives");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
@@ -908,6 +945,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1558,6 +1598,16 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "ReportsTo")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ReportsToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReportsTo");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
                 {
                     b.HasOne("Attachment", "Attachment")
@@ -1879,6 +1929,8 @@ namespace ProjectManagementSystem1.Migrations
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("DirectReports");
+
                     b.Navigation("UserSkills");
                 });
 

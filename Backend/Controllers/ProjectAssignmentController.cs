@@ -28,17 +28,28 @@ namespace ProjectManagementSystem1.Controllers
         [HttpGet("All-members")]
         public async Task<IActionResult> GetByProject(int projectId)
         {
-            var dept = User.FindFirst("Department")?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            try
-            {
-                var assignments = await _assignmentService.GetAllByProjectAsync(projectId, dept);
-                return Ok(assignments);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+            // Check if user is part of the project
+            bool isMember = await _context.ProjectAssignments
+                .AnyAsync(pa => pa.ProjectId == projectId && pa.MemberId == userId);
+
+            if (!isMember)
+                return Forbid("You are not a member of this project.");
+
+            var assignments = await _assignmentService.GetAllByProjectAsync(projectId);
+            return Ok(assignments);
+            //var dept = User.FindFirst("Department")?.Value;
+
+            //try
+            //{
+            //    var assignments = await _assignmentService.GetAllByProjectAsync(projectId, dept);
+            //    return Ok(assignments);
+            //}
+            //catch (UnauthorizedAccessException ex)
+            //{
+            //    return Forbid(ex.Message);
+            //}
         }
 
         // GET: Show all projects assigned for a user
@@ -64,11 +75,11 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPost("Add-members")]
         public async Task<IActionResult> Create([FromBody] CreateAssignmentDto dto)
         {
-            var dept = User.FindFirst("Department")?.Value;
+            //var dept = User.FindFirst("Department")?.Value;
             var currentUser = User.FindFirstValue(ClaimTypes.Name);
             try
             {
-                var result = await _assignmentService.CreateAsync(dto, dept, currentUser);
+                var result = await _assignmentService.CreateAsync(dto, currentUser);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -87,7 +98,7 @@ namespace ProjectManagementSystem1.Controllers
 
         // PUT: Edit role of the project members
         [HttpPut("edit-role")]
-        [Authorize(Policy = "ManagerOnly")]
+        //[Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> EditRole([FromBody] UpdateAssignmentDto dto)
         {
             var user = await _userService.GetUserByEmployeeIdAsync(dto.EmployeeId);

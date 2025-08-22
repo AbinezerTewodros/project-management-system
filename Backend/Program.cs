@@ -54,6 +54,8 @@ using Microsoft.Extensions.Http; // For HttpClient builder extensions
 using ProjectManagementSystem1.Services.UserProfile;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using ProjectManagementSystem1.Services.ArchiveService;
+using ProjectManagementSystem1.Services.AccessControl;
 
 
 
@@ -97,6 +99,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IADService, ADService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddHostedService<RefreshTokenCleanupService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectApprovalService, ProjectApprovalService>();
 builder.Services.AddScoped<IEnhancedAssignmentService, EnhancedAssignmentService>();
@@ -141,6 +145,7 @@ builder.Services.AddScoped<SkillDataSeeder>();
 builder.Services.AddHostedService<SkillUpdateBackgroundService>();
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+builder.Services.AddScoped<IArchiveService, ArchiveService>();
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
