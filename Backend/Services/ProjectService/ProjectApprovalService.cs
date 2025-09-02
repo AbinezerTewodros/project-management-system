@@ -147,9 +147,12 @@ namespace ProjectManagementSystem1.Services.ProjectService
             var roles = await _userManager.GetRolesAsync(user);
             
             // Check if user has manager, supervisor, or admin role
-            return roles.Any(r => r.Equals("Manager", StringComparison.OrdinalIgnoreCase) ||
-                                 r.Equals("Supervisor", StringComparison.OrdinalIgnoreCase) ||
-                                 r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+            return roles.Any(r => 
+                            r.Equals("President", StringComparison.OrdinalIgnoreCase) ||    
+                            r.Equals("Vice-President", StringComparison.OrdinalIgnoreCase) ||
+                            r.Equals("Director", StringComparison.OrdinalIgnoreCase) ||
+                            r.Equals("Manager", StringComparison.OrdinalIgnoreCase) ||
+                            r.Equals("Admin", StringComparison.OrdinalIgnoreCase));
         }
 
         public async Task<List<ProjectApprovalResponseDto>> GetApprovalHistoryAsync(string userId)

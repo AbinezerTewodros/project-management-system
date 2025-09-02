@@ -15,11 +15,8 @@ namespace ProjectManagementSystem1.Services.ProjectService
         private readonly IProjectAssignmentService _projectAssignmentService;
         private readonly IAccessControlService _accessControlService;
         private readonly UserManager<ApplicationUser> _userManager;
-
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager)
         private readonly IProjectApprovalService _projectApprovalService;
-
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IProjectApprovalService projectApprovalService)
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager, IProjectApprovalService projectApprovalService)
         {
             _context = context;
             _mapper = mapper;

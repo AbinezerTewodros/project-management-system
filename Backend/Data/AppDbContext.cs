@@ -256,6 +256,11 @@ namespace ProjectManagementSystem1.Data
 
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<IndependentTask>()
+                .HasOne(t => t.Issue)
+                .WithMany(i => i.IndependentTasks)
+                .HasForeignKey(t => t.IssueId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
 

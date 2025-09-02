@@ -1,7 +1,7 @@
 [
     {
         "employeeId": "111101",
-        "fullName": "John Doe",
+        "fullName": "John Doess",
         "department": "Finance",
         "jobTitle": "Accountant",
         "company": "CBE",
@@ -16,5 +16,32 @@
         "company": "CBE",
         "email": "sara.smith@cbe.com",
         "phoneNumber": "0922222222"
+    },
+    {
+        "employeeId": "111103",
+        "fullName": "Abeni Ted",
+        "department": "Finance",
+        "jobTitle": "Accountant",
+        "company": "CBE",
+        "email": "john.doe@cbe.com",
+        "phoneNumber": "0933333333"
+    },
+    {
+        "employeeId": "111104",
+        "fullName": "Johny Daniel",
+        "department": "Electrical",
+        "jobTitle": "Manager",
+        "company": "CBE",
+        "email": "john.doe@cbe.com",
+        "phoneNumber": "0944444444"
+    },
+    {
+        "employeeId": "111106",
+        "fullName": "Abel Abebe",
+        "department": "Computer Science",
+        "jobTitle": "Programmer",
+        "company": "CBE",
+        "email": "abelabebe@cbe.com",
+        "phoneNumber": "095555555"
     }
 ]
