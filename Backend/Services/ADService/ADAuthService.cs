@@ -124,7 +124,7 @@ namespace ProjectManagementSystem1.Services.ADService
             string[] properties =
             {
                 "sAMAccountName", "mail", "employeeID", "displayname",
-                "company", "department", "title"
+                "company", "department", "title", "manager"
             };
 
             foreach (var prop in properties)
@@ -145,7 +145,9 @@ namespace ProjectManagementSystem1.Services.ADService
                 EmpId = GetPropertyValue(result, "employeeID"),
                 Name = GetPropertyValue(result, "displayname"),
                 Company = GetPropertyValue(result, "company"),
-                Title = GetPropertyValue(result, "title")
+                Title = GetPropertyValue(result, "title"),
+                Department = GetPropertyValue(result, "department"),
+                Manager = GetPropertyValue(result, "manager")
             };
         }
 

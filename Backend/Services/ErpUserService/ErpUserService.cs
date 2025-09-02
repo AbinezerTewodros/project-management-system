@@ -22,6 +22,48 @@ namespace ProjectManagementSystem1.Services.ErpUserService
             _env = env;
         }
 
+        public async Task<List<ErpUserDto>> SyncAllUsersAsync()
+        {
+            if (_config.GetValue<bool>("ErpApi:UseMockErp"))
+            {
+                // ✅ Read from JSON file
+                var filePath = Path.Combine(_env.ContentRootPath, "erpUsers.json");
+                var json = await File.ReadAllTextAsync(filePath);
+                var users = JsonConvert.DeserializeObject<List<ErpUserDto>>(json);
+
+                if (users == null || !users.Any())
+                    throw new Exception("Mock ERP returned no users.");
+
+                foreach (var userDto in users)
+                {
+                    await UpsertUserAsync(userDto);
+                }
+
+                return users;
+            }
+            else
+            {
+                // ✅ Call real ERP API for all users
+                var httpClient = _httpClientFactory.CreateClient();
+                var apiUrl = $"{_config["ErpApi:BaseUrl"]}/api/users"; // assumes API supports all users
+                var response = await httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    throw new Exception("Failed to fetch users from ERP.");
+
+                var users = await response.Content.ReadFromJsonAsync<List<ErpUserDto>>();
+                if (users == null || !users.Any())
+                    throw new Exception("ERP returned no users.");
+
+                foreach (var userDto in users)
+                {
+                    await UpsertUserAsync(userDto);
+                }
+
+                return users;
+            }
+        }
+
         public async Task<ErpUserDto> SyncSingleUserAsync(string employeeId)
         {
             if (_config.GetValue<bool>("ErpApi:UseMockErp"))

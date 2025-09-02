@@ -1667,7 +1667,7 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.Issue", "Issue")
                         .WithMany("IndependentTasks")
                         .HasForeignKey("IssueId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("AssignedToUser");
 
