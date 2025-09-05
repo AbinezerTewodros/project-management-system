@@ -7,6 +7,7 @@ using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.ADService;
 using ProjectManagementSystem1.Services.UserService;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProjectManagementSystem1.Controller
 {
@@ -177,7 +178,7 @@ namespace ProjectManagementSystem1.Controller
                     Department = adUser.Department ?? string.Empty,
                     Title = adUser.Title ?? string.Empty,
                     Company = adUser.Company ?? string.Empty,
-                    Manager = adUser.Manager,
+                    Manager = ExtractCnCommonName(adUser.Manager),
                     PhoneNumber = null,
                     Status = "Active",
                     IsFirstLogin = true
@@ -261,7 +262,7 @@ namespace ProjectManagementSystem1.Controller
                         user.Department = adUser.Department ?? string.Empty;
                         user.Title = adUser.Title ?? string.Empty;
                         user.Company = adUser.Company ?? string.Empty;
-                        user.Manager = adUser.Manager;
+                        user.Manager = ExtractCnCommonName(adUser.Manager);
                         user.UpdatedDate = DateTime.UtcNow;
                         await _userManager.UpdateAsync(user);
                     }
@@ -275,6 +276,78 @@ namespace ProjectManagementSystem1.Controller
                 }
             }
             return Ok(results);
+        }
+
+        // Import users by OU path segment(s)
+        public class ImportByOuRequest
+        {
+            public List<string> OrganizationalUnits { get; set; } = new();
+            public string DefaultPassword { get; set; } = "Welcome2cbe";
+        }
+
+        [HttpPost("ad/import-by-ou")]
+        public async Task<IActionResult> ImportUsersByOu([FromBody] ImportByOuRequest request)
+        {
+            if (request.OrganizationalUnits == null || request.OrganizationalUnits.Count == 0)
+                return BadRequest("Provide at least one OU segment.");
+
+            var adAuth = HttpContext.RequestServices.GetRequiredService<IADAuthService>();
+            var users = await adAuth.GetUsersByOrganizationalUnitsAsync(request.OrganizationalUnits);
+            var results = new List<object>();
+
+            foreach (var emp in users)
+            {
+                try
+                {
+                    var role = InferRoleFromTitle(emp.Title);
+                    if (!await _roleManager.RoleExistsAsync(role))
+                        await _roleManager.CreateAsync(new IdentityRole(role));
+
+                    var user = await _userManager.Users
+                        .FirstOrDefaultAsync(u => u.EmployeeId == emp.EmpId || u.Email == emp.Email);
+                    if (user == null)
+                    {
+                        user = new ApplicationUser
+                        {
+                            UserName = emp.Email ?? emp.EmpId,
+                            Email = emp.Email,
+                            FullName = emp.Name,
+                            EmployeeId = emp.EmpId,
+                            Department = emp.Department ?? string.Empty,
+                            Title = emp.Title ?? string.Empty,
+                            Company = emp.Company ?? string.Empty,
+                            Manager = ExtractCnCommonName(emp.Manager),
+                            Status = "Active",
+                            IsFirstLogin = true
+                        };
+                        var create = await _userManager.CreateAsync(user, request.DefaultPassword);
+                        if (!create.Succeeded)
+                        {
+                            results.Add(new { empId = emp.EmpId, status = "Error", errors = create.Errors.Select(e => e.Description) });
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        user.FullName = emp.Name;
+                        user.Department = emp.Department ?? string.Empty;
+                        user.Title = emp.Title ?? string.Empty;
+                        user.Company = emp.Company ?? string.Empty;
+                        user.Manager = ExtractCnCommonName(emp.Manager);
+                        user.UpdatedDate = DateTime.UtcNow;
+                        await _userManager.UpdateAsync(user);
+                    }
+
+                    await EnsureUserInRole(user, role);
+                    results.Add(new { empId = emp.EmpId, status = "OK", userId = user.Id, role });
+                }
+                catch (Exception ex)
+                {
+                    results.Add(new { empId = emp.EmpId, status = "Error", message = ex.Message });
+                }
+            }
+
+            return Ok(new { total = users.Count, results });
         }
 
         private static string InferRoleFromTitle(string? title)
@@ -298,6 +371,18 @@ namespace ProjectManagementSystem1.Controller
                 }
                 await _userManager.AddToRoleAsync(user, role);
             }
+        }
+
+        private static string? ExtractCnCommonName(string? dn)
+        {
+            if (string.IsNullOrWhiteSpace(dn)) return dn;
+            const string prefix = "CN=";
+            var start = dn.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+            if (start < 0) return dn;
+            start += prefix.Length;
+            var end = dn.IndexOf(',', start);
+            if (end < 0) end = dn.Length;
+            return dn.Substring(start, end - start);
         }
 
         [HttpPut("edit-user")]
