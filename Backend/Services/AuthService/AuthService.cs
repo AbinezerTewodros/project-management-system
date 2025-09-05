@@ -7,6 +7,7 @@ using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.UserManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.JwtService;
+using ProjectManagementSystem1.Services.AccessLogService;
 
 namespace ProjectManagementSystem1.Services.AuthService
 {
@@ -17,22 +18,50 @@ namespace ProjectManagementSystem1.Services.AuthService
         private readonly AppDbContext context;
         private readonly IConfiguration _configuration;
         private readonly IJwtService _jwtService;
+        private readonly IAccessLogService _accessLogService;
 
-        public AuthService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IConfiguration _configuration, IJwtService jwtService, AppDbContext _context)
+        public AuthService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IConfiguration _configuration, IJwtService jwtService, AppDbContext _context, IAccessLogService accessLogService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _jwtService = jwtService;
             context = _context;
+            _accessLogService = accessLogService;
         }
 
         public async Task<TokenResponseDto?> LoginAsync(LoginRequestDto loginDto)
         {
             var user = await _userManager.FindByNameAsync(loginDto.Username);
-            if (user == null) return null;
+            
+            if (user == null)
+            {
+                await _accessLogService.LogLoginAsync(
+                    userId: null,
+                    userEmail: loginDto.Username,
+                    status: "Failed",
+                    errorMessage: "User not found"
+                );
+                return null;
+            }
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
-            if (!result.Succeeded) return null;
+            
+            if (!result.Succeeded)
+            {
+                await _accessLogService.LogLoginAsync(
+                    userId: user.Id,
+                    userEmail: user.Email,
+                    status: "Failed",
+                    errorMessage: "Invalid password"
+                );
+                return null;
+            }
+
+            await _accessLogService.LogLoginAsync(
+                userId: user.Id,
+                userEmail: user.Email,
+                status: "Success"
+            );
 
             var accessToken = await _jwtService.GenerateJwtTokenAsync(user);
             var refreshToken = GenerateRefreshToken(user);
@@ -92,6 +121,10 @@ namespace ProjectManagementSystem1.Services.AuthService
         }
         public async Task LogoutAsync(string userId)
         {
+            // Get user info for logging
+            var user = await _userManager.FindByIdAsync(userId);
+            var sessionDuration = user?.LastLogin.HasValue == true ? DateTime.UtcNow - user.LastLogin.Value : TimeSpan.Zero;
+
             var tokens = context.RefreshTokens
                 .Where(r => r.UserId == userId && !r.IsRevoked && !r.IsUsed);
 
@@ -101,6 +134,16 @@ namespace ProjectManagementSystem1.Services.AuthService
             }
 
             await context.SaveChangesAsync();
+
+            // Log logout
+            if (user != null)
+            {
+                await _accessLogService.LogLogoutAsync(
+                    userId: user.Id,
+                    userEmail: user.Email,
+                    sessionDuration: sessionDuration
+                );
+            }
         }
 
     }

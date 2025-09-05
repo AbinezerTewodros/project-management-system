@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Data;
-using ProjectManagementSystem1.Migrations;
 
 namespace ProjectManagementSystem1.Services.MilestoneService
 {

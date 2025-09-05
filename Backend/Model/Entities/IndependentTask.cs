@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjectManagementSystem1.Model.Entities
@@ -77,7 +77,5 @@ namespace ProjectManagementSystem1.Model.Entities
         public virtual ICollection<Comment> Comments { get; set; }
         public virtual ICollection<Attachment> Attachments { get; set; }
         public virtual ICollection<TaskStatusHistory> StatusHistory { get; set; }
-        public int? IssueId { get; set; } // Foreign key to Issue
-        public virtual Issue Issue { get; set; } // Navigation property
     }
 }

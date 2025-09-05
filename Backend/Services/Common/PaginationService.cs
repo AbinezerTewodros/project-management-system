@@ -36,10 +36,12 @@ namespace ProjectManagementSystem1.Services.Common
             }
 
             // Apply pagination
-            var items = await query
-                .Skip((paginationDto.PageNumber - 1) * paginationDto.PageSize)
-                .Take(paginationDto.PageSize)
-                .ToListAsync();
+            var items = paginationDto.PageSize == -1 
+                ? await query.ToListAsync() // Get all items when PageSize is -1
+                : await query
+                    .Skip((paginationDto.PageNumber - 1) * paginationDto.PageSize)
+                    .Take(paginationDto.PageSize)
+                    .ToListAsync();
 
             return new PaginatedResponseDto<T>(items, totalCount, paginationDto.PageNumber, paginationDto.PageSize);
         }

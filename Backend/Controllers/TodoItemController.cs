@@ -7,6 +7,7 @@ using ProjectManagementSystem1.Model.Dto.TodoItemsDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.ProjectTaskService;
 using ProjectManagementSystem1.Services.TodoItemService;
+using ProjectManagementSystem1.Services.AccessLogService;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -19,11 +20,13 @@ namespace ProjectManagementSystem1.Controllers
     {
         private readonly ITodoItemService _todoItemService;
         private readonly IProjectTaskService _projectTaskService;
+        private readonly IAccessLogService _accessLogService;
 
-        public TodoItemController(ITodoItemService todoItemService, IProjectTaskService projectTaskService)
+        public TodoItemController(ITodoItemService todoItemService, IProjectTaskService projectTaskService, IAccessLogService accessLogService)
         {
             _todoItemService = todoItemService;
             _projectTaskService = projectTaskService;
+            _accessLogService = accessLogService;
         }
 
         [HttpGet("{id}")]
@@ -63,7 +66,19 @@ namespace ProjectManagementSystem1.Controllers
             return CreatedAtAction(nameof(GetTodoItemById), new { id = todoItem.Id }, todoItem);
         }
 
-       
+        [HttpPut("{id}/accept")]
+        public async Task<IActionResult> AcceptTodoItem(int id)
+        {
+            var memberId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            try
+            {
+                await _todoItemService.AcceptTodoItemAsync(id, memberId);
+                return Ok("Todo item accepted successfully.");
+            }
+            catch (NotFoundException ex) { return NotFound(ex.Message); }
+            catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return StatusCode(500, $"An error occurred while accepting the todo item: {ex.Message}"); }
+        }
 
         [HttpPut("{id}/acceptassignment")]
         public async Task<IActionResult> AcceptAssignment(int id)
@@ -83,10 +98,23 @@ namespace ProjectManagementSystem1.Controllers
         public async Task<IActionResult> AcceptTodoAfterApproval(int id)
         {
             var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader makes this action
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
 
             try
             {
                 await _todoItemService.ApproveTodoItemAsync(id, teamLeaderId);
+                
+                // Log the approval action
+                await _accessLogService.LogAccessAsync(
+                    userId: teamLeaderId,
+                    userEmail: userEmail,
+                    action: "TodoItem Approval",
+                    status: "Success",
+                    endpoint: $"/api/todoitems/{id}/acceptapproval",
+                    httpMethod: "PUT",
+                    httpStatusCode: 204
+                );
+                
                 return NoContent();
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
@@ -112,9 +140,24 @@ namespace ProjectManagementSystem1.Controllers
         public async Task<IActionResult> RejectTodoAfterCompletion(int id, [FromBody] string reason)
         {
             var teamLeaderId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Assuming Team Leader makes this action
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            
             try
             {
                 await _todoItemService.RejectTodoAfterCompletionAsync(id, teamLeaderId, reason);
+                
+                // Log the rejection action
+                await _accessLogService.LogAccessAsync(
+                    userId: teamLeaderId,
+                    userEmail: userEmail,
+                    action: "TodoItem Rejection",
+                    status: "Success",
+                    endpoint: $"/api/todoitems/{id}/rejectcompletion",
+                    httpMethod: "PUT",
+                    httpStatusCode: 204,
+                    errorMessage: reason
+                );
+                
                 return NoContent();
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
@@ -199,7 +242,7 @@ namespace ProjectManagementSystem1.Controllers
             // Enhancement: Check if the TodoItem has been accepted before allowing progress update
             if (existingTodoItem.Status != TodoItemStatus.InProgress)
             {
-                return BadRequest("Progress can only be updated for accepted TodoItems.");
+                return BadRequest("Progress can only be updated for accepted TodoItems that are in progress.");
             }
 
             var updateDto = new TodoItemUpdateDto { Progress = progressDto.Progress };
@@ -207,12 +250,9 @@ namespace ProjectManagementSystem1.Controllers
 
             if (updatedTodoItem != null)
             {
-                // Trigger update of parent ProjectTask's progress
-                var todoItemEntity = await _todoItemService.GetTodoItemByIdAsync(id); // Need the entity to get ProjectTaskId
-                if (todoItemEntity != null)
-                {
-                    await _projectTaskService.UpdateParentTaskProgressAsync(todoItemEntity.ProjectTaskId);
-                }
+                // IMPORTANT: Do NOT update parent ProjectTask progress here
+                // Progress will only be updated when the team leader approves completion
+                // This ensures that partial progress doesn't affect the overall project progress
                 return Ok(updatedTodoItem);
             }
 
