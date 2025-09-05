@@ -6,16 +6,19 @@ using System.Threading.Tasks;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Model.Dto.Issue;
+using ProjectManagementSystem1.Services;
 
 namespace ProjectManagementSystem1.Services.IssueService
 {
     public class IssueService : IIssueService
     {
         private readonly AppDbContext _context;
+        private readonly IActivityLogService _activityLogService;
 
-        public IssueService(AppDbContext context)
+        public IssueService(AppDbContext context, IActivityLogService activityLogService)
         {
             _context = context;
+            _activityLogService = activityLogService;
         }
 
         // --- Helper Methods for Mapping ---
@@ -50,25 +53,39 @@ namespace ProjectManagementSystem1.Services.IssueService
                 ProjectName = issue.Project?.ProjectName,
                 ProjectTaskId = issue.ProjectTaskId,
                 ProjectTaskTitle = issue.ProjectTask?.Title,
-                IndependentTaskId = issue.IndependentTaskId,
-                IndependentTaskTitle = issue.IndependentTask?.Title
+
+
 
             };
         }
 
         private async Task<IEnumerable<IssueDto>> MapIssuesToDtos(IQueryable<Issue> issuesQuery)
         {
-            // Execute the query to get the list of issues with included navigation properties
-            var issuesList = await issuesQuery
-                             .Include(i => i.Reporter)
-                             .Include(i => i.Assignee)
-                             .ToListAsync();
+            // CRITICAL FIX: Use efficient projection to avoid N+1 queries
+            var dtos = await issuesQuery
+                .Include(i => i.Reporter)
+                .Include(i => i.Assignee)
+                .Select(i => new IssueDto
+                {
+                    Id = i.Id,
+                    Title = i.Title,
+                    Description = i.Description,
+                    Status = i.Status,
+                    Priority = i.Priority,
+                    Type = i.Type,
+                    CreatedAt = i.CreatedAt,
+                    UpdatedAt = i.UpdatedAt,
+                    ReporterId = i.ReporterId,
+                    ReporterUsername = i.Reporter != null ? i.Reporter.UserName : "Unknown",
+                    AssigneeId = i.AssigneeId,
+                    AssigneeUsername = i.Assignee != null ? i.Assignee.UserName : "Unassigned",
+                    ProjectId = i.ProjectId,
+                    ProjectTaskId = i.ProjectTaskId,
+    
+                })
+                .AsNoTracking()
+                .ToListAsync();
 
-            var dtos = new List<IssueDto>();
-            foreach (var issue in issuesList)
-            {
-                dtos.Add(await MapIssueToDto(issue)); // Use the single-issue mapper
-            }
             return dtos;
         }
 
@@ -132,16 +149,7 @@ namespace ProjectManagementSystem1.Services.IssueService
             }
 
             // Independent task
-            int? independentTaskId = null;
-            if (issueCreateDto.IndependentTaskId.HasValue)
-            {
-                var independentTaskExists = await _context.IndependentTasks.AnyAsync(it => it.TaskId == issueCreateDto.IndependentTaskId.Value);
-                if (!independentTaskExists)
-                {
-                    throw new InvalidOperationException($"Independent Task with ID {issueCreateDto.IndependentTaskId.Value} does not exist.");
-                }
-                independentTaskId = issueCreateDto.IndependentTaskId.Value;
-            }
+
 
             // Create the Issue - FIXED: Use parsed integers, not original strings
             var issue = new Issue
@@ -156,11 +164,20 @@ namespace ProjectManagementSystem1.Services.IssueService
                 AssigneeId = assigneeId.ToString(),    // FIX: Use parsed int? value
                 ProjectId = projectId,
                 ProjectTaskId = projectTaskId,
-                IndependentTaskId = issueCreateDto.IndependentTaskId
+
             };
 
             _context.Issues.Add(issue);
             await _context.SaveChangesAsync();
+
+            // Log issue creation
+            await _activityLogService.LogActivityAsync(
+                userId: issue.ReporterId,
+                entityType: "Issue",
+                entityId: issue.Id,
+                actionType: "Created",
+                details: $"Issue '{issue.Title}' created with priority {issue.Priority} and type {issue.Type}"
+            );
 
             return await MapIssueToDto(issue);
         }
@@ -173,7 +190,7 @@ namespace ProjectManagementSystem1.Services.IssueService
                                  .Include(i => i.Assignee)
                                  .Include(i => i.Project)
                                  .Include(i => i.ProjectTask)
-                                 .Include(i => i.IndependentTask)
+
                                  .FirstOrDefaultAsync(i => i.Id == issueId);
 
             if (issue == null)
@@ -202,6 +219,13 @@ namespace ProjectManagementSystem1.Services.IssueService
             {
                 return null; // Issue not found
             }
+
+            // Store old values for logging
+            var oldTitle = issue.Title;
+            var oldDescription = issue.Description;
+            var oldStatus = issue.Status;
+            var oldPriority = issue.Priority;
+            var oldAssigneeId = issue.AssigneeId;
 
             // Apply updates only if the corresponding DTO property is provided (not null/empty)
             if (!string.IsNullOrWhiteSpace(issueUpdateDto.Title))
@@ -252,6 +276,37 @@ namespace ProjectManagementSystem1.Services.IssueService
 
             await _context.SaveChangesAsync();
 
+            // Log issue update with field changes
+            var fieldChanges = new List<FieldChange>();
+            
+            if (!string.IsNullOrWhiteSpace(issueUpdateDto.Title) && issueUpdateDto.Title != oldTitle)
+                fieldChanges.Add(new FieldChange { FieldName = "Title", OldValue = oldTitle, NewValue = issueUpdateDto.Title, FieldType = "string" });
+            
+            if (!string.IsNullOrWhiteSpace(issueUpdateDto.Description) && issueUpdateDto.Description != oldDescription)
+                fieldChanges.Add(new FieldChange { FieldName = "Description", OldValue = oldDescription, NewValue = issueUpdateDto.Description, FieldType = "string" });
+            
+            if (issueUpdateDto.Status.HasValue && issueUpdateDto.Status.Value != oldStatus)
+                fieldChanges.Add(new FieldChange { FieldName = "Status", OldValue = oldStatus.ToString(), NewValue = issueUpdateDto.Status.Value.ToString(), FieldType = "enum" });
+            
+            if (issueUpdateDto.Priority.HasValue && issueUpdateDto.Priority.Value != oldPriority)
+                fieldChanges.Add(new FieldChange { FieldName = "Priority", OldValue = oldPriority.ToString(), NewValue = issueUpdateDto.Priority.Value.ToString(), FieldType = "enum" });
+            
+            if (!string.IsNullOrWhiteSpace(issueUpdateDto.AssigneeId) && issueUpdateDto.AssigneeId != oldAssigneeId)
+                fieldChanges.Add(new FieldChange { FieldName = "AssigneeId", OldValue = oldAssigneeId, NewValue = issueUpdateDto.AssigneeId, FieldType = "string" });
+
+            if (fieldChanges.Any())
+            {
+                await _activityLogService.LogActivityWithFieldChangesAsync(
+                    userId: issue.ReporterId,
+                    entityType: "Issue",
+                    entityId: issue.Id,
+                    actionType: "Updated",
+                    entityName: $"Issue: {issue.Title}",
+                    fieldChanges: fieldChanges,
+                    details: "Issue details updated"
+                );
+            }
+
             // Load navigation properties for the DTO after saving changes
             await _context.Entry(issue).Reference(i => i.Reporter).LoadAsync();
             if (!string.IsNullOrEmpty(issue.AssigneeId))
@@ -283,6 +338,15 @@ namespace ProjectManagementSystem1.Services.IssueService
 
             _context.Issues.Remove(issue);
             await _context.SaveChangesAsync();
+
+            // Log issue deletion
+            await _activityLogService.LogActivityAsync(
+                userId: issue.ReporterId,
+                entityType: "Issue",
+                entityId: issue.Id,
+                actionType: "Deleted",
+                details: $"Issue '{issue.Title}' was deleted"
+            );
 
             return deletedDto;
         }

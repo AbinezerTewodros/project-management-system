@@ -26,6 +26,6 @@ namespace ProjectManagementSystem1.Model.Dto.Issue
         public string? AssigneeId { get; set; }
         public int? ProjectId { get; set; }
         public int? ProjectTaskId { get; set; }
-        public int? IndependentTaskId { get; set; }
+
     }
 }

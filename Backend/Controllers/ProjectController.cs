@@ -1,125 +1,268 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Controllers.Base;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
+using ProjectManagementSystem1.Model.Dto.Common;
 using ProjectManagementSystem1.Services.ProjectService;
-using System.Security.Claims;
+using ProjectManagementSystem1.Model.Exceptions;
 
 namespace ProjectManagementSystem1.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Controller for managing project-related operations including CRUD operations,
+    /// project archiving/restoration, and project retrieval by various criteria.
+    /// </summary>
     [Route("api/[controller]")]
-    [Authorize] // only authenticated users access the endpoints
-    public class ProjectController : ControllerBase
+    [Authorize]
+    public class ProjectController : BaseApiController
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
+        private readonly ILogger<ProjectController> _logger;
 
-        public ProjectController(IProjectService projectService, AppDbContext context)
+        public ProjectController(IProjectService projectService, AppDbContext context, ILogger<ProjectController> logger)
+            : base(logger)
         {
             _projectService = projectService;
             _context = context;
         }
 
-        [HttpGet("All-projects")]
+        /// <summary>
+        /// Retrieves all projects for the current user's department.
+        /// Only accessible by users with Manager role.
+        /// </summary>
+        /// <returns>A list of projects for the user's department</returns>
+        /// <response code="200">Returns the list of projects</response>
+        /// <response code="403">If the user is not authorized or lacks department claim</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpGet]
         [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> GetAll()
+        [ProducesResponseType(typeof(ApiResponse<List<ProjectDto>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 403)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> GetProjects()
         {
-            var userDept = User.FindFirst("Department")?.Value;
-            if (userDept == null) return Forbid();
-
-            var projects = await _projectService.GetAllAsync(userDept);
-            return Ok(projects);
-        }
-
-        [HttpGet("project-byId")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var project = await _projectService.GetByIdAsync(id);
-            if (project == null)
-                return NotFound();
-            return Ok(project);
-        }
-
-        //Get All Projects by Priority
-        [HttpGet("project-by-priority/{priority}")]
-        public async Task<IActionResult> GetProjectsByPriority(string priority)
-        {
-            var projects = await _context.Projects
-                .Where(p => p.Priority.ToLower() == priority.ToLower())
-                .ToListAsync();
-
-            return Ok(projects);
-        }
-
-        [HttpPost("create-project")]
-        //[Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Create([FromBody] CreateProjectDto dto)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (userId == null) return Unauthorized()
-;
-            var created = await _projectService.CreateAsync(dto, userId);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-        }
-
-        [HttpPut("edit-project")]
-        [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateProjectDto dto)
-        {
-            var username = User.FindFirstValue(ClaimTypes.Name);
-            var updated = await _projectService.UpdateAsync(id, dto, username);
-            if (updated == null)
-                return NotFound();
-            return Ok(updated);
-        }
-
-        [HttpDelete("delete-project")]
-        [Authorize(Roles = "Manager")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var deleted = await _projectService.DeleteAsync(id);
-            if (!deleted)
-                return NotFound();
-            return NoContent();
-        }
-
-        [HttpPost("archive/{id}")]
-        public async Task<IActionResult> ArchiveProject(int id)
-        {
-            var currentUser = User.Identity?.Name; // or get from claims
-
-            await _projectService.ArchiveProjectAsync(id, currentUser);
-
-            return Ok(new { Message = "Project archived successfully" });
-        }
-
-        [HttpPost("restore/{id}")]
-        public async Task<IActionResult> RestoreProject(int id)
-        {
-            var currentUser = User.Identity?.Name;
-
             try
             {
-                await _projectService.RestoreProjectAsync(id, currentUser);
-                return Ok(new { Message = "Project restored successfully" });
+                var departmentValidation = ValidateUserDepartment();
+                if (departmentValidation != null)
+                    return departmentValidation;
+
+                var projects = await _projectService.GetAllAsync(GetCurrentUserDepartment());
+                return SuccessResponse(projects, "Projects retrieved successfully");
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return HandleException(ex, "retrieving projects");
             }
         }
 
+        /// <summary>
+        /// Retrieves a specific project by its ID.
+        /// </summary>
+        /// <param name="id">The unique identifier of the project</param>
+        /// <returns>The project with the specified ID</returns>
+        /// <response code="200">Returns the requested project</response>
+        /// <response code="400">If the project ID is invalid</response>
+        /// <response code="404">If the project was not found</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<ProjectDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 404)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> GetProject(int id)
+        {
+            try
+            {
+                var idValidation = ValidateId(id, "Project");
+                if (idValidation != null)
+                    return idValidation;
 
-        //[HttpGet("active")]
-        //public async Task<IActionResult> GetActiveProjects()
-        //{
-        //    var projects = await _projectService.GetActiveProjectsAsync();
-        //    return Ok(projects);
-        //}
+                var project = await _projectService.GetByIdAsync(id);
+                if (project == null)
+                {
+                    return NotFoundResponse("Project", id);
+                }
 
+                return SuccessResponse(project, "Project retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "retrieving the project", id);
+            }
+        }
+
+        [HttpGet("by-priority/{priority}")]
+        [ProducesResponseType(typeof(ApiResponse<List<ProjectDto>>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> GetProjectsByPriority(string priority)
+        {
+            try
+            {
+                var priorityValidation = ValidateRequiredString(priority, "Priority");
+                if (priorityValidation != null)
+                    return priorityValidation;
+
+                var validPriorities = new[] { "Low", "Medium", "High", "Critical" };
+                var enumValidation = ValidateEnumValue(priority, validPriorities, "Priority");
+                if (enumValidation != null)
+                    return enumValidation;
+
+                var projects = await _context.Projects
+                    .Where(p => p.Priority.ToLower() == priority.ToLower())
+                    .ToListAsync();
+
+                return SuccessResponse(projects, $"Projects with priority {priority} retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "retrieving projects by priority");
+            }
+        }
+
+        /// <summary>
+        /// Creates a new project.
+        /// </summary>
+        /// <param name="dto">The project creation data</param>
+        /// <returns>The newly created project</returns>
+        /// <response code="201">Returns the newly created project</response>
+        /// <response code="400">If the request data is invalid</response>
+        /// <response code="401">If the user is not authenticated</response>
+        /// <response code="500">If there was an internal server error</response>
+        [HttpPost]
+        [ProducesResponseType(typeof(ApiResponse<ProjectDto>), 201)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 401)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> CreateProject([FromBody] CreateProjectDto dto)
+        {
+            try
+            {
+                var modelStateValidation = ValidateModelState();
+                if (modelStateValidation != null)
+                    return modelStateValidation;
+
+                var authValidation = ValidateUserAuthenticated();
+                if (authValidation != null)
+                    return authValidation;
+
+                var created = await _projectService.CreateAsync(dto, GetCurrentUserId());
+                return CreatedResponse(created, nameof(GetProject), new { id = created.Id }, "Project created successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "creating the project");
+            }
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Manager")]
+        [ProducesResponseType(typeof(ApiResponse<ProjectDto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 403)]
+        [ProducesResponseType(typeof(ApiResponse), 404)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> UpdateProject(int id, [FromBody] UpdateProjectDto dto)
+        {
+            try
+            {
+                var idValidation = ValidateId(id, "Project");
+                if (idValidation != null)
+                    return idValidation;
+
+                var modelStateValidation = ValidateModelState();
+                if (modelStateValidation != null)
+                    return modelStateValidation;
+
+                var updated = await _projectService.UpdateAsync(id, dto, GetCurrentUserId());
+                
+                if (updated == null)
+                {
+                    return NotFoundResponse("Project", id);
+                }
+
+                return SuccessResponse(updated, "Project updated successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "updating the project", id);
+            }
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Manager")]
+        [ProducesResponseType(typeof(ApiResponse), 204)]
+        [ProducesResponseType(typeof(ApiResponse), 403)]
+        [ProducesResponseType(typeof(ApiResponse), 404)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> DeleteProject(int id)
+        {
+            try
+            {
+                var idValidation = ValidateId(id, "Project");
+                if (idValidation != null)
+                    return idValidation;
+
+                var deleted = await _projectService.DeleteAsync(id);
+                if (!deleted)
+                {
+                    return NotFoundResponse("Project", id);
+                }
+
+                return NoContentResponse("Project deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "deleting the project", id);
+            }
+        }
+
+        [HttpPost("{id}/archive")]
+        [ProducesResponseType(typeof(ApiResponse), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 404)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> ArchiveProject(int id)
+        {
+            try
+            {
+                var idValidation = ValidateId(id, "Project");
+                if (idValidation != null)
+                    return idValidation;
+
+                await _projectService.ArchiveProjectAsync(id, GetCurrentUserId());
+                return SuccessResponse("Project archived successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "archiving the project", id);
+            }
+        }
+
+        [HttpPost("{id}/restore")]
+        [ProducesResponseType(typeof(ApiResponse), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 404)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> RestoreProject(int id)
+        {
+            try
+            {
+                var idValidation = ValidateId(id, "Project");
+                if (idValidation != null)
+                    return idValidation;
+
+                await _projectService.RestoreProjectAsync(id, GetCurrentUserId());
+                return SuccessResponse("Project restored successfully");
+            }
+            catch (Exception ex)
+            {
+                return HandleException(ex, "restoring the project", id);
+            }
+        }
 
 
     }

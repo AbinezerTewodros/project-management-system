@@ -1,4 +1,4 @@
-using ProjectManagementSystem1.Model.Dto.Reports;
+using ProjectManagementSystem1.Model.Dto.ReportDto;
 
 namespace ProjectManagementSystem1.Services.ReportService
 {
@@ -81,18 +81,5 @@ namespace ProjectManagementSystem1.Services.ReportService
         public List<string> RestrictedProjects { get; set; } = new();
     }
 
-    public class ScheduledReportDto
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public ReportType ReportType { get; set; }
-        public ReportRequestDto ReportRequest { get; set; } = new();
-        public string CronExpression { get; set; } = string.Empty; // For scheduling
-        public List<string> Recipients { get; set; } = new();
-        public bool IsActive { get; set; } = true;
-        public DateTime NextRun { get; set; }
-        public DateTime? LastRun { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-    }
+
 }

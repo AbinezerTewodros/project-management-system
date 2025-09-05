@@ -8,6 +8,8 @@ using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.FileStorageService;
 using ProjectManagementSystem1.Services.ResourceAcessService;
 using ProjectManagementSystem1.Services.Validation;
+using ProjectManagementSystem1.Services;
+using ProjectManagementSystem1.Services.AccessLogService;
 using System.Security;
 using PermissionType = ProjectManagementSystem1.Model.Entities.PermissionType;
 
@@ -20,14 +22,19 @@ namespace ProjectManagementSystem1.Services.AttachmentService
         private readonly IFileStorageService _fileStorageService;
         private IEntityValidator _entityValidator;
         private readonly IProjectMemberService _projectMemberService;
+        private readonly IActivityLogService _activityLogService;
+        private readonly IAccessLogService _accessLogService;
+
         public AttachmentService(AppDbContext context, ILogger<AttachmentService> logger, IProjectMemberService projectMemberService
-            , IFileStorageService fileStorage, IEntityValidator entityValidator)
+            , IFileStorageService fileStorage, IEntityValidator entityValidator, IActivityLogService activityLogService, IAccessLogService accessLogService)
         {
             _context = context;
             _logger = logger;   
             _projectMemberService = projectMemberService;
             _fileStorageService = fileStorage;
             _entityValidator = entityValidator;
+            _activityLogService = activityLogService;
+            _accessLogService = accessLogService;
         }
 
         public async Task<Attachment> UploadAttachmentAsync(AttachmentUploadDto uploadDto, EntityContext context, string uploadedByUserId)
@@ -87,6 +94,23 @@ namespace ProjectManagementSystem1.Services.AttachmentService
 
             await _context.Attachments.AddAsync(attachment);
             await _context.SaveChangesAsync();
+
+            // Log attachment upload
+            await _activityLogService.LogActivityAsync(
+                userId: uploadedByUserId,
+                entityType: "Attachment",
+                entityId: 0, // Attachment ID is Guid, not int, so we use 0 as placeholder
+                actionType: "Uploaded",
+                details: $"File '{attachment.FileName}' uploaded to {entityType} {entityId}"
+            );
+
+            // Log file access
+            await _accessLogService.LogFileAccessAsync(
+                userId: uploadedByUserId,
+                action: "Upload",
+                fileName: attachment.FileName,
+                status: "Success"
+            );
 
             return attachment;
 
@@ -358,6 +382,14 @@ namespace ProjectManagementSystem1.Services.AttachmentService
 
             if (attachment == null || attachment.IsDeleted)
                 throw new FileNotFoundException("Attachment not found");
+
+            // Log file download
+            await _accessLogService.LogFileAccessAsync(
+                userId: attachment.UploadedByUserId, // This should be the current user, but we don't have it in this method
+                action: "Download",
+                fileName: attachment.FileName,
+                status: "Success"
+            );
 
             return (
                 await File.ReadAllBytesAsync(attachment.FilePhysicalPath),

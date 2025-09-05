@@ -82,12 +82,6 @@ namespace ProjectManagementSystem1.Model.Entities
         [ForeignKey("ProjectTaskId")]
         public virtual ProjectTask? ProjectTask { get; set; } // The navigation property
 
-        //Foreign Key for IndependentTask
-        public int? IndependentTaskId { get; set; } // The foreign key property
-        [ForeignKey("IndependentTaskId")]
-        public virtual IndependentTask? IndependentTask { get; set; }
-
         public virtual ICollection<ProjectTask> ProjectTasks { get; set; } // Navigation property for ProjectTasks
-        public virtual ICollection<IndependentTask> IndependentTasks { get; set; } // Navigation property for IndependentTasks
     }
 }

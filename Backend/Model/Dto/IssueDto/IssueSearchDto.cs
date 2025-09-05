@@ -13,7 +13,7 @@ namespace ProjectManagementSystem1.Model.Dto.Issue
         public string? ReporterId { get; set; }
         public int? ProjectId { get; set; }
         public int? ProjectTaskId { get; set; }
-        public int? IndependentTaskId { get; set; }
+
         public string Keywords { get; set; } // For full-text search in description/title
     }
 }
