@@ -20,14 +20,14 @@ public class ProjectAssignmentService : IProjectAssignmentService
         _activityLogService = activityLogService;
     }
 
-    public async Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId, string requesterDept)
+    public async Task<List<AssignmentDto>> GetAllByProjectAsync(int projectId)
     {
-        var project = await _context.Projects
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == projectId);
+        //var project = await _context.Projects
+        //    .AsNoTracking()
+        //    .FirstOrDefaultAsync(p => p.Id == projectId);
 
-        if (project == null)
-            throw new ArgumentException("Project not found.");
+        //if (project == null || project.Department != requesterDept)
+        //    throw new UnauthorizedAccessException("Access denied. Department mismatch.");
 
         // More flexible department validation - allow cross-department access for project management
         if (!string.IsNullOrEmpty(requesterDept) && 
@@ -112,34 +112,40 @@ public class ProjectAssignmentService : IProjectAssignmentService
         return assignment != null ? _mapper.Map<AssignmentDto>(assignment) : null;
     }
 
-    public async Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string requesterDept, string currentUser)
+    public async Task<AssignmentDto> CreateAsync(CreateAssignmentDto dto, string currentUser)
     {
+        var assigner = await _context.Users.FirstOrDefaultAsync(u => u.UserName == currentUser);
+        if (assigner == null)
+            throw new UnauthorizedAccessException("Assigning user not found.");
+
         var project = await _context.Projects.FindAsync(dto.ProjectId);
         if (project == null)
             throw new ArgumentException("Project not found.");
 
-        // More flexible department validation - allow cross-department collaboration
-        if (!string.IsNullOrEmpty(requesterDept) && 
-            !string.IsNullOrEmpty(project.Department) &&
-            !string.Equals(requesterDept.Trim(), project.Department.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            // Log the department mismatch for debugging
-            Console.WriteLine($"Department mismatch during assignment: Requester: '{requesterDept}', Project: '{project.Department}'");
-            
-            // For now, allow cross-department assignment but log it
-            // You can make this stricter if needed by uncommenting the line below
-            // throw new UnauthorizedAccessException($"Access denied. Department mismatch. Requester: '{requesterDept}', Project: '{project.Department}'");
-        }
+        var assignerAssignment = await _context.ProjectAssignments
+            .FirstOrDefaultAsync(a => a.ProjectId == dto.ProjectId && a.MemberId == assigner.Id);
+
+        if (assignerAssignment == null)
+            throw new UnauthorizedAccessException("You are not a member of this project.");
+
+        string assignerRole = assignerAssignment.MemberRole;
+
+        // Only ScrumMaster or TeamLeader can assign
+        if (assignerRole != "ScrumMaster" && assignerRole != "TeamLeader")
+            throw new UnauthorizedAccessException("Only ScrumMaster or TeamLeader can assign members.");
 
         // Find user by EmployeeId
         var user = await _context.Users.FirstOrDefaultAsync(u => u.EmployeeId == dto.EmployeeId);
         if (user == null)
             throw new ArgumentException("No user found with that Employee ID.");
 
-        // Check if this user is already assigned to the project
-        bool exists = await _context.ProjectAssignments
-            .AnyAsync(a => a.ProjectId == dto.ProjectId && a.MemberId == user.Id);
+        // ScrumMaster can add anyone, TeamLeader must match department
+        if (assignerRole == "TeamLeader" && user.Department != assigner.Department)
+            throw new UnauthorizedAccessException("TeamLeaders can only assign users from their own department.");
 
+        // Prevent duplicate assignment
+        bool exists = await _context.ProjectAssignments
+            .AnyAsync(p => p.ProjectId == dto.ProjectId && p.MemberId == user.Id);
         if (exists)
             throw new InvalidOperationException("User is already assigned to this project.");
 

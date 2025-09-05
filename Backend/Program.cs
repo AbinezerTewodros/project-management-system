@@ -65,6 +65,8 @@ using ProjectManagementSystem1.Services.FileOperationsService;
 using ProjectManagementSystem1.Services.DataProcessingService;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using ProjectManagementSystem1.Services.ArchiveService;
+using ProjectManagementSystem1.Services.AccessControl;
 using System.Reflection;
 
 
@@ -109,6 +111,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IADService, ADService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddHostedService<RefreshTokenCleanupService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectApprovalService, ProjectApprovalService>();
 builder.Services.AddScoped<IEnhancedAssignmentService, EnhancedAssignmentService>();

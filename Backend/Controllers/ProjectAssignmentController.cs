@@ -28,40 +28,28 @@ namespace ProjectManagementSystem1.Controllers
         [HttpGet("All-members")]
         public async Task<IActionResult> GetByProject(int projectId)
         {
-            var dept = User.FindFirst("Department")?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            try
-            {
-                var assignments = await _assignmentService.GetAllByProjectAsync(projectId, dept);
-                return Ok(assignments);
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { 
-                    message = ex.Message,
-                    errorType = "ValidationError",
-                    details = "The request contains invalid data. Please check your input and try again."
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { 
-                    message = ex.Message,
-                    errorType = "AccessDenied",
-                    details = "You don't have permission to access this project.",
-                    requesterDepartment = dept,
-                    projectId = projectId
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Unexpected error in GetByProject: {ex.Message}");
-                return StatusCode(500, new { 
-                    message = "An unexpected error occurred while retrieving project members.",
-                    errorType = "InternalServerError",
-                    details = "Please try again later or contact support if the problem persists."
-                });
-            }
+            // Check if user is part of the project
+            bool isMember = await _context.ProjectAssignments
+                .AnyAsync(pa => pa.ProjectId == projectId && pa.MemberId == userId);
+
+            if (!isMember)
+                return Forbid("You are not a member of this project.");
+
+            var assignments = await _assignmentService.GetAllByProjectAsync(projectId);
+            return Ok(assignments);
+            //var dept = User.FindFirst("Department")?.Value;
+
+            //try
+            //{
+            //    var assignments = await _assignmentService.GetAllByProjectAsync(projectId, dept);
+            //    return Ok(assignments);
+            //}
+            //catch (UnauthorizedAccessException ex)
+            //{
+            //    return Forbid(ex.Message);
+            //}
         }
 
         // GET: Show all projects assigned for a user
@@ -110,12 +98,12 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPost("Add-members")]
         public async Task<IActionResult> Create([FromBody] CreateAssignmentDto dto)
         {
-            var dept = User.FindFirst("Department")?.Value;
+            //var dept = User.FindFirst("Department")?.Value;
             var currentUser = User.FindFirstValue(ClaimTypes.Name);
             
             try
             {
-                var result = await _assignmentService.CreateAsync(dto, dept, currentUser);
+                var result = await _assignmentService.CreateAsync(dto, currentUser);
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -159,7 +147,7 @@ namespace ProjectManagementSystem1.Controllers
 
         // PUT: Edit role of the project members
         [HttpPut("edit-role")]
-        [Authorize(Policy = "ManagerOnly")]
+        //[Authorize(Policy = "ManagerOnly")]
         public async Task<IActionResult> EditRole([FromBody] UpdateAssignmentDto dto)
         {
             var user = await _userService.GetUserByEmployeeIdAsync(dto.EmployeeId);
