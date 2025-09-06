@@ -22,7 +22,9 @@ namespace ProjectManagementSystem1.Data
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<AttachmentPermission> AttachmentPermissions { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
-        //public DbSet<TaskDependency> TaskDependencies { get; set; }
+        public DbSet<ActivityLogFieldChange> ActivityLogFieldChanges { get; set; }
+        public DbSet<AccessLog> AccessLogs { get; set; }
+        public DbSet<TaskDependency> TaskDependencies { get; set; }
         public DbSet<ErpUser> ErpUsers { get; set; }
         public DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
 
@@ -35,6 +37,8 @@ namespace ProjectManagementSystem1.Data
         public DbSet<AddSkill> AddSkills { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
         public DbSet<Archive> Archives { get; set; }
+        public DbSet<ScheduledReportEntity> ScheduledReports { get; set; }
+        public DbSet<ScheduledReportExecutionEntity> ScheduledReportExecutions { get; set; }
         public object TaskAssignments { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -139,6 +143,14 @@ namespace ProjectManagementSystem1.Data
                 .HasForeignKey(pt => pt.UserId)
                 .OnDelete(DeleteBehavior.Restrict); // Or DeleteBehavior.NoAction
 
+            modelBuilder.Entity<PersonalTodo>()
+                .Property(t => t.Status)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<PersonalTodo>()
+                .Property(t => t.Priority)
+                .HasConversion<string>();
+
             modelBuilder.Entity<MessageReadStatus>()
                 .HasOne(mrs => mrs.Message)
                 .WithMany(message => message.ReadStatuses)
@@ -170,11 +182,7 @@ namespace ProjectManagementSystem1.Data
                 .HasForeignKey(pt => pt.IssueId) // Foreign key in ProjectTask
                 .OnDelete(DeleteBehavior.Cascade); // Or another behavior you prefer
 
-            modelBuilder.Entity<Issue>()
-                .HasMany(i => i.IndependentTasks)
-                .WithOne(it => it.Issue) // Assuming IndependentTask has a navigation property for Issue
-                .HasForeignKey(it => it.IssueId) // Foreign key in IndependentTask
-                .OnDelete(DeleteBehavior.Cascade); // Or another behavior you prefer
+
 
             modelBuilder.Entity<Milestone>()
                 .Property(m => m.Status)
@@ -191,6 +199,54 @@ namespace ProjectManagementSystem1.Data
             modelBuilder.Entity<ProjectTask>()
                 .HasIndex(t => t.AssignedMemberId)
                 .HasDatabaseName("IX_ProjectTask_Assignee");
+
+            // Add critical indexes for performance optimization
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => t.ParentTaskId)
+                .HasDatabaseName("IX_ProjectTask_ParentTask");
+
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => new { t.ParentTaskId, t.Status })
+                .HasDatabaseName("IX_ProjectTask_ParentStatus");
+
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => new { t.ProjectAssignmentId, t.Status, t.DueDate })
+                .HasDatabaseName("IX_ProjectTask_AssignmentStatusDue");
+
+            modelBuilder.Entity<ProjectTask>()
+                .HasIndex(t => new { t.AssignedMemberId, t.Status })
+                .HasDatabaseName("IX_ProjectTask_AssigneeStatus");
+
+            // Add indexes for IndependentTask performance
+            modelBuilder.Entity<IndependentTask>()
+                .HasIndex(t => t.AssignedToUserId)
+                .HasDatabaseName("IX_IndependentTask_Assignee");
+
+            modelBuilder.Entity<IndependentTask>()
+                .HasIndex(t => t.CreatedByUserId)
+                .HasDatabaseName("IX_IndependentTask_Creator");
+
+            modelBuilder.Entity<IndependentTask>()
+                .HasIndex(t => new { t.AssignedToUserId, t.Status })
+                .HasDatabaseName("IX_IndependentTask_AssigneeStatus");
+
+            // Add indexes for ActivityLog performance
+            modelBuilder.Entity<ActivityLog>()
+                .HasIndex(t => new { t.UserId, t.CreatedAt })
+                .HasDatabaseName("IX_ActivityLog_UserCreated");
+
+            modelBuilder.Entity<ActivityLog>()
+                .HasIndex(t => new { t.EntityType, t.EntityId })
+                .HasDatabaseName("IX_ActivityLog_Entity");
+
+            // Add indexes for Notification performance
+            modelBuilder.Entity<Notification>()
+                .HasIndex(t => new { t.RecipientUserId, t.Status })
+                .HasDatabaseName("IX_Notification_UserStatus");
+
+            modelBuilder.Entity<Notification>()
+                .HasIndex(t => t.CreatedAt)
+                .HasDatabaseName("IX_Notification_CreatedAt");
 
             modelBuilder.Entity<ProjectTask>(entity =>
             {
@@ -243,6 +299,25 @@ namespace ProjectManagementSystem1.Data
             modelBuilder.Entity<AddSkill>()
                 .HasIndex(s => s.NormalizedName);
             // or appropriate type for your DB
+
+            // Configure TaskDependency to prevent cascade delete issues
+            modelBuilder.Entity<TaskDependency>(entity =>
+            {
+                entity.HasOne(td => td.PredecessorTask)
+                    .WithMany()
+                    .HasForeignKey(td => td.PredecessorTaskId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(td => td.SuccessorTask)
+                    .WithMany()
+                    .HasForeignKey(td => td.SuccessorTaskId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(td => td.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(td => td.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
 
             // Prevent circular references via SQL trigger (optional)
             //entity.HasCheckConstraint("CK_NoSelfReference", "ParentTaskId <> Id");

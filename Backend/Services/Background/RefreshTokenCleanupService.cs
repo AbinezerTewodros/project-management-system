@@ -41,7 +41,7 @@
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromHours(0.25), stoppingToken); // Run every 15 minutes
+                await Task.Delay(TimeSpan.FromMinutes(15), stoppingToken);
             }
         }
 

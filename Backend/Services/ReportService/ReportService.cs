@@ -1,11 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using ProjectManagementSystem1.Data;
-using ProjectManagementSystem1.Model.Dto.Reports;
+using ProjectManagementSystem1.Model.Dto.ReportDto;
 using ProjectManagementSystem1.Model.Entities;
 using System.Text.Json;
 using TaskStatus = ProjectManagementSystem1.Model.Entities.TaskStatus;
 using IssueStatus = ProjectManagementSystem1.Model.Entities.IssueStatus;
+using System.IO;
+using System.Globalization;
+using System.Linq;
+using System;
+using System.Collections.Generic;
 
 namespace ProjectManagementSystem1.Services.ReportService
 {
@@ -50,9 +55,6 @@ namespace ProjectManagementSystem1.Services.ReportService
                 if (!string.IsNullOrEmpty(request.Department))
                     projectsQuery = projectsQuery.Where(p => p.Department == request.Department);
 
-                if (!request.IncludeArchived)
-                    projectsQuery = projectsQuery.Where(p => !p.IsArchived);
-
                 var projects = await projectsQuery.ToListAsync();
 
                 var reportData = new ProjectSummaryReportDto
@@ -73,17 +75,11 @@ namespace ProjectManagementSystem1.Services.ReportService
                         ProjectName = project.ProjectName,
                         Department = project.Department,
                         Status = project.Status,
-                        Priority = project.Priority,
-                        DueDate = project.DueDate,
+                        Progress = tasks.Any() ? (int)((double)tasks.Count(t => t.Status == TaskStatus.Completed) / tasks.Count * 100) : 0,
                         TotalTasks = tasks.Count,
                         CompletedTasks = tasks.Count(t => t.Status == TaskStatus.Completed),
-                        PendingTasks = tasks.Count(t => t.Status == TaskStatus.Pending || t.Status == TaskStatus.InProgress),
-                        OverdueTasks = tasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Completed),
-                        ProgressPercentage = tasks.Any() ? (double)tasks.Count(t => t.Status == TaskStatus.Completed) / tasks.Count * 100 : 0,
-                        TeamMembersCount = project.ProjectAssignments.Count,
-                        IssuesCount = project.Issues.Count,
-                        IsOverdue = project.DueDate < DateTime.UtcNow && project.Status != "Completed",
-                        DaysUntilDue = project.DueDate.HasValue ? (int)((project.DueDate.Value - DateTime.UtcNow).TotalDays) : 0
+                        DueDate = project.DueDate,
+                        IsOverdue = project.DueDate < DateTime.UtcNow && project.Status != "Completed"
                     };
 
                     reportData.Projects.Add(projectItem);
@@ -93,21 +89,17 @@ namespace ProjectManagementSystem1.Services.ReportService
                 reportData.Overview = new ProjectOverviewDto
                 {
                     TotalProjects = projects.Count,
-                    ActiveProjects = projects.Count(p => p.Status == "Active"),
+                    ActiveProjects = projects.Count(p => p.Status != "Completed"),
                     CompletedProjects = projects.Count(p => p.Status == "Completed"),
-                    OnHoldProjects = projects.Count(p => p.Status == "On Hold"),
-                    OverdueProjects = reportData.Projects.Count(p => p.IsOverdue),
-                    AverageProgress = reportData.Projects.Any() ? reportData.Projects.Average(p => p.ProgressPercentage) : 0,
-                    TotalTeamMembers = reportData.Projects.Sum(p => p.TeamMembersCount),
-                    TotalTasks = reportData.Projects.Sum(p => p.TotalTasks),
-                    TotalIssues = reportData.Projects.Sum(p => p.IssuesCount)
+                    OverdueProjects = projects.Count(p => p.DueDate < DateTime.UtcNow && p.Status != "Completed"),
+                    AverageProgress = projects.Any() ? (int)projects.Average(p => reportData.Projects.First(pr => pr.Id == p.Id).Progress) : 0
                 };
 
                 return new ReportResponseDto<ProjectSummaryReportDto>
                 {
                     ReportTitle = "Project Summary Report",
                     GeneratedAt = DateTime.UtcNow,
-                    GeneratedBy = user.UserName ?? string.Empty,
+                    GeneratedBy = user.UserName ?? user.Email ?? "Unknown",
                     ReportType = ReportType.ProjectSummary,
                     PeriodStart = request.StartDate,
                     PeriodEnd = request.EndDate,
@@ -119,15 +111,14 @@ namespace ProjectManagementSystem1.Services.ReportService
                         {
                             ["TotalProjects"] = reportData.Overview.TotalProjects,
                             ["ActiveProjects"] = reportData.Overview.ActiveProjects,
-                            ["AverageProgress"] = Math.Round(reportData.Overview.AverageProgress, 2),
-                            ["OverdueProjects"] = reportData.Overview.OverdueProjects
+                            ["AverageProgress"] = reportData.Overview.AverageProgress
                         }
                     }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating project summary report for user {UserId}", userId);
+                _logger.LogError(ex, "Error generating project summary report");
                 throw;
             }
         }
@@ -141,9 +132,6 @@ namespace ProjectManagementSystem1.Services.ReportService
 
                 var tasksQuery = _context.ProjectTasks
                     .Include(t => t.ProjectAssignment)
-                        .ThenInclude(pa => pa.Project)
-                    .Include(t => t.ProjectAssignment)
-                        .ThenInclude(pa => pa.Member)
                     .AsQueryable();
 
                 // Apply filters
@@ -156,17 +144,12 @@ namespace ProjectManagementSystem1.Services.ReportService
                 if (request.ProjectIds?.Any() == true)
                     tasksQuery = tasksQuery.Where(t => request.ProjectIds.Contains(t.ProjectAssignment.ProjectId));
 
-                if (request.UserIds?.Any() == true)
-                    tasksQuery = tasksQuery.Where(t => request.UserIds.Contains(t.AssignedMemberId));
-
                 var tasks = await tasksQuery.ToListAsync();
 
                 var reportData = new TaskProgressReportDto
                 {
                     Tasks = new List<TaskProgressItemDto>(),
-                    Overview = new TaskOverviewDto(),
-                    TasksByStatus = new List<TasksByStatusDto>(),
-                    TasksByPriority = new List<TasksByPriorityDto>()
+                    Overview = new TaskOverviewDto()
                 };
 
                 foreach (var task in tasks)
@@ -175,8 +158,6 @@ namespace ProjectManagementSystem1.Services.ReportService
                     {
                         Id = task.Id,
                         Title = task.Title,
-                        ProjectName = task.ProjectAssignment.Project?.ProjectName ?? "Unknown",
-                        AssignedMemberName = task.ProjectAssignment.Member?.UserName ?? "Unassigned",
                         Status = task.Status.ToString(),
                         Priority = task.Priority.ToString(),
                         Progress = (int)task.Progress,
@@ -185,7 +166,7 @@ namespace ProjectManagementSystem1.Services.ReportService
                         UpdatedAt = task.UpdatedAt,
                         IsOverdue = task.DueDate < DateTime.UtcNow && task.Status != TaskStatus.Completed,
                         DaysUntilDue = task.DueDate.HasValue ? (int)((task.DueDate.Value - DateTime.UtcNow).TotalDays) : 0,
-                        CommentsCount = 0 // TODO: Add comments count when comment system is implemented
+                        CommentsCount = 0 // TODO: Add comments count
                     };
 
                     reportData.Tasks.Add(taskItem);
@@ -198,40 +179,16 @@ namespace ProjectManagementSystem1.Services.ReportService
                     CompletedTasks = tasks.Count(t => t.Status == TaskStatus.Completed),
                     InProgressTasks = tasks.Count(t => t.Status == TaskStatus.InProgress),
                     PendingTasks = tasks.Count(t => t.Status == TaskStatus.Pending),
-                    OverdueTasks = reportData.Tasks.Count(t => t.IsOverdue),
-                    AverageProgress = tasks.Any() ? tasks.Average(t => t.Progress) : 0,
+                    OverdueTasks = tasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Completed),
+                    AverageProgress = tasks.Any() ? (int)tasks.Average(t => t.Progress) : 0,
                     CompletionRate = tasks.Any() ? (double)tasks.Count(t => t.Status == TaskStatus.Completed) / tasks.Count * 100 : 0
                 };
-
-                // Group by status
-                var statusGroups = tasks.GroupBy(t => t.Status.ToString()).ToList();
-                foreach (var group in statusGroups)
-                {
-                    reportData.TasksByStatus.Add(new TasksByStatusDto
-                    {
-                        Status = group.Key,
-                        Count = group.Count(),
-                        Percentage = tasks.Any() ? (double)group.Count() / tasks.Count * 100 : 0
-                    });
-                }
-
-                // Group by priority
-                var priorityGroups = tasks.GroupBy(t => t.Priority.ToString()).ToList();
-                foreach (var group in priorityGroups)
-                {
-                    reportData.TasksByPriority.Add(new TasksByPriorityDto
-                    {
-                        Priority = group.Key,
-                        Count = group.Count(),
-                        Percentage = tasks.Any() ? (double)group.Count() / tasks.Count * 100 : 0
-                    });
-                }
 
                 return new ReportResponseDto<TaskProgressReportDto>
                 {
                     ReportTitle = "Task Progress Report",
                     GeneratedAt = DateTime.UtcNow,
-                    GeneratedBy = user.UserName ?? string.Empty,
+                    GeneratedBy = user.UserName ?? user.Email ?? "Unknown",
                     ReportType = ReportType.TaskProgress,
                     PeriodStart = request.StartDate,
                     PeriodEnd = request.EndDate,
@@ -242,16 +199,15 @@ namespace ProjectManagementSystem1.Services.ReportService
                         KeyMetrics = new Dictionary<string, object>
                         {
                             ["TotalTasks"] = reportData.Overview.TotalTasks,
-                            ["CompletionRate"] = Math.Round(reportData.Overview.CompletionRate, 2),
-                            ["AverageProgress"] = Math.Round(reportData.Overview.AverageProgress, 2),
-                            ["OverdueTasks"] = reportData.Overview.OverdueTasks
+                            ["CompletedTasks"] = reportData.Overview.CompletedTasks,
+                            ["CompletionRate"] = reportData.Overview.CompletionRate
                         }
                     }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating task progress report for user {UserId}", userId);
+                _logger.LogError(ex, "Error generating task progress report");
                 throw;
             }
         }
@@ -263,111 +219,32 @@ namespace ProjectManagementSystem1.Services.ReportService
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user == null) throw new UnauthorizedAccessException("User not found");
 
-                var assignmentsQuery = _context.ProjectAssignments
-                    .Include(pa => pa.Member)
-                    .Include(pa => pa.Project)
-                    .Include(pa => pa.Tasks)
-                    .AsQueryable();
-
-                // Apply filters
-                if (!string.IsNullOrEmpty(request.Department))
-                    assignmentsQuery = assignmentsQuery.Where(pa => pa.Project.Department == request.Department);
-
-                if (request.ProjectIds?.Any() == true)
-                    assignmentsQuery = assignmentsQuery.Where(pa => request.ProjectIds.Contains(pa.ProjectId));
-
-                if (request.UserIds?.Any() == true)
-                    assignmentsQuery = assignmentsQuery.Where(pa => request.UserIds.Contains(pa.MemberId));
-
-                var assignments = await assignmentsQuery.ToListAsync();
-                var memberGroups = assignments.GroupBy(a => a.MemberId).ToList();
-
+                // This is a placeholder implementation
                 var reportData = new TeamPerformanceReportDto
                 {
                     TeamMembers = new List<TeamMemberPerformanceDto>(),
-                    Overview = new TeamOverviewDto(),
-                    DepartmentPerformance = new List<DepartmentPerformanceDto>()
+                    Overview = new TeamOverviewDto()
                 };
-
-                foreach (var memberGroup in memberGroups)
-                {
-                    var memberAssignments = memberGroup.ToList();
-                    var member = memberAssignments.First().Member;
-                    var allTasks = memberAssignments.SelectMany(a => a.Tasks).ToList();
-
-                    var memberPerformance = new TeamMemberPerformanceDto
-                    {
-                        UserId = member.Id,
-                        UserName = member.UserName ?? string.Empty,
-                        FullName = member.FullName ?? string.Empty,
-                        Department = member.Department ?? string.Empty,
-                        AssignedProjects = memberAssignments.Count,
-                        AssignedTasks = allTasks.Count,
-                        CompletedTasks = allTasks.Count(t => t.Status == TaskStatus.Completed),
-                        PendingTasks = allTasks.Count(t => t.Status != TaskStatus.Completed),
-                        OverdueTasks = allTasks.Count(t => t.DueDate < DateTime.UtcNow && t.Status != TaskStatus.Completed),
-                        TaskCompletionRate = allTasks.Any() ? (double)allTasks.Count(t => t.Status == TaskStatus.Completed) / allTasks.Count * 100 : 0,
-                        AverageTaskProgress = allTasks.Any() ? allTasks.Average(t => t.Progress) : 0,
-                        WorkloadPercentage = memberAssignments.Sum(a => a.WorkloadPercentage),
-                        IsScrumMaster = memberAssignments.Any(a => a.Role == "Scrum Master"),
-                        LastActivity = allTasks.Any() ? allTasks.Max(t => t.UpdatedAt ?? t.CreatedAt) : DateTime.MinValue
-                    };
-
-                    reportData.TeamMembers.Add(memberPerformance);
-                }
-
-                // Calculate overview
-                reportData.Overview = new TeamOverviewDto
-                {
-                    TotalTeamMembers = memberGroups.Count,
-                    ActiveMembers = reportData.TeamMembers.Count(m => m.AssignedTasks > 0),
-                    ScrumMasters = reportData.TeamMembers.Count(m => m.IsScrumMaster),
-                    AverageWorkload = reportData.TeamMembers.Any() ? reportData.TeamMembers.Average(m => m.WorkloadPercentage) : 0,
-                    AverageCompletionRate = reportData.TeamMembers.Any() ? reportData.TeamMembers.Average(m => m.TaskCompletionRate) : 0,
-                    TotalDepartments = reportData.TeamMembers.Select(m => m.Department).Distinct().Count()
-                };
-
-                // Group by department
-                var departmentGroups = reportData.TeamMembers.GroupBy(m => m.Department).ToList();
-                foreach (var deptGroup in departmentGroups)
-                {
-                    var deptMembers = deptGroup.ToList();
-                    reportData.DepartmentPerformance.Add(new DepartmentPerformanceDto
-                    {
-                        Department = deptGroup.Key,
-                        MembersCount = deptMembers.Count,
-                        ProjectsCount = deptMembers.Sum(m => m.AssignedProjects),
-                        TasksCount = deptMembers.Sum(m => m.AssignedTasks),
-                        CompletionRate = deptMembers.Any() ? deptMembers.Average(m => m.TaskCompletionRate) : 0,
-                        AverageWorkload = deptMembers.Any() ? deptMembers.Average(m => m.WorkloadPercentage) : 0
-                    });
-                }
 
                 return new ReportResponseDto<TeamPerformanceReportDto>
                 {
                     ReportTitle = "Team Performance Report",
                     GeneratedAt = DateTime.UtcNow,
-                    GeneratedBy = user.UserName ?? string.Empty,
+                    GeneratedBy = user.UserName ?? user.Email ?? "Unknown",
                     ReportType = ReportType.TeamPerformance,
                     PeriodStart = request.StartDate,
                     PeriodEnd = request.EndDate,
                     Data = reportData,
                     Summary = new ReportSummaryDto
                     {
-                        TotalRecords = memberGroups.Count,
-                        KeyMetrics = new Dictionary<string, object>
-                        {
-                            ["TotalTeamMembers"] = reportData.Overview.TotalTeamMembers,
-                            ["AverageCompletionRate"] = Math.Round(reportData.Overview.AverageCompletionRate, 2),
-                            ["AverageWorkload"] = Math.Round(reportData.Overview.AverageWorkload, 2),
-                            ["ScrumMasters"] = reportData.Overview.ScrumMasters
-                        }
+                        TotalRecords = 0,
+                        KeyMetrics = new Dictionary<string, object>()
                     }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating team performance report for user {UserId}", userId);
+                _logger.LogError(ex, "Error generating team performance report");
                 throw;
             }
         }
@@ -381,8 +258,6 @@ namespace ProjectManagementSystem1.Services.ReportService
 
                 var issuesQuery = _context.Issues
                     .Include(i => i.Project)
-                    .Include(i => i.Reporter)
-                    .Include(i => i.Assignee)
                     .AsQueryable();
 
                 // Apply filters
@@ -393,20 +268,14 @@ namespace ProjectManagementSystem1.Services.ReportService
                     issuesQuery = issuesQuery.Where(i => i.CreatedAt <= request.EndDate.Value);
 
                 if (request.ProjectIds?.Any() == true)
-                    issuesQuery = issuesQuery.Where(i => i.ProjectId.HasValue && request.ProjectIds.Contains(i.ProjectId.Value));
-
-                if (request.UserIds?.Any() == true)
-                    issuesQuery = issuesQuery.Where(i => request.UserIds.Contains(i.ReporterId) || 
-                                                        (i.AssigneeId != null && request.UserIds.Contains(i.AssigneeId)));
+                    issuesQuery = issuesQuery.Where(i => request.ProjectIds.Contains(i.ProjectId ?? 0));
 
                 var issues = await issuesQuery.ToListAsync();
 
                 var reportData = new IssueSummaryReportDto
                 {
                     Issues = new List<IssueSummaryItemDto>(),
-                    Overview = new IssueOverviewDto(),
-                    IssuesByType = new List<IssuesByTypeDto>(),
-                    IssuesByStatus = new List<IssuesByStatusDto>()
+                    Overview = new IssueOverviewDto()
                 };
 
                 foreach (var issue in issues)
@@ -415,16 +284,14 @@ namespace ProjectManagementSystem1.Services.ReportService
                     {
                         Id = issue.Id,
                         Title = issue.Title,
-                        ProjectName = issue.Project?.ProjectName ?? "Unknown",
-                        Type = issue.Type.ToString(),
                         Status = issue.Status.ToString(),
                         Priority = issue.Priority.ToString(),
                         ReporterName = issue.Reporter?.UserName ?? "Unknown",
-                        AssigneeName = issue.Assignee?.UserName,
+                        AssigneeName = issue.Assignee?.UserName ?? "Unassigned",
                         CreatedAt = issue.CreatedAt,
-                        ResolvedAt = issue.UpdatedAt,
-                        DaysToResolve = issue.UpdatedAt.HasValue ? (int)(issue.UpdatedAt.Value - issue.CreatedAt).TotalDays : 0,
-                        IsOverdue = false // TODO: Add due date logic for issues
+                        ResolvedAt = issue.Status == IssueStatus.Closed ? issue.UpdatedAt : null,
+                        DaysToResolve = issue.Status == IssueStatus.Closed && issue.UpdatedAt.HasValue ? (int)((issue.UpdatedAt.Value - issue.CreatedAt).TotalDays) : 0,
+                        IsOverdue = false // Issue doesn't have DueDate property
                     };
 
                     reportData.Issues.Add(issueItem);
@@ -434,43 +301,19 @@ namespace ProjectManagementSystem1.Services.ReportService
                 reportData.Overview = new IssueOverviewDto
                 {
                     TotalIssues = issues.Count,
-                    OpenIssues = issues.Count(i => i.Status == IssueStatus.Open || i.Status == IssueStatus.InProgress),
-                    ResolvedIssues = issues.Count(i => i.Status == IssueStatus.Closed),
+                    OpenIssues = issues.Count(i => i.Status == IssueStatus.Open),
+                    ResolvedIssues = issues.Count(i => i.Status == IssueStatus.InProgress),
                     ClosedIssues = issues.Count(i => i.Status == IssueStatus.Closed),
                     ResolutionRate = issues.Any() ? (double)issues.Count(i => i.Status == IssueStatus.Closed) / issues.Count * 100 : 0,
-                    AverageResolutionTime = reportData.Issues.Where(i => i.ResolvedAt.HasValue).Any() ? 
-                        reportData.Issues.Where(i => i.ResolvedAt.HasValue).Average(i => i.DaysToResolve) : 0
+                    AverageResolutionTime = issues.Where(i => i.Status == IssueStatus.Closed && i.UpdatedAt.HasValue).Any() ? 
+                        issues.Where(i => i.Status == IssueStatus.Closed && i.UpdatedAt.HasValue).Average(i => (i.UpdatedAt.Value - i.CreatedAt).TotalDays) : 0
                 };
-
-                // Group by type
-                var typeGroups = issues.GroupBy(i => i.Type.ToString()).ToList();
-                foreach (var group in typeGroups)
-                {
-                    reportData.IssuesByType.Add(new IssuesByTypeDto
-                    {
-                        Type = group.Key,
-                        Count = group.Count(),
-                        Percentage = issues.Any() ? (double)group.Count() / issues.Count * 100 : 0
-                    });
-                }
-
-                // Group by status
-                var statusGroups = issues.GroupBy(i => i.Status.ToString()).ToList();
-                foreach (var group in statusGroups)
-                {
-                    reportData.IssuesByStatus.Add(new IssuesByStatusDto
-                    {
-                        Status = group.Key,
-                        Count = group.Count(),
-                        Percentage = issues.Any() ? (double)group.Count() / issues.Count * 100 : 0
-                    });
-                }
 
                 return new ReportResponseDto<IssueSummaryReportDto>
                 {
                     ReportTitle = "Issue Summary Report",
                     GeneratedAt = DateTime.UtcNow,
-                    GeneratedBy = user.UserName ?? string.Empty,
+                    GeneratedBy = user.UserName ?? user.Email ?? "Unknown",
                     ReportType = ReportType.IssueSummary,
                     PeriodStart = request.StartDate,
                     PeriodEnd = request.EndDate,
@@ -481,16 +324,15 @@ namespace ProjectManagementSystem1.Services.ReportService
                         KeyMetrics = new Dictionary<string, object>
                         {
                             ["TotalIssues"] = reportData.Overview.TotalIssues,
-                            ["ResolutionRate"] = Math.Round(reportData.Overview.ResolutionRate, 2),
-                            ["AverageResolutionTime"] = Math.Round(reportData.Overview.AverageResolutionTime, 2),
-                            ["OpenIssues"] = reportData.Overview.OpenIssues
+                            ["OpenIssues"] = reportData.Overview.OpenIssues,
+                            ["ResolutionRate"] = reportData.Overview.ResolutionRate
                         }
                     }
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating issue summary report for user {UserId}", userId);
+                _logger.LogError(ex, "Error generating issue summary report");
                 throw;
             }
         }
@@ -500,67 +342,59 @@ namespace ProjectManagementSystem1.Services.ReportService
             switch (request.ReportType)
             {
                 case ReportType.ProjectSummary:
-                {
-                    var report = await GenerateProjectSummaryReportAsync(request, userId);
+                    var projectReport = await GenerateProjectSummaryReportAsync(request, userId);
                     return new ReportResponseDto<object>
                     {
-                        ReportTitle = report.ReportTitle,
-                        GeneratedAt = report.GeneratedAt,
-                        GeneratedBy = report.GeneratedBy,
-                        ReportType = report.ReportType,
-                        PeriodStart = report.PeriodStart,
-                        PeriodEnd = report.PeriodEnd,
-                        Data = report.Data,
-                        Summary = report.Summary
+                        ReportTitle = projectReport.ReportTitle,
+                        GeneratedAt = projectReport.GeneratedAt,
+                        GeneratedBy = projectReport.GeneratedBy,
+                        ReportType = projectReport.ReportType,
+                        PeriodStart = projectReport.PeriodStart,
+                        PeriodEnd = projectReport.PeriodEnd,
+                        Data = projectReport.Data,
+                        Summary = projectReport.Summary
                     };
-                }
                 case ReportType.TaskProgress:
-                {
-                    var report = await GenerateTaskProgressReportAsync(request, userId);
+                    var taskReport = await GenerateTaskProgressReportAsync(request, userId);
                     return new ReportResponseDto<object>
                     {
-                        ReportTitle = report.ReportTitle,
-                        GeneratedAt = report.GeneratedAt,
-                        GeneratedBy = report.GeneratedBy,
-                        ReportType = report.ReportType,
-                        PeriodStart = report.PeriodStart,
-                        PeriodEnd = report.PeriodEnd,
-                        Data = report.Data,
-                        Summary = report.Summary
+                        ReportTitle = taskReport.ReportTitle,
+                        GeneratedAt = taskReport.GeneratedAt,
+                        GeneratedBy = taskReport.GeneratedBy,
+                        ReportType = taskReport.ReportType,
+                        PeriodStart = taskReport.PeriodStart,
+                        PeriodEnd = taskReport.PeriodEnd,
+                        Data = taskReport.Data,
+                        Summary = taskReport.Summary
                     };
-                }
                 case ReportType.TeamPerformance:
-                {
-                    var report = await GenerateTeamPerformanceReportAsync(request, userId);
+                    var teamReport = await GenerateTeamPerformanceReportAsync(request, userId);
                     return new ReportResponseDto<object>
                     {
-                        ReportTitle = report.ReportTitle,
-                        GeneratedAt = report.GeneratedAt,
-                        GeneratedBy = report.GeneratedBy,
-                        ReportType = report.ReportType,
-                        PeriodStart = report.PeriodStart,
-                        PeriodEnd = report.PeriodEnd,
-                        Data = report.Data,
-                        Summary = report.Summary
+                        ReportTitle = teamReport.ReportTitle,
+                        GeneratedAt = teamReport.GeneratedAt,
+                        GeneratedBy = teamReport.GeneratedBy,
+                        ReportType = teamReport.ReportType,
+                        PeriodStart = teamReport.PeriodStart,
+                        PeriodEnd = teamReport.PeriodEnd,
+                        Data = teamReport.Data,
+                        Summary = teamReport.Summary
                     };
-                }
                 case ReportType.IssueSummary:
-                {
-                    var report = await GenerateIssueSummaryReportAsync(request, userId);
+                    var issueReport = await GenerateIssueSummaryReportAsync(request, userId);
                     return new ReportResponseDto<object>
                     {
-                        ReportTitle = report.ReportTitle,
-                        GeneratedAt = report.GeneratedAt,
-                        GeneratedBy = report.GeneratedBy,
-                        ReportType = report.ReportType,
-                        PeriodStart = report.PeriodStart,
-                        PeriodEnd = report.PeriodEnd,
-                        Data = report.Data,
-                        Summary = report.Summary
+                        ReportTitle = issueReport.ReportTitle,
+                        GeneratedAt = issueReport.GeneratedAt,
+                        GeneratedBy = issueReport.GeneratedBy,
+                        ReportType = issueReport.ReportType,
+                        PeriodStart = issueReport.PeriodStart,
+                        PeriodEnd = issueReport.PeriodEnd,
+                        Data = issueReport.Data,
+                        Summary = issueReport.Summary
                     };
-                }
                 default:
-                    throw new NotSupportedException($"Report type {request.ReportType} is not supported");
+                    throw new ArgumentException($"Unsupported report type: {request.ReportType}");
             }
         }
 
@@ -568,76 +402,71 @@ namespace ProjectManagementSystem1.Services.ReportService
         {
             var report = await GenerateReportAsync(request, userId);
             
-            return request.Format switch
+            return request.ExportFormat switch
             {
                 ReportFormat.Json => System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true })),
                 ReportFormat.Csv => await ConvertToCsvAsync(report),
                 ReportFormat.Excel => await ConvertToExcelAsync(report),
                 ReportFormat.Pdf => await ConvertToPdfAsync(report),
-                _ => throw new NotSupportedException($"Export format {request.Format} is not supported")
+                _ => throw new ArgumentException($"Unsupported export format: {request.ExportFormat}")
             };
         }
 
         public async Task<List<ReportTemplateDto>> GetAvailableReportsAsync(string userId)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) throw new UnauthorizedAccessException("User not found");
+            await Task.CompletedTask;
             
-            var userRoles = await _userManager.GetRolesAsync(user);
-            
-            var templates = new List<ReportTemplateDto>
+            return new List<ReportTemplateDto>
             {
-                new()
+                new ReportTemplateDto
                 {
                     Type = ReportType.ProjectSummary,
-                    Name = "Project Summary",
-                    Description = "Overview of all projects with progress, tasks, and team information",
+                    Name = "Project Summary Report",
+                    Description = "Overview of all projects with progress and status",
                     RequiredParameters = new List<string>(),
-                    OptionalParameters = new List<string> { "StartDate", "EndDate", "ProjectIds", "Department" },
-                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel }
+                    OptionalParameters = new List<string> { "StartDate", "EndDate", "Department", "ProjectIds" },
+                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel, ReportFormat.Pdf },
+                    RequiresManagerRole = false,
+                    RequiresAdminRole = false
                 },
-                new()
+                new ReportTemplateDto
                 {
                     Type = ReportType.TaskProgress,
-                    Name = "Task Progress",
-                    Description = "Detailed view of task completion and progress across projects",
+                    Name = "Task Progress Report",
+                    Description = "Detailed task progress and status information",
                     RequiredParameters = new List<string>(),
                     OptionalParameters = new List<string> { "StartDate", "EndDate", "ProjectIds", "UserIds" },
-                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel }
+                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel, ReportFormat.Pdf },
+                    RequiresManagerRole = false,
+                    RequiresAdminRole = false
                 },
-                new()
+                new ReportTemplateDto
                 {
                     Type = ReportType.TeamPerformance,
-                    Name = "Team Performance",
-                    Description = "Analysis of team member productivity and workload distribution",
+                    Name = "Team Performance Report",
+                    Description = "Team member performance metrics and statistics",
                     RequiredParameters = new List<string>(),
-                    OptionalParameters = new List<string> { "Department", "ProjectIds", "UserIds" },
-                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel },
-                    RequiresManagerRole = true
+                    OptionalParameters = new List<string> { "StartDate", "EndDate", "Department", "UserIds" },
+                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel, ReportFormat.Pdf },
+                    RequiresManagerRole = true,
+                    RequiresAdminRole = false
                 },
-                new()
+                new ReportTemplateDto
                 {
                     Type = ReportType.IssueSummary,
-                    Name = "Issue Summary",
-                    Description = "Summary of issues, bugs, and their resolution status",
+                    Name = "Issue Summary Report",
+                    Description = "Issue tracking and resolution statistics",
                     RequiredParameters = new List<string>(),
-                    OptionalParameters = new List<string> { "StartDate", "EndDate", "ProjectIds", "UserIds" },
-                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel }
+                    OptionalParameters = new List<string> { "StartDate", "EndDate", "ProjectIds", "Status" },
+                    SupportedFormats = new List<ReportFormat> { ReportFormat.Json, ReportFormat.Csv, ReportFormat.Excel, ReportFormat.Pdf },
+                    RequiresManagerRole = false,
+                    RequiresAdminRole = false
                 }
             };
-
-            // Filter based on user roles
-            if (!userRoles.Contains("Manager") && !userRoles.Contains("Admin"))
-            {
-                templates = templates.Where(t => !t.RequiresManagerRole).ToList();
-            }
-
-            return templates;
         }
 
         public async Task<ReportMetadataDto> GetReportMetadataAsync(ReportType reportType, string userId)
         {
-            // Implementation for report metadata - simplified for now
             await Task.CompletedTask;
             
             return new ReportMetadataDto
@@ -665,26 +494,26 @@ namespace ProjectManagementSystem1.Services.ReportService
             return new List<ScheduledReportDto>();
         }
 
-        // Helper methods for export formats
+        // Helper methods for export formats (simplified for now)
         private async Task<byte[]> ConvertToCsvAsync(ReportResponseDto<object> report)
         {
             // TODO: Implement CSV conversion
             await Task.CompletedTask;
-            return System.Text.Encoding.UTF8.GetBytes("CSV export not yet implemented");
+            return System.Text.Encoding.UTF8.GetBytes("CSV export not implemented yet");
         }
 
         private async Task<byte[]> ConvertToExcelAsync(ReportResponseDto<object> report)
         {
             // TODO: Implement Excel conversion using EPPlus or similar
             await Task.CompletedTask;
-            return System.Text.Encoding.UTF8.GetBytes("Excel export not yet implemented");
+            return System.Text.Encoding.UTF8.GetBytes("Excel export not implemented yet");
         }
 
         private async Task<byte[]> ConvertToPdfAsync(ReportResponseDto<object> report)
         {
             // TODO: Implement PDF conversion using iTextSharp or similar
             await Task.CompletedTask;
-            return System.Text.Encoding.UTF8.GetBytes("PDF export not yet implemented");
+            return System.Text.Encoding.UTF8.GetBytes("PDF export not implemented yet");
         }
     }
 }

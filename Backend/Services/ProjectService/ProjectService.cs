@@ -5,6 +5,7 @@ using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.AccessControl;
 using Microsoft.AspNetCore.Identity;
+using ProjectManagementSystem1.Services;
 
 namespace ProjectManagementSystem1.Services.ProjectService
 {
@@ -16,7 +17,9 @@ namespace ProjectManagementSystem1.Services.ProjectService
         private readonly IAccessControlService _accessControlService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IProjectApprovalService _projectApprovalService;
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager, IProjectApprovalService projectApprovalService)
+        private readonly IActivityLogService _activityLogService;
+
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager, IProjectApprovalService projectApprovalService, IActivityLogService activityLogService)
         {
             _context = context;
             _mapper = mapper;
@@ -24,6 +27,7 @@ namespace ProjectManagementSystem1.Services.ProjectService
             _accessControlService = accessControlService;
             _userManager = userManager;
             _projectApprovalService = projectApprovalService;
+            _activityLogService = activityLogService;
         }
 
         public async Task<List<ProjectDto>> GetAllAsync(string department)
@@ -67,6 +71,15 @@ namespace ProjectManagementSystem1.Services.ProjectService
             _context.Projects.Add(project);
             await _context.SaveChangesAsync();
 
+            // Log project creation
+            await _activityLogService.LogActivityAsync(
+                userId: currentUser,
+                entityType: "Project",
+                entityId: project.Id,
+                actionType: "Created",
+                details: $"Project '{project.ProjectName}' created in {project.Department} department with status {project.Status}"
+            );
+
             // Resolve current user object
             var currentUserEntity = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUser);
             if (currentUserEntity == null)
@@ -89,6 +102,9 @@ namespace ProjectManagementSystem1.Services.ProjectService
                 //    if (exists)
                 //        throw new InvalidOperationException("Project already has a ScrumMaster.");
                 //}
+
+                // Allow multiple scrum masters for enterprise projects
+                // Removed restriction - projects can now have multiple scrum masters
 
                 projectAssignment = new ProjectAssignment
                 {
@@ -123,11 +139,46 @@ namespace ProjectManagementSystem1.Services.ProjectService
             var project = await _context.Projects.FindAsync(id);
             if (project == null) return false;
 
+            // Store old values for logging
+            var oldProjectName = project.ProjectName;
+            var oldStatus = project.Status;
+            var oldPriority = project.Priority;
+            var oldDescription = project.Description;
+
             _mapper.Map(dto, project);
             project.UpdateUser = currentUser;
             project.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
+
+            // Log project update with field changes
+            var fieldChanges = new List<FieldChange>();
+            
+            if (oldProjectName != project.ProjectName)
+                fieldChanges.Add(new FieldChange { FieldName = "ProjectName", OldValue = oldProjectName, NewValue = project.ProjectName, FieldType = "string" });
+            
+            if (oldStatus != project.Status)
+                fieldChanges.Add(new FieldChange { FieldName = "Status", OldValue = oldStatus, NewValue = project.Status, FieldType = "string" });
+            
+            if (oldPriority != project.Priority)
+                fieldChanges.Add(new FieldChange { FieldName = "Priority", OldValue = oldPriority, NewValue = project.Priority, FieldType = "string" });
+            
+            if (oldDescription != project.Description)
+                fieldChanges.Add(new FieldChange { FieldName = "Description", OldValue = oldDescription, NewValue = project.Description, FieldType = "string" });
+
+            if (fieldChanges.Any())
+            {
+                await _activityLogService.LogActivityWithFieldChangesAsync(
+                    userId: currentUser,
+                    entityType: "Project",
+                    entityId: project.Id,
+                    actionType: "Updated",
+                    entityName: $"Project: {project.ProjectName}",
+                    fieldChanges: fieldChanges,
+                    details: "Project details updated"
+                );
+            }
+
             return true;
         }
 
@@ -136,8 +187,19 @@ namespace ProjectManagementSystem1.Services.ProjectService
             var project = await _context.Projects.FindAsync(id);
             if (project == null) return false;
 
+            var projectName = project.ProjectName;
             _context.Projects.Remove(project);
             await _context.SaveChangesAsync();
+
+            // Log project deletion
+            await _activityLogService.LogActivityAsync(
+                userId: project.UpdateUser ?? project.CreateUser,
+                entityType: "Project",
+                entityId: id,
+                actionType: "Deleted",
+                details: $"Project '{projectName}' was deleted"
+            );
+
             return true;
         }
 
@@ -154,6 +216,15 @@ namespace ProjectManagementSystem1.Services.ProjectService
             project.UpdateUser = currentUser;
 
             await _context.SaveChangesAsync();
+
+            // Log project archival
+            await _activityLogService.LogActivityAsync(
+                userId: currentUser,
+                entityType: "Project",
+                entityId: project.Id,
+                actionType: "Archived",
+                details: $"Project '{project.ProjectName}' was archived"
+            );
         }
         public async Task<List<ProjectDto>> GetActiveProjectsAsync()
         {
@@ -186,6 +257,15 @@ namespace ProjectManagementSystem1.Services.ProjectService
             project.UpdateUser = currentUser;
 
             await _context.SaveChangesAsync();
+
+            // Log project restoration
+            await _activityLogService.LogActivityAsync(
+                userId: currentUser,
+                entityType: "Project",
+                entityId: project.Id,
+                actionType: "Restored",
+                details: $"Project '{project.ProjectName}' was restored from archive"
+            );
         }
 
         public async Task<List<ProjectDto>> GetAllVisibleAsync(string currentUserId)

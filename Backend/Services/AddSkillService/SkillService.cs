@@ -101,9 +101,10 @@ namespace ProjectManagementSystem1.Services.AddSkillService
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30);
 
+                    var userIdString = id.ToString(); // Convert to string once before query
                     var skills = await _context.UserSkills
                         .AsNoTracking() // Better performance for read-only
-                        .Where(us => us.UserId == id.ToString()) // Ensure proper type comparison
+                        .Where(us => us.UserId == userIdString) // Use pre-converted string
                         .Include(us => us.Skill)
                         .Select(us => new UserSkillDto
                         {

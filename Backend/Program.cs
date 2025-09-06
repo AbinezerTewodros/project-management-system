@@ -24,6 +24,7 @@ using ProjectManagementSystem1.Services.TodoItemService;
 using ProjectManagementSystem1.Services.Background;
 using Hangfire;
 using Hangfire.SqlServer;
+
 using ProjectManagementSystem1.Configuration;
 using ProjectManagementSystem1.Services.MilestoneService;
 using ProjectManagementSystem1.Services.CommentService;
@@ -54,10 +55,21 @@ using Polly.Extensions.Http; // For HttpPolicyExtensions
 using Microsoft.Extensions.Http; // For HttpClient builder extensions
 //using ProjectManagementSystem1.Services.ThumbnailService;
 using ProjectManagementSystem1.Services.UserProfile;
+using ProjectManagementSystem1.Services.CascadedFilterService;
+using ProjectManagementSystem1.Services.AccessLogService;
+using ProjectManagementSystem1.Services.TaskDependencyService;
+using ProjectManagementSystem1.Services.Background;
+using ProjectManagementSystem1.Services.BackgroundJobs;
+using ProjectManagementSystem1.Services.BackgroundJobs.Jobs;
+using ProjectManagementSystem1.Services.EmailService;
+using ProjectManagementSystem1.Services.CacheService;
+using ProjectManagementSystem1.Services.FileOperationsService;
+using ProjectManagementSystem1.Services.DataProcessingService;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using ProjectManagementSystem1.Services.ArchiveService;
 using ProjectManagementSystem1.Services.AccessControl;
+using System.Reflection;
 
 
 
@@ -110,6 +122,9 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 builder.Services.AddScoped<IProjectAssignmentService, ProjectAssignmentService>();
 builder.Services.AddScoped<IMilestoneService, MilestoneService>();
 builder.Services.AddScoped<IProjectTaskService, ProjectTaskService>();
+builder.Services.AddScoped<ITaskValidationService, TaskValidationService>();
+builder.Services.AddScoped<ITaskHierarchyService, TaskHierarchyService>();
+// TaskAssignmentService removed as it doesn't exist
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAttachmentService, AttachmentService>();
@@ -118,8 +133,18 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<IIndependentTaskService, IndependentTaskService>();
 builder.Services.AddScoped<IPersonalTodoService, PersonalTodoService>();
+builder.Services.AddScoped<IBulkOperationsService, BulkOperationsService>();
+builder.Services.AddScoped<IFileOperationsService, FileOperationsService>();
+builder.Services.AddScoped<IDataProcessingService, DataProcessingService>();
 builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 //builder.Services.AddHttpClient(); // for HttpClient injection
 builder.Services.AddScoped<IErpUserService, ErpUserService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
@@ -131,6 +156,10 @@ builder.Services.AddScoped<DownloadTokenService>();
 builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 builder.Services.AddScoped<IEntityValidator,  EntityValidator>();
 //builder.Services.AddScoped<IThumbnailGeneratorService, ThumbnailGeneratorService>();
+
+builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICacheService, MemoryCacheService>();
 
 // Add new Phase 1 services
 builder.Services.AddScoped<IPaginationService, PaginationService>();
@@ -147,7 +176,24 @@ builder.Services.AddScoped<SkillDataSeeder>();
 builder.Services.AddHostedService<SkillUpdateBackgroundService>();
 
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-builder.Services.AddScoped<IArchiveService, ArchiveService>();
+        builder.Services.AddScoped<ICascadedFilterService, CascadedFilterService>();
+        builder.Services.AddScoped<IAccessLogService, AccessLogService>();
+        builder.Services.AddScoped<ITaskDependencyService, TaskDependencyService>();
+        
+        // Register background job services
+        builder.Services.AddScoped<PersonalTodoReminderJob>();
+        builder.Services.AddScoped<EmailNotificationJob>();
+        builder.Services.AddScoped<DataExportJob>();
+        builder.Services.AddScoped<PersonalTodoReminderJob>();
+
+        // Configure logging options
+        builder.Services.Configure<LoggingOptions>(builder.Configuration.GetSection("Logging:RequestResponse"));
+        
+        // Configure cache options
+        builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
+        
+        // Configure background job options
+        builder.Services.Configure<BackgroundJobOptions>(builder.Configuration.GetSection("BackgroundJobs"));
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 // Add services to the container.
@@ -188,9 +234,15 @@ builder.Services.AddHangfire(configuration => configuration
         DisableGlobalLocks = true
     }));
 
-GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
+// GlobalConfiguration.Configuration.UseActivator(new HangfireActivator(builder.Services.BuildServiceProvider()));
 // Add the processing server as IHostedService
-builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer(options =>
+{
+    options.WorkerCount = 5; // Reduced from 10 to 5 for better resource management
+    options.Queues = new[] { "high", "default", "low" }; // Reordered for priority
+    options.ServerTimeout = TimeSpan.FromMinutes(5);
+    options.HeartbeatInterval = TimeSpan.FromSeconds(30);
+});
 
 // AD sync scheduler intentionally not registered
 
@@ -203,11 +255,25 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Project Management API",
-        Version = "v1"
+        Title = "Project Management System API",
+        Version = "v1",
+        Description = "A comprehensive API for managing projects, tasks, and team collaboration.",
+        Contact = new OpenApiContact
+        {
+            Name = "API Support",
+            Email = "support@projectmanagement.com"
+        }
     });
 
-     c.CustomSchemaIds(type => type.FullName);
+    // Include XML comments
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+
+    c.CustomSchemaIds(type => type.FullName);
     c.IgnoreObsoleteProperties();
 
     // ?? JWT Bearer Auth Setup
@@ -322,7 +388,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = false; // Changed to false for HTTP development
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -365,7 +431,8 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        Console.WriteLine($"Database connection test: {db.Database.CanConnect()}");
+        var canConnect = await db.Database.CanConnectAsync();
+        Console.WriteLine($"Database connection test: {canConnect}");
     }
     catch (Exception ex)
     {
@@ -399,7 +466,30 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHangfireDashboard();
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    DashboardTitle = "Project Management System - Job Dashboard"
+});
+
+// Configure recurring jobs for PersonalTodo reminders and overdue status updates
+using (var scope = app.Services.CreateScope())
+{
+    var reminderJob = scope.ServiceProvider.GetRequiredService<PersonalTodoReminderJob>();
+    
+    // Schedule reminder processing every hour
+    RecurringJob.AddOrUpdate(
+        "personal-todo-reminders",
+        () => reminderJob.ProcessRemindersAsync(),
+        "0 * * * *");
+    
+    // Schedule overdue status updates every 6 hours
+    RecurringJob.AddOrUpdate(
+        "personal-todo-overdue-updates",
+        () => reminderJob.UpdateOverdueStatusAsync(),
+        "0 */6 * * *");
+    
+    Console.WriteLine("PersonalTodo recurring jobs configured successfully");
+}
 app.UseExceptionHandler("/error");
 app.UseStatusCodePagesWithReExecute("/error/{0}");
 //app.UseMiddleware<JwtErrorHandlingMiddleware>();
@@ -408,19 +498,29 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Project Management System API V1");
-    c.RoutePrefix = "Swagger"; // Set Swagger UI at the app's root
+    c.RoutePrefix = string.Empty; // Set Swagger UI at the app's root
+    c.ConfigObject.TryItOutEnabled = true;
+    c.ConfigObject.DeepLinking = true;
+    c.DocumentTitle = "Project Management System API";
+    c.DefaultModelsExpandDepth(-1); // Hide models section by default
 });
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabled for development to avoid SSL issues
 app.UseRateLimiter();
 
-app.UseMiddleware<JwtErrorHandlingMiddleware>();
+// Add session middleware before other middleware that might need it
+app.UseSession();
+
+app.UseRequestResponseLogging();
+app.UseGlobalExceptionHandling();
+app.UseMiddleware<AccessLoggingMiddleware>();
 app.UseCors("AllowFrontendDev");
 
 // Session must come before auth in most cases if you rely on session-backed auth
 app.UseSession();
 
 app.UseJwtErrorHandling();
+
 app.UseAuthentication();
 app.UseAuthorization();
 

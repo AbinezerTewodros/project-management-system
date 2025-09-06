@@ -9,8 +9,11 @@ using ProjectManagementSystem1.Model.Dto.Attachments;
 using ProjectManagementSystem1.Model.Dto.IndependentTaskDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
+using ProjectManagementSystem1.Model.Exceptions;
+using BusinessUnauthorizedAccessException = ProjectManagementSystem1.Model.Exceptions.UnauthorizedAccessException;
 using AutoMapper;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace ProjectManagementSystem1.Controllers
 {
@@ -96,33 +99,135 @@ namespace ProjectManagementSystem1.Controllers
         [HttpPost("{taskId}/accept")]
         public async Task<IActionResult> AcceptTaskAssignment(int taskId)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _independentTaskService.AcceptTaskAssignmentAsync(taskId, userId);
-            return NoContent();
+            try
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "User not authenticated" });
+
+                await _independentTaskService.AcceptTaskAssignmentAsync(taskId, userId);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (BusinessUnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An unexpected error occurred while accepting task assignment", details = ex.Message });
+            }
         }
 
         [HttpPost("{taskId}/reject")]
         public async Task<IActionResult> RejectTaskAssignment(int taskId, [FromBody] RejectTaskRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _independentTaskService.RejectTaskAssignmentAsync(taskId, userId, request.Reason);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid) 
+                    return BadRequest(new { error = "Invalid request data", details = ModelState });
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "User not authenticated" });
+
+                await _independentTaskService.RejectTaskAssignmentAsync(taskId, userId, request.Reason);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (BusinessUnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An unexpected error occurred while rejecting task assignment", details = ex.Message });
+            }
         }
 
         [HttpPut("{taskId}/progress")]
         public async Task<IActionResult> UpdateProgress(int taskId, [FromBody] UpdateProgressRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _independentTaskService.UpdateTaskProgressAsync(taskId, userId, request.Progress, request.Comments);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid) 
+                    return BadRequest(new { error = "Invalid request data", details = ModelState });
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "User not authenticated" });
+
+                await _independentTaskService.UpdateTaskProgressAsync(taskId, userId, request.Progress, request.Comments);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (BusinessUnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception here
+                return StatusCode(500, new { error = "An unexpected error occurred while updating task progress", details = ex.Message });
+            }
         }
 
         [HttpPost("{taskId}/complete")]
         public async Task<IActionResult> CompleteTask(int taskId, [FromBody] CompleteTaskRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _independentTaskService.CompleteTaskAsync(taskId, userId, request.CompletionDetails);
-            return NoContent();
+            try
+            {
+                if (!ModelState.IsValid) 
+                    return BadRequest(new { error = "Invalid request data", details = ModelState });
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized(new { error = "User not authenticated" });
+
+                await _independentTaskService.CompleteTaskAsync(taskId, userId, request.CompletionDetails);
+                return NoContent();
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (BusinessUnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An unexpected error occurred while completing the task", details = ex.Message });
+            }
         }
 
         [HttpPost("{taskId}/approve")]

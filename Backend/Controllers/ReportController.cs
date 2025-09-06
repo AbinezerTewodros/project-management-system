@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProjectManagementSystem1.Model.Dto.Reports;
+using ProjectManagementSystem1.Model.Dto.ReportDto;
 using ProjectManagementSystem1.Services.ReportService;
 using System.Security.Claims;
 
@@ -197,7 +197,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 var exportData = await _reportService.ExportReportAsync(request, userId);
                 
-                var contentType = request.Format switch
+                var contentType = request.ExportFormat switch
                 {
                     ReportFormat.Json => "application/json",
                     ReportFormat.Csv => "text/csv",
@@ -206,7 +206,7 @@ namespace ProjectManagementSystem1.Controllers
                     _ => "application/octet-stream"
                 };
 
-                var fileName = $"{request.ReportType}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{request.Format.ToString().ToLower()}";
+                var fileName = $"{request.ReportType}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.{request.ExportFormat.ToString().ToLower()}";
                 
                 return File(exportData, contentType, fileName);
             }

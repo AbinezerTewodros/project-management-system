@@ -54,13 +54,13 @@ namespace ProjectManagementSystem1.Controllers
 
                 if (dto.MilestoneId.HasValue)
                 {
-                    await _notification.CreateNotificationAsync(
-                        recipientUserId: memberId,
-                        subject: "Task Added to Milestone",
-                        message: $"Task '{task.Title}' was added to milestone",
-                        relatedEntityType: "Milestone",
-                        relatedEntityId: dto.MilestoneId.Value,
-                        deliveryMethod: NotificationDeliveryMethod.InApp
+                    await _notification.SendNotificationAsync(
+                        memberId,
+                        "Task Added to Milestone",
+                        $"Task '{task.Title}' was added to milestone",
+                        "TaskAddedToMilestone",
+                        "Milestone",
+                        dto.MilestoneId.Value
                     );
                 }
 
@@ -68,13 +68,13 @@ namespace ProjectManagementSystem1.Controllers
 
                 try
                 {
-                    await _notification.CreateNotificationAsync(
-                        recipientUserId: User.FindFirstValue(ClaimTypes.NameIdentifier), // Send to the user creating the task
-                        subject: "Test Email Notification",
-                        message: $"This is a test email notification from your Project Management System to verify email sending functionality.",
-                        relatedEntityType: "ProjectTask",
-                        relatedEntityId: task.Id,
-                        deliveryMethod: NotificationDeliveryMethod.Email
+                    await _notification.SendNotificationAsync(
+                        User.FindFirstValue(ClaimTypes.NameIdentifier), // Send to the user creating the task
+                        "Test Email Notification",
+                        $"This is a test email notification from your Project Management System to verify email sending functionality.",
+                        "TestEmail",
+                        "ProjectTask",
+                        task.Id
                     );
                 }
                 catch (Exception ex)
@@ -115,9 +115,39 @@ namespace ProjectManagementSystem1.Controllers
             // catch (Exception ex) { /* Log error */ return StatusCode(500, "An unexpected error occurred."); }
         }
 
-        [HttpPost("filter")]
-        public async Task<IActionResult> FilterTasks([FromBody] ProjectTaskFilterDto filter)
+        [HttpGet("filter")]
+        public async Task<IActionResult> FilterTasks(
+            [FromQuery] int? projectAssignmentId = null,
+            [FromQuery] string? assignedMemberId = null,
+            [FromQuery] int? milestoneId = null,
+            [FromQuery] string? description = null,
+            [FromQuery] ProjectManagementSystem1.Model.Entities.TaskStatus? status = null,
+            [FromQuery] TaskPriority? priority = null,
+            [FromQuery] int? depth = null,
+            [FromQuery] bool? isLeaf = null,
+            [FromQuery] DateTime? dueDateBefore = null,
+            [FromQuery] DateTime? dueDateAfter = null,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 20)
         {
+            var filter = new ProjectTaskFilterDto
+            {
+                ProjectAssignmentId = projectAssignmentId,
+                AssignedMemberId = assignedMemberId,
+                MilestoneId = milestoneId,
+                Description = description,
+                Status = status,
+                Priority = priority,
+                Depth = depth,
+                IsLeaf = isLeaf,
+                DueDateBefore = dueDateBefore,
+                DueDateAfter = dueDateAfter,
+                SearchTerm = searchTerm,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
             var result = await _projectTaskService.GetFilteredTasksAsync(filter);
 
             // Map items to DTOs
@@ -142,12 +172,19 @@ namespace ProjectManagementSystem1.Controllers
                 PageNumber = page,
                 PageSize = pageSize
             };
-            return await FilterTasks(filter);
+            var result = await _projectTaskService.GetFilteredTasksAsync(filter);
+            var mappedItems = result.Items.Select(MapToResponseDto).ToList();
+            return Ok(new PaginatedResult<ProjectTaskReadDto>(
+                mappedItems,
+                result.TotalCount,
+                result.PageNumber,
+                result.PageSize
+            ));
         }
 
         [HttpGet("by-member/{memberId}")]
         public async Task<IActionResult> GetTasksByMember(string memberId,
-            [FromQuery] System.Threading.Tasks.TaskStatus? status = null,
+            [FromQuery] ProjectManagementSystem1.Model.Entities.TaskStatus? status = null,
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var filter = new ProjectTaskFilterDto
@@ -157,11 +194,18 @@ namespace ProjectManagementSystem1.Controllers
                 PageNumber = page,
                 PageSize = pageSize
             };
-            return await FilterTasks(filter);
+            var result = await _projectTaskService.GetFilteredTasksAsync(filter);
+            var mappedItems = result.Items.Select(MapToResponseDto).ToList();
+            return Ok(new PaginatedResult<ProjectTaskReadDto>(
+                mappedItems,
+                result.TotalCount,
+                result.PageNumber,
+                result.PageSize
+            ));
         }
 
         [HttpGet("by-status/{status}")]
-        public async Task<IActionResult> GetTasksByStatus(System.Threading.Tasks.TaskStatus status,
+        public async Task<IActionResult> GetTasksByStatus(ProjectManagementSystem1.Model.Entities.TaskStatus status,
             [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
         {
             var filter = new ProjectTaskFilterDto
@@ -170,7 +214,14 @@ namespace ProjectManagementSystem1.Controllers
                 PageNumber = page,
                 PageSize = pageSize
             };
-            return await FilterTasks(filter);
+            var result = await _projectTaskService.GetFilteredTasksAsync(filter);
+            var mappedItems = result.Items.Select(MapToResponseDto).ToList();
+            return Ok(new PaginatedResult<ProjectTaskReadDto>(
+                mappedItems,
+                result.TotalCount,
+                result.PageNumber,
+                result.PageSize
+            ));
         }
         private ProjectTaskReadDto MapToResponseDto(ProjectTask task)
         {
