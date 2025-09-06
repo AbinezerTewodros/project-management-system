@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Model.Entities;
+using ProjectManagementSystem1.Services.AccessControl;
+using Microsoft.AspNetCore.Identity;
 using ProjectManagementSystem1.Services;
 
 namespace ProjectManagementSystem1.Services.ProjectService
@@ -12,14 +14,18 @@ namespace ProjectManagementSystem1.Services.ProjectService
         private readonly AppDbContext _context;
         private readonly IMapper _mapper;
         private readonly IProjectAssignmentService _projectAssignmentService;
+        private readonly IAccessControlService _accessControlService;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IProjectApprovalService _projectApprovalService;
         private readonly IActivityLogService _activityLogService;
 
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IProjectApprovalService projectApprovalService, IActivityLogService activityLogService)
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager, IProjectApprovalService projectApprovalService, IActivityLogService activityLogService)
         {
             _context = context;
             _mapper = mapper;
             _projectAssignmentService = projectAssignmentService;
+            _accessControlService = accessControlService;
+            _userManager = userManager;
             _projectApprovalService = projectApprovalService;
             _activityLogService = activityLogService;
         }
@@ -88,6 +94,15 @@ namespace ProjectManagementSystem1.Services.ProjectService
                 if (assignedUser == null)
                     throw new ArgumentException("Assigned employee not found.");
 
+                // Check if role is ScrumMaster and already exists
+                //if (dto.AssignedRole == "ScrumMaster")
+                //{
+                //    var exists = await _context.ProjectAssignments
+                //        .AnyAsync(a => a.ProjectId == project.Id && a.MemberRole == "ScrumMaster");
+                //    if (exists)
+                //        throw new InvalidOperationException("Project already has a ScrumMaster.");
+                //}
+
                 // Allow multiple scrum masters for enterprise projects
                 // Removed restriction - projects can now have multiple scrum masters
 
@@ -118,36 +133,6 @@ namespace ProjectManagementSystem1.Services.ProjectService
 
             return _mapper.Map<ProjectDto>(project);
         }
-
-        //public async Task<ProjectDto> CreateAsync(CreateProjectDto dto, string currentUser)
-        //{
-        //    var project = _mapper.Map<Project>(dto);
-
-        //    var now = DateTime.UtcNow;
-
-        //    project.CreateUser = currentUser;
-        //    project.CreatedDate = now;
-
-        //    project.UpdateUser = currentUser;  // set UpdateUser as same user
-        //    project.UpdatedDate = now;         // set updated time on create too
-
-        //    _context.Projects.Add(project);
-        //    await _context.SaveChangesAsync();
-
-        //    var projectAssignment = new ProjectAssignment
-        //    {
-        //        ProjectId = project.Id,
-        //        MemberId = currentUser,
-        //        MemberRole = "Project Manager", // Or Role = "Project Manager" if you're using the new Role property
-        //        CreatedDate = now,
-        //        CreateUser = currentUser
-        //    };
-        //    _context.ProjectAssignments.Add(projectAssignment);
-        //    await _context.SaveChangesAsync();
-
-        //    return _mapper.Map<ProjectDto>(project);
-        //}
-
 
         public async Task<bool> UpdateAsync(int id, UpdateProjectDto dto, string currentUser)
         {
@@ -283,7 +268,21 @@ namespace ProjectManagementSystem1.Services.ProjectService
             );
         }
 
+        public async Task<List<ProjectDto>> GetAllVisibleAsync(string currentUserId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
+            if (user == null) return new List<ProjectDto>();
 
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var baseQuery = _context.Projects
+                .Include(p => p.ProjectAssignments)
+                .AsQueryable();
+
+            var filtered = await _accessControlService.FilterProjectsForUserAsync(baseQuery, user, roles);
+            var list = await filtered.ToListAsync();
+            return _mapper.Map<List<ProjectDto>>(list);
+        }
 
     }
 

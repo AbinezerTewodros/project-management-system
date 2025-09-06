@@ -9,7 +9,7 @@
         public string MemberFullName { get; set; }
         public string MemberRole { get; set; }
 
-        public double Status { get; set; }
+        public string Status { get; set; }
 
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }

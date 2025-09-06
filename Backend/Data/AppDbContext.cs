@@ -36,6 +36,7 @@ namespace ProjectManagementSystem1.Data
         public DbSet<PersonalTodo> PersonalTodo { get; set; }
         public DbSet<AddSkill> AddSkills { get; set; }
         public DbSet<UserSkill> UserSkills { get; set; }
+        public DbSet<Archive> Archives { get; set; }
         public DbSet<ScheduledReportEntity> ScheduledReports { get; set; }
         public DbSet<ScheduledReportExecutionEntity> ScheduledReportExecutions { get; set; }
         public object TaskAssignments { get; internal set; }
@@ -43,6 +44,14 @@ namespace ProjectManagementSystem1.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // ApplicationUser self-reference
+            modelBuilder.Entity<ApplicationUser>()
+                .HasOne(u => u.ReportsTo)
+                .WithMany(u => u.DirectReports)
+                .HasForeignKey(u => u.ReportsToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // ProjectTask relationships
             modelBuilder.Entity<ProjectTask>(entity =>
             {
@@ -144,7 +153,7 @@ namespace ProjectManagementSystem1.Data
 
             modelBuilder.Entity<MessageReadStatus>()
                 .HasOne(mrs => mrs.Message)
-                .WithMany(m => m.ReadStatuses)
+                .WithMany(message => message.ReadStatuses)
                 .HasForeignKey(mrs => mrs.MessageId)
                 .OnDelete(DeleteBehavior.Restrict); // 👈 prevent cascade delete
 
@@ -315,8 +324,18 @@ namespace ProjectManagementSystem1.Data
 
             //// Limit hierarchy depth
             //entity.HasCheckConstraint("CK_MaxDepth", "Depth BETWEEN 0 AND 10");
+            modelBuilder
+                .Entity<Archive>()
+                .Property(a => a.EntityType)
+                .HasConversion<string>();
 
+            base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<IndependentTask>()
+                .HasOne(t => t.Issue)
+                .WithMany(i => i.IndependentTasks)
+                .HasForeignKey(t => t.IssueId)
+                .OnDelete(DeleteBehavior.Restrict);
 
         }
 

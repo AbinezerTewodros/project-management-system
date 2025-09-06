@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -20,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using ProjectManagementSystem1.Services.AttachmentService;
 using ProjectManagementSystem1.Services.TodoItems;
 using ProjectManagementSystem1.Services.TodoItemService;
+using ProjectManagementSystem1.Services.Background;
 using Hangfire;
 using Hangfire.SqlServer;
 
@@ -65,6 +67,8 @@ using ProjectManagementSystem1.Services.FileOperationsService;
 using ProjectManagementSystem1.Services.DataProcessingService;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using ProjectManagementSystem1.Services.ArchiveService;
+using ProjectManagementSystem1.Services.AccessControl;
 using System.Reflection;
 
 
@@ -109,6 +113,8 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IADService, ADService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddHostedService<RefreshTokenCleanupService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
+
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IProjectApprovalService, ProjectApprovalService>();
 builder.Services.AddScoped<IEnhancedAssignmentService, EnhancedAssignmentService>();
@@ -238,6 +244,8 @@ builder.Services.AddHangfireServer(options =>
     options.HeartbeatInterval = TimeSpan.FromSeconds(30);
 });
 
+// AD sync scheduler intentionally not registered
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -337,10 +345,46 @@ builder.Services.Configure<JwtSettings>(jwtSection);
 var jwtSettings = jwtSection.Get<JwtSettings>();
 var key = Encoding.ASCII.GetBytes(jwtSettings.SecretKey);
 
+// Distributed cache and session
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = ".pms.session";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+});
+
+// Hybrid auth: prefer JWT when Authorization header is present; otherwise use Cookies
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = "SmartAuth";
+    options.DefaultAuthenticateScheme = "SmartAuth";
+    options.DefaultChallengeScheme = "SmartAuth";
+})
+.AddPolicyScheme("SmartAuth", "JWT or Cookie", options =>
+{
+    options.ForwardDefaultSelector = context =>
+    {
+        var authHeader = context.Request.Headers["Authorization"].ToString();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return JwtBearerDefaults.AuthenticationScheme;
+        }
+        return CookieAuthenticationDefaults.AuthenticationScheme;
+    };
+})
+.AddCookie(options =>
+{
+    options.Cookie.Name = ".pms.auth";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.LoginPath = "/api/Auth/cookie-login";
+    options.LogoutPath = "/api/Auth/cookie-logout";
 })
 .AddJwtBearer(options =>
 {
@@ -471,6 +515,11 @@ app.UseRequestResponseLogging();
 app.UseGlobalExceptionHandling();
 app.UseMiddleware<AccessLoggingMiddleware>();
 app.UseCors("AllowFrontendDev");
+
+// Session must come before auth in most cases if you rely on session-backed auth
+app.UseSession();
+
+app.UseJwtErrorHandling();
 
 app.UseAuthentication();
 app.UseAuthorization();

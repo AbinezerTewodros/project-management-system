@@ -6,6 +6,8 @@ using ProjectManagementSystem1.Model.Dto.UserManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.AuthService;
 using ProjectManagementSystem1.Services.UserService;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace ProjectManagementSystem1.Controllers
 {
@@ -29,19 +31,19 @@ namespace ProjectManagementSystem1.Controllers
 
         }
 
-        [HttpPost("register")]
-        [Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
-        public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
-        {
-            var result = await _userService.RegisterUserAsync(dto);
+        //[HttpPost("register")]
+        //[Authorize(Policy = "AdminOnly")] // Optional: only admins can register users
+        //public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
+        //{
+        //    var result = await _userService.RegisterUserAsync(dto);
 
-            if (!result.Success)
-            {
-                return BadRequest(new { errors = result.Errors });
-            }
+        //    if (!result.Success)
+        //    {
+        //        return BadRequest(new { errors = result.Errors });
+        //    }
 
-            return Ok(new { message = "User registered successfully." });
-        }
+        //    return Ok(new { message = "User registered successfully." });
+        //}
 
         [HttpPost("login")]
         [AllowAnonymous]
@@ -79,6 +81,48 @@ namespace ProjectManagementSystem1.Controllers
             await _signInManager.SignOutAsync();
 
             return Ok(new { message = "Logged out successfully." });
+        }
+
+        // Cookie-based login (for web clients)
+        [HttpPost("cookie-login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> CookieLogin([FromBody] LoginRequestDto dto)
+        {
+            var user = await _userManager.FindByNameAsync(dto.Username);
+            if (user == null)
+                return Unauthorized(new { message = "Invalid credentials." });
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
+            if (!result.Succeeded)
+                return Unauthorized(new { message = "Invalid credentials." });
+
+            await _signInManager.SignInAsync(user, isPersistent: true);
+
+            // Demo session value
+            HttpContext.Session.SetString("LastLoginUser", user.UserName ?? string.Empty);
+
+            return Ok(new { message = "Signed in with cookie.", user = new { user.UserName, user.Email } });
+        }
+
+        [HttpPost("cookie-logout")]
+        [Authorize]
+        public async Task<IActionResult> CookieLogout()
+        {
+            await _signInManager.SignOutAsync();
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            HttpContext.Session.Clear();
+            return Ok(new { message = "Signed out and session cleared." });
+        }
+
+        [HttpGet("session-demo")]
+        [Authorize]
+        public IActionResult SessionDemo()
+        {
+            var visits = HttpContext.Session.GetInt32("Visits") ?? 0;
+            visits++;
+            HttpContext.Session.SetInt32("Visits", visits);
+            var lastUser = HttpContext.Session.GetString("LastLoginUser");
+            return Ok(new { visits, lastUser });
         }
 
     }
