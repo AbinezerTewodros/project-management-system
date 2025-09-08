@@ -41,6 +41,7 @@ namespace ProjectManagementSystem1.Model.Entities
 
         public bool IsDeleted { get; set; } = false;
         public bool IsRead { get; set; } = false;
+        public bool IsArchived { get; set; } = false; // default to not archived
         public ICollection<MessageReadStatus> ReadStatuses { get; set; }
 
         [Timestamp]

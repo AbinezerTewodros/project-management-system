@@ -61,7 +61,7 @@ namespace ProjectManagementSystem1.Services.ADService
                             searcher.PropertiesToLoad.Add("sAMAccountName");
                             searcher.PropertiesToLoad.Add("department");
                             searcher.PropertiesToLoad.Add("description");
-
+                            searcher.PropertiesToLoad.Add("telephoneNumber");
                             var result = searcher.FindOne();
                             if (result == null) return null;
 

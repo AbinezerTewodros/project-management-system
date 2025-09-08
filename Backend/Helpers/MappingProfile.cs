@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ProjectManagementSystem1.Model.Dto;
+using ProjectManagementSystem1.Model.Dto.ArchiveDto;
 using ProjectManagementSystem1.Model.Dto.IndependentTaskDto;
 using ProjectManagementSystem1.Model.Dto.Message;
 using ProjectManagementSystem1.Model.Dto.MilestoneDto;
@@ -86,6 +87,11 @@ namespace ProjectManagementSystem1.Helpers
                 .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
 
+            CreateMap<Archive, ArchiveDto>()
+                .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => src.EntityType.ToString()));
+            //.ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.Action.ToString()));
+
+            CreateMap<CreateArchiveDto, Archive>();
 
         }
 
