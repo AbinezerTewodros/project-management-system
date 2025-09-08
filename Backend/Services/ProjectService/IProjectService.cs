@@ -11,6 +11,7 @@ namespace ProjectManagementSystem1.Services.ProjectService
         Task<bool> DeleteAsync(int id);
         Task ArchiveProjectAsync(int projectId, string currentUser);
         Task RestoreProjectAsync(int projectId, string currentUser);
+        Task<List<ProjectDto>> GetAllVisibleAsync(string currentUserId);
     }
 
 }

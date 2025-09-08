@@ -25,6 +25,7 @@ namespace ProjectManagementSystem1.Services.UserService
                 Email = registerDto.Email,
                 UserName = registerDto.Username,
                 Department = registerDto.Department,
+                Manager = registerDto.Manager,
                 EmployeeId = registerDto.EmployeeId,
                 Company = registerDto.Company,
                 Title = registerDto.Title,

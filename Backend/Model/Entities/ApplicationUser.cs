@@ -30,5 +30,10 @@ namespace ProjectManagementSystem1.Model.Entities
         public string? AccessToken { get; set; } //  Add this
 
         public virtual ICollection<UserSkill> UserSkills { get; set; } = new List<UserSkill>();
+
+        // Org hierarchy
+        public string? ReportsToUserId { get; set; }
+        public virtual ApplicationUser? ReportsTo { get; set; }
+        public virtual ICollection<ApplicationUser> DirectReports { get; set; } = new List<ApplicationUser>();
     }
 }

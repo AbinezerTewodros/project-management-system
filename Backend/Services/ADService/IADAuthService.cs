@@ -1,4 +1,5 @@
-﻿using ProjectManagementSystem1.Model.Dto.ADDto;
+﻿
+using ProjectManagementSystem1.Model.Dto.ADDto;
 
 namespace ProjectManagementSystem1.Services.ADService
 {
@@ -6,5 +7,6 @@ namespace ProjectManagementSystem1.Services.ADService
     {
         bool Authenticate(string username, string password);
         EmployeeADDto GetEmployee(string empId);
+        Task<List<EmployeeADDto>> GetUsersByOrganizationalUnitsAsync(List<string> organizationalUnits);
     }
 }

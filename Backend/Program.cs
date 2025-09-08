@@ -45,6 +45,7 @@ using ProjectManagementSystem1.Services.Validation;
 using ProjectManagementSystem1.Services.AddSkillService;
 using ProjectManagementSystem1.Services.Common;
 using ProjectManagementSystem1.Services.ReportService;
+using ProjectManagementSystem1.Services.AccessControl;
 using System.Net.Http.Headers;
 using System.Threading.RateLimiting;
 using System.Net.Http; // For HttpResponseMessage
@@ -129,6 +130,7 @@ builder.Services.AddScoped<IIndependentTaskService, IndependentTaskService>();
 builder.Services.AddScoped<IPersonalTodoService, PersonalTodoService>();
 builder.Services.AddScoped<IBulkOperationsService, BulkOperationsService>();
 builder.Services.AddScoped<IFileOperationsService, FileOperationsService>();
+builder.Services.AddScoped<IAccessControlService, AccessControlService>();
 builder.Services.AddScoped<IDataProcessingService, DataProcessingService>();
 builder.Services.AddScoped<IProjectMemberService, ProjectMemberService>();
 builder.Services.AddHttpContextAccessor();

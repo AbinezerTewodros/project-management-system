@@ -79,6 +79,45 @@ namespace ProjectManagementSystem1.Services.ADService
                 throw new Exception("LDAP communication error", ex);
             }
         }
+
+        public async Task<List<EmployeeADDto>> GetUsersByOrganizationalUnitsAsync(List<string> organizationalUnits)
+        {
+            var list = new List<EmployeeADDto>();
+            if (organizationalUnits == null || organizationalUnits.Count == 0) return list;
+
+            try
+            {
+                using var directoryEntry = CreateDirectoryEntry();
+                using var searcher = new DirectorySearcher(directoryEntry)
+                {
+                    SearchScope = SearchScope.Subtree,
+                    PageSize = 1000
+                };
+
+                AddPropertiesToLoad(searcher);
+
+                // Build filter: user objects whose distinguishedName contains any OU segment provided
+                // Example OU parts: "Application Management", "Information System"
+                var ouFilters = organizationalUnits
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Select(s => s.Trim())
+                    .Select(s => $"(distinguishedName=*OU={LdapFilterEncode(s)}*)");
+
+                var filter = $"(&(objectClass=user)(|{string.Join(string.Empty, ouFilters)}))";
+                searcher.Filter = filter;
+
+                foreach (SearchResult result in searcher.FindAll())
+                {
+                    list.Add(CreateEmployeeADDto(result));
+                }
+            }
+            catch (DirectoryServicesCOMException ex)
+            {
+                throw new Exception("LDAP communication error", ex);
+            }
+
+            return await Task.FromResult(list);
+        }
         private bool IsValidEmpId(string empId)
         {
             var regex = new Regex("^[a-zA-Z0-9]+$");
@@ -124,7 +163,7 @@ namespace ProjectManagementSystem1.Services.ADService
             string[] properties =
             {
                 "sAMAccountName", "mail", "employeeID", "displayname",
-                "company", "department", "title"
+                "company", "department", "title", "manager"
             };
 
             foreach (var prop in properties)
@@ -145,7 +184,9 @@ namespace ProjectManagementSystem1.Services.ADService
                 EmpId = GetPropertyValue(result, "employeeID"),
                 Name = GetPropertyValue(result, "displayname"),
                 Company = GetPropertyValue(result, "company"),
-                Title = GetPropertyValue(result, "title")
+                Title = GetPropertyValue(result, "title"),
+                Department = GetPropertyValue(result, "department"),
+                Manager = GetPropertyValue(result, "manager")
             };
         }
 
