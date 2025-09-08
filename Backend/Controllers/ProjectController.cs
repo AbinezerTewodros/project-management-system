@@ -7,6 +7,7 @@ using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Model.Dto.Common;
 using ProjectManagementSystem1.Services.ProjectService;
 using ProjectManagementSystem1.Model.Exceptions;
+using System.Security.Claims;
 
 namespace ProjectManagementSystem1.Controllers
 {
@@ -31,32 +32,38 @@ namespace ProjectManagementSystem1.Controllers
 
         /// <summary>
         /// Retrieves all projects for the current user's department.
-        /// Only accessible by users with Manager role.
+        /// Accessible by users with higher role.
         /// </summary>
         /// <returns>A list of projects for the user's department</returns>
         /// <response code="200">Returns the list of projects</response>
         /// <response code="403">If the user is not authorized or lacks department claim</response>
         /// <response code="500">If there was an internal server error</response>
-        [HttpGet]
-        [Authorize(Roles = "Manager")]
+        [HttpGet("All-projects")]
+        [Authorize(Roles = "Admin,President,Vice-President,Director,Manager,Supervisor")]
         [ProducesResponseType(typeof(ApiResponse<List<ProjectDto>>), 200)]
         [ProducesResponseType(typeof(ApiResponse), 403)]
         [ProducesResponseType(typeof(ApiResponse), 500)]
         public async Task<IActionResult> GetProjects()
         {
-            try
-            {
-                var departmentValidation = ValidateUserDepartment();
-                if (departmentValidation != null)
-                    return departmentValidation;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return Forbid();
 
-                var projects = await _projectService.GetAllAsync(GetCurrentUserDepartment());
-                return SuccessResponse(projects, "Projects retrieved successfully");
-            }
-            catch (Exception ex)
-            {
-                return HandleException(ex, "retrieving projects");
-            }
+            var projects = await _projectService.GetAllVisibleAsync(userId);
+            return Ok(projects);
+        
+            //try
+            //{
+            //    var departmentValidation = ValidateUserDepartment();
+            //    if (departmentValidation != null)
+            //        return departmentValidation;
+
+            //    var projects = await _projectService.GetAllAsync(GetCurrentUserDepartment());
+            //    return SuccessResponse(projects, "Projects retrieved successfully");
+            //}
+            //catch (Exception ex)
+            //{
+            //    return HandleException(ex, "retrieving projects");
+            //}
         }
 
         /// <summary>

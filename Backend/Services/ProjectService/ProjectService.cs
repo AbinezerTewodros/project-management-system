@@ -4,6 +4,8 @@ using ProjectManagementSystem1.Data;
 using ProjectManagementSystem1.Model.Dto.ProjectManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services;
+using ProjectManagementSystem1.Services.AccessControl;
+using Microsoft.AspNetCore.Identity;
 
 namespace ProjectManagementSystem1.Services.ProjectService
 {
@@ -14,14 +16,19 @@ namespace ProjectManagementSystem1.Services.ProjectService
         private readonly IProjectAssignmentService _projectAssignmentService;
         private readonly IProjectApprovalService _projectApprovalService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IAccessControlService _accessControlService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IProjectApprovalService projectApprovalService, IActivityLogService activityLogService)
+
+        public ProjectService(AppDbContext context, IMapper mapper, IProjectAssignmentService projectAssignmentService, IProjectApprovalService projectApprovalService, IActivityLogService activityLogService, IAccessControlService accessControlService, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _mapper = mapper;
             _projectAssignmentService = projectAssignmentService;
             _projectApprovalService = projectApprovalService;
             _activityLogService = activityLogService;
+            _accessControlService = accessControlService;
+            _userManager = userManager;
         }
 
         public async Task<List<ProjectDto>> GetAllAsync(string department)
@@ -283,6 +290,21 @@ namespace ProjectManagementSystem1.Services.ProjectService
             );
         }
 
+        public async Task<List<ProjectDto>> GetAllVisibleAsync(string currentUserId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == currentUserId);
+            if (user == null) return new List<ProjectDto>();
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var baseQuery = _context.Projects
+                .Include(p => p.ProjectAssignments)
+                .AsQueryable();
+
+            var filtered = await _accessControlService.FilterProjectsForUserAsync(baseQuery, user, roles);
+            var list = await filtered.ToListAsync();
+            return _mapper.Map<List<ProjectDto>>(list);
+        }
 
 
     }

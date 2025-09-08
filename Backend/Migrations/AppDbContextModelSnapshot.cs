@@ -720,6 +720,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ReportsToUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -756,6 +759,8 @@ namespace ProjectManagementSystem1.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
+
+                    b.HasIndex("ReportsToUserId");
 
                     b.ToTable("AspNetUsers", (string)null);
                 });
@@ -1898,6 +1903,16 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("ActivityLog");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "ReportsTo")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ReportsToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ReportsTo");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
                 {
                     b.HasOne("Attachment", "Attachment")
@@ -2229,6 +2244,8 @@ namespace ProjectManagementSystem1.Migrations
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("DirectReports");
+
                     b.Navigation("UserSkills");
                 });
 
