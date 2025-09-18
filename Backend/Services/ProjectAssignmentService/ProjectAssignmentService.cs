@@ -29,17 +29,7 @@ public class ProjectAssignmentService : IProjectAssignmentService
         //if (project == null || project.Department != requesterDept)
         //    throw new UnauthorizedAccessException("Access denied. Department mismatch.");
 
-        // More flexible department validation - allow cross-department access for project management
-        if (!string.IsNullOrEmpty(requesterDept) && 
-            !string.IsNullOrEmpty(project.Department) &&
-            !string.Equals(requesterDept.Trim(), project.Department.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            // Log the department mismatch for debugging
-            Console.WriteLine($"Department mismatch: Requester: '{requesterDept}', Project: '{project.Department}'");
-            
-            // For now, allow access but log it - you can make this stricter if needed
-            // throw new UnauthorizedAccessException("Access denied. Department mismatch.");
-        }
+        // Department validation removed - allowing cross-department access for project management
 
         var assignments = await _context.ProjectAssignments
             .AsNoTracking()

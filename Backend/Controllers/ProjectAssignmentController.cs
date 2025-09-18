@@ -127,8 +127,7 @@ namespace ProjectManagementSystem1.Controllers
                 return StatusCode(403, new { 
                     message = ex.Message,
                     errorType = "AccessDenied",
-                    details = "You don't have permission to perform this action.",
-                    requesterDepartment = dept
+                    details = "You don't have permission to perform this action."
                 });
             }
             catch (Exception ex)
