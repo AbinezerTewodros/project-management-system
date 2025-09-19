@@ -113,6 +113,7 @@ namespace ProjectManagementSystem1.Controllers
 
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m =>
                     m.MessageType == 1 &&
                     m.ProjectId.HasValue &&
@@ -178,7 +179,7 @@ namespace ProjectManagementSystem1.Controllers
 
             // Personal messages
             var personalUnread = await _context.Messages
-                .Where(m => m.MessageType == 3 && m.ReceiverId == userId && !m.IsRead)
+                .Where(m => m.MessageType == 3 && m.ReceiverId == userId && !m.IsRead && !m.IsDeleted)
                 .CountAsync();
 
             // Group messages

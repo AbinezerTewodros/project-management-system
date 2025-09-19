@@ -33,24 +33,49 @@ namespace ProjectManagementSystem1.Controller
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userManager.Users
-                .Select(u => new
+            var users = await _userManager.Users.ToListAsync();
+
+            var usersWithRoles = new List<object>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                var primaryRole = roles.FirstOrDefault() ?? "No Role";
+
+                usersWithRoles.Add(new
                 {
-                    u.Id,
-                    u.FullName,
-                    u.Email,
-                    u.UserName,
-                    u.EmployeeId,
-                    u.PhoneNumber,
-                    u.Department,
-                    u.Status,
-                    u.Company,
-                    u.Title,
+                    user.Id,
+                    user.FullName,
+                    user.Email,
+                    user.UserName,
+                    user.EmployeeId,
+                    user.PhoneNumber,
+                    user.Department,
+                    user.Status,
+                    user.Company,
+                    user.Title,
+                    Role = primaryRole
+                });
+            }
+
+            return Ok(usersWithRoles);
+        }
+
+        [HttpGet("roles")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var roles = await _roleManager.Roles
+                .Select(r => new
+                {
+                    r.Id,
+                    r.Name
                 })
                 .ToListAsync();
 
-            return Ok(users);
+            return Ok(roles);
         }
+
 
 
         [HttpGet("users")]
@@ -400,6 +425,7 @@ namespace ProjectManagementSystem1.Controller
             //user.Role = dto.Role ?? user.Role;
             user.Company = dto.Company ?? user.Company;
             //user.Status = dto.Status;
+            user.Status = dto.Status ?? user.Status;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded) return BadRequest("Failed to update user.");

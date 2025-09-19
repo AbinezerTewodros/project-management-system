@@ -54,9 +54,9 @@ namespace ProjectManagementSystem1.Helpers
                 opt => opt.MapFrom(src => src.Status != null ? src.Member.Status : null))
             .ForMember(dest => dest.MemberRole,
                 opt => opt.MapFrom(src => src.MemberRole))
-       
+
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            
+
             .ReverseMap();
 
 
@@ -64,7 +64,12 @@ namespace ProjectManagementSystem1.Helpers
             CreateMap<CreateMessageDto, Message>();
             CreateMap<Message, MessageDto>()
             .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
-            .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.Sender.EmployeeId));
+            .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.Sender.EmployeeId))
+            .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => src.IsRead))
+            .ForMember(dest => dest.Attachment, opt => opt.MapFrom(src => src.Attachment));
+
+            CreateMap<Attachment, AttachmentDto>()
+            .ForMember(dest => dest.UploadedByUserName, opt => opt.MapFrom(src => src.UploadedBy.FullName));
 
             CreateMap<CreateMilestoneDto, Milestone>();
             CreateMap<Milestone, MilestoneReadDto>()
