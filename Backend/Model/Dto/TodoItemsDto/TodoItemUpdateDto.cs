@@ -15,8 +15,5 @@ namespace ProjectManagementSystem1.Model.Dto.TodoItemsDto
 
         [Range(0, 100)]
         public double? Progress { get; set; }
-
-        [Required]  // Add this
-        public string AssigneeId { get; set; }
     }
 }
