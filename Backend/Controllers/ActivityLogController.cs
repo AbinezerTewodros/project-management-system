@@ -86,7 +86,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 return Ok(ApiResponse<object>.CreateSuccess(response, "Activity logs retrieved successfully"));
             }
-            catch (System.UnauthorizedAccessException ex)
+            catch (System.UnauthorizedAccessException)
             {
                 return Forbid();
             }
@@ -132,7 +132,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 return Ok(ApiResponse<ActivityLog>.CreateSuccess(log, "Activity log retrieved successfully"));
             }
-            catch (System.UnauthorizedAccessException ex)
+            catch (System.UnauthorizedAccessException)
             {
                 return Forbid();
             }
@@ -205,7 +205,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 return Ok(ApiResponse<object>.CreateSuccess(response, $"User activity logs retrieved successfully for user {userId}"));
             }
-            catch (System.UnauthorizedAccessException ex)
+            catch (System.UnauthorizedAccessException)
             {
                 return Forbid();
             }
@@ -285,7 +285,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 return Ok(ApiResponse<object>.CreateSuccess(response, $"Entity activity logs retrieved successfully for {entityType} {entityId}"));
             }
-            catch (System.UnauthorizedAccessException ex)
+            catch (System.UnauthorizedAccessException)
             {
                 return Forbid();
             }

@@ -51,7 +51,7 @@ namespace ProjectManagementSystem1.Helpers
             .ForMember(dest => dest.MemberId,
                 opt => opt.MapFrom(src => src.Member != null ? src.Member.EmployeeId : null))
             .ForMember(dest => dest.Status,
-                opt => opt.MapFrom(src => src.Status != null ? src.Member.Status : null))
+                opt => opt.MapFrom(src => src.Member != null ? src.Member.Status : null))
             .ForMember(dest => dest.MemberRole,
                 opt => opt.MapFrom(src => src.MemberRole))
 

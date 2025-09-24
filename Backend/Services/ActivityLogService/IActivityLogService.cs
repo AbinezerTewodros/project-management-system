@@ -1,7 +1,6 @@
 ﻿using ProjectManagementSystem1.Model.Entities;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using ProjectManagementSystem1.Model.Entities;
 
 namespace ProjectManagementSystem1.Services
 {

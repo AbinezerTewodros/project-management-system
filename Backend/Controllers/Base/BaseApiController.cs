@@ -385,7 +385,7 @@ namespace ProjectManagementSystem1.Controllers.Base
             var response = ApiResponse.CreateSuccess(message);
             if (!string.IsNullOrEmpty(location))
             {
-                Response.Headers.Add("Location", location);
+                Response.Headers["Location"] = location;
             }
             return Accepted(response);
         }

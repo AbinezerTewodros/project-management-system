@@ -1,6 +1,5 @@
 ﻿using ProjectManagementSystem1.Model.Entities;
 using System.ComponentModel.DataAnnotations;
-using ProjectManagementSystem1.Model.Entities;
 
 namespace ProjectManagementSystem1.Model.Dto.Issue
 {
