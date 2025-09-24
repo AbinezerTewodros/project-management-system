@@ -21,7 +21,6 @@ namespace ProjectManagementSystem1.Controllers
     {
         private readonly IProjectService _projectService;
         private readonly AppDbContext _context;
-        private readonly ILogger<ProjectController> _logger;
 
         public ProjectController(IProjectService projectService, AppDbContext context, ILogger<ProjectController> logger)
             : base(logger)
@@ -186,7 +185,7 @@ namespace ProjectManagementSystem1.Controllers
 
                 var updated = await _projectService.UpdateAsync(id, dto, GetCurrentUserId());
                 
-                if (updated == null)
+                if (!updated)
                 {
                     return NotFoundResponse("Project", id);
                 }

@@ -57,7 +57,6 @@ using ProjectManagementSystem1.Services.UserProfile;
 using ProjectManagementSystem1.Services.CascadedFilterService;
 using ProjectManagementSystem1.Services.AccessLogService;
 using ProjectManagementSystem1.Services.TaskDependencyService;
-using ProjectManagementSystem1.Services.Background;
 using ProjectManagementSystem1.Services.BackgroundJobs;
 using ProjectManagementSystem1.Services.BackgroundJobs.Jobs;
 using ProjectManagementSystem1.Services.EmailService;
@@ -73,13 +72,10 @@ using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureLogging(logging =>
-{
-    logging.ClearProviders();
-    logging.AddConsole();
-    logging.AddDebug();
-    logging.SetMinimumLevel(LogLevel.Trace);
-});
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
 builder.Services.AddMemoryCache();
 

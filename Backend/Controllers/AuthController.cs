@@ -17,7 +17,6 @@ namespace ProjectManagementSystem1.Controllers
     {
         private readonly IUserService _userService;
         private readonly IAuthService _authService;
-        private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
        
@@ -53,7 +52,12 @@ namespace ProjectManagementSystem1.Controllers
             if (jwtResponse == null)
                 return Unauthorized(new { message = "Invalid credentials." });
 
-            if (jwtResponse.IsFirstLogin)
+            // Check if user is admin before showing first login message
+            var user = await _userManager.FindByNameAsync(dto.Username);
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var isAdmin = userRoles.Contains("Admin") || userRoles.Contains("Administrator");
+
+            if (jwtResponse.IsFirstLogin && !isAdmin)
                 return Ok(new { message = "First login. Password change required.", jwtResponse });
 
             return Ok(jwtResponse);

@@ -94,8 +94,8 @@ namespace ProjectManagementSystem1.Model.Dto.Common
         public bool? HasTeamMembers { get; set; }
         public int? MinTeamSize { get; set; }
         public int? MaxTeamSize { get; set; }
-        public bool? IsOverdue { get; set; }
-        public bool? IsNearDeadline { get; set; } // Within 7 days
+        public new bool? IsOverdue { get; set; }
+        public new bool? IsNearDeadline { get; set; } // Within 7 days
         public bool? HasIssues { get; set; }
         public bool? HasMilestones { get; set; }
     }
@@ -103,12 +103,12 @@ namespace ProjectManagementSystem1.Model.Dto.Common
     public class TaskFilterDto : AdvancedFilterDto
     {
         // Task-specific filters
-        public List<int>? ProjectIds { get; set; }
+        public new List<int>? ProjectIds { get; set; }
         public List<int>? MilestoneIds { get; set; }
         public List<string>? TaskTypes { get; set; }
         public List<string>? TaskStatuses { get; set; }
         public bool? IsAssigned { get; set; }
-        public bool? IsOverdue { get; set; }
+        public new bool? IsOverdue { get; set; }
         public bool? IsNearDeadline { get; set; }
         public bool? HasDependencies { get; set; }
         public bool? HasComments { get; set; }
@@ -118,11 +118,11 @@ namespace ProjectManagementSystem1.Model.Dto.Common
     public class AssignmentFilterDto : AdvancedFilterDto
     {
         // Assignment-specific filters
-        public List<int>? ProjectIds { get; set; }
+        public new List<int>? ProjectIds { get; set; }
         public List<string>? MemberRoles { get; set; }
         public List<string>? AssignmentStatuses { get; set; }
         public bool? IsPrimaryScrumMaster { get; set; }
-        public bool? IsActive { get; set; }
+        public new bool? IsActive { get; set; }
         public double? MinWorkloadPercentage { get; set; }
         public double? MaxWorkloadPercentage { get; set; }
         public DateTime? AssignmentStartDateFrom { get; set; }
@@ -134,14 +134,14 @@ namespace ProjectManagementSystem1.Model.Dto.Common
     public class IssueFilterDto : AdvancedFilterDto
     {
         // Issue-specific filters
-        public List<int>? ProjectIds { get; set; }
+        public new List<int>? ProjectIds { get; set; }
         public List<string>? IssueTypes { get; set; }
         public List<string>? IssueStatuses { get; set; }
-        public List<string>? Priorities { get; set; }
+        public new List<string>? Priorities { get; set; }
         public List<string>? AssignedToUserIds { get; set; }
         public List<string>? ReportedByUserIds { get; set; }
         public bool? IsResolved { get; set; }
-        public bool? IsOverdue { get; set; }
+        public new bool? IsOverdue { get; set; }
         public bool? HasAttachments { get; set; }
         public bool? HasComments { get; set; }
     }

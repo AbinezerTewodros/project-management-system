@@ -61,7 +61,7 @@ namespace ProjectManagementSystem1.Middleware
             // Add retry-after header if applicable
             if (errorResponse.RetryAfterSeconds.HasValue)
             {
-                context.Response.Headers.Add("Retry-After", errorResponse.RetryAfterSeconds.Value.ToString());
+                context.Response.Headers["Retry-After"] = errorResponse.RetryAfterSeconds.Value.ToString();
             }
 
             // Add correlation ID to response headers

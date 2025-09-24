@@ -16,11 +16,10 @@ namespace ProjectManagementSystem1.Services.AuthService
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly AppDbContext context;
-        private readonly IConfiguration _configuration;
         private readonly IJwtService _jwtService;
         private readonly IAccessLogService _accessLogService;
 
-        public AuthService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IConfiguration _configuration, IJwtService jwtService, AppDbContext _context, IAccessLogService accessLogService)
+        public AuthService(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IJwtService jwtService, AppDbContext _context, IAccessLogService accessLogService)
         {
             _signInManager = signInManager;
             _userManager = userManager;
@@ -72,10 +71,15 @@ namespace ProjectManagementSystem1.Services.AuthService
             user.LastLogin = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
 
+            // Check if user is admin - admins should never need password change
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var isAdmin = userRoles.Contains("Admin") || userRoles.Contains("Administrator");
+
             return new TokenResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token
+                RefreshToken = refreshToken.Token,
+                IsFirstLogin = isAdmin ? false : user.IsFirstLogin
             };
         }
 

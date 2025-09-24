@@ -91,7 +91,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the assignment."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while accepting the assignment."); }
         }
 
         [HttpPut("{id}/acceptapproval")]
@@ -119,7 +119,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while accepting the approval."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while accepting the approval."); }
         }
 
         [HttpPut("{id}/rejectassignment")]
@@ -133,7 +133,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the assignment."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while rejecting the assignment."); }
         }
 
         [HttpPut("{id}/rejectcompletion")]
@@ -162,7 +162,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while rejecting the completed todo."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while rejecting the completed todo."); }
         }
 
         // In TodoItemController.cs
@@ -208,7 +208,7 @@ namespace ProjectManagementSystem1.Controllers
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
             catch (UnauthorizedAccessException ex) { return Unauthorized(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while starting the todo item."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while starting the todo item."); }
         }
 
         [HttpPut("{id}/complete")]
@@ -222,7 +222,7 @@ namespace ProjectManagementSystem1.Controllers
             }
             catch (NotFoundException ex) { return NotFound(ex.Message); }
             catch (InvalidOperationException ex) { return BadRequest(ex.Message); }
-            catch (Exception ex) { return StatusCode(500, "An error occurred while completing the todo item."); }
+            catch (Exception) { return StatusCode(500, "An error occurred while completing the todo item."); }
         }
 
         [HttpPut("{id}/progress")]

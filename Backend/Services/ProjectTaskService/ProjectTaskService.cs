@@ -1347,7 +1347,7 @@ namespace ProjectManagementSystem1.Services.ProjectTaskService
             var depth = 0;
             var currentTaskId = taskId;
 
-            while (currentTaskId != null)
+            while (currentTaskId != 0)
             {
                 var task = await _context.ProjectTasks
                     .FirstOrDefaultAsync(t => t.Id == currentTaskId);

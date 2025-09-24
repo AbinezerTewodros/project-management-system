@@ -6,8 +6,6 @@ using ProjectManagementSystem1.Model.Dto.UserManagementDto;
 using ProjectManagementSystem1.Model.Entities;
 using ProjectManagementSystem1.Services.ADService;
 using ProjectManagementSystem1.Services.UserService;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace ProjectManagementSystem1.Controller
 {
@@ -151,7 +149,7 @@ namespace ProjectManagementSystem1.Controller
 
         // ========== AD Integration (Preview + Import) ==========
         [HttpGet("ad/users/{empId}")]
-        public async Task<IActionResult> PreviewAdUser(string empId)
+        public IActionResult PreviewAdUser(string empId)
         {
             try
             {
