@@ -485,3 +485,4 @@ The backend uses these JWT settings (check with backend team for exact values):
 ---
 
 This guide should provide your frontend team with everything they need to integrate with your authentication system. For any specific implementation details or clarifications, coordinate with your backend team.
+

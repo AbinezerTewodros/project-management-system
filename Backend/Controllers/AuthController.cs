@@ -52,12 +52,7 @@ namespace ProjectManagementSystem1.Controllers
             if (jwtResponse == null)
                 return Unauthorized(new { message = "Invalid credentials." });
 
-            // Check if user is admin before showing first login message
-            var user = await _userManager.FindByNameAsync(dto.Username);
-            var userRoles = await _userManager.GetRolesAsync(user);
-            var isAdmin = userRoles.Contains("Admin") || userRoles.Contains("Administrator");
-
-            if (jwtResponse.IsFirstLogin && !isAdmin)
+            if (jwtResponse.IsFirstLogin)
                 return Ok(new { message = "First login. Password change required.", jwtResponse });
 
             return Ok(jwtResponse);
