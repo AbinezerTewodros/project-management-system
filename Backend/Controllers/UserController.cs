@@ -21,6 +21,25 @@ namespace ProjectManagementSystem1.Controllers
             _userService = userService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userManager.Users
+                .Select(u => new
+                {
+                    u.Id,
+                    u.FullName,
+                    u.EmployeeId,
+                    u.Email,
+                    u.Department,
+                    u.PhoneNumber,
+                    u.Title,
+                    u.Company
+                }).ToListAsync();
+
+            return Ok(users);
+        }
+
         [HttpGet("users-by-department/{departmentName}")]
         public async Task<IActionResult> GetUsersByDepartment(string departmentName)
         {
