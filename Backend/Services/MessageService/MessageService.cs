@@ -79,6 +79,7 @@ namespace ProjectManagementSystem1.Services.MessageService
 
             message = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .FirstOrDefaultAsync(m => m.MessageId == message.MessageId);
 
             return _mapper.Map<MessageDto>(message);
@@ -89,6 +90,7 @@ namespace ProjectManagementSystem1.Services.MessageService
         {
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m => m.ProjectId == projectId && m.MessageType == 1 && !m.IsDeleted)
                 .OrderBy(m => m.TimeSent)
                 .ToListAsync();
@@ -105,6 +107,7 @@ namespace ProjectManagementSystem1.Services.MessageService
 
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m => m.MessageType == 2 && senderIds.Contains(m.SenderId) && !m.IsDeleted)
                 .OrderBy(m => m.TimeSent)
                 .ToListAsync();
@@ -116,6 +119,7 @@ namespace ProjectManagementSystem1.Services.MessageService
         {
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m =>
                     m.MessageType == 3 &&
                     !m.IsDeleted &&
@@ -139,6 +143,7 @@ namespace ProjectManagementSystem1.Services.MessageService
 
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m =>
                     m.MessageType == 1 &&
                     m.ProjectId.HasValue &&
@@ -193,6 +198,18 @@ namespace ProjectManagementSystem1.Services.MessageService
                 .CountAsync();
 
             return personalUnread + groupUnread;
+        }
+
+        public async Task<bool> MarkMessageAsReadAsync(int messageId, string userId)
+        {
+            var message = await _context.Messages
+                .FirstOrDefaultAsync(m => m.MessageId == messageId && m.ReceiverId == userId);
+
+            if (message == null || message.IsRead) return false;
+
+            message.IsRead = true;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> MarkGroupMessageAsRead(int messageId, string userId)

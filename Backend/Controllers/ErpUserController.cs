@@ -34,6 +34,21 @@ namespace ProjectManagementSystem1.Controllers
             var result = await _erpService.SyncMultipleUsersAsync(employeeIds);
             return Ok(result);
         }
+
+        [HttpPost("sync-all")]
+        public async Task<IActionResult> SyncAll()
+        {
+            try
+            {
+                var result = await _erpService.SyncAllUsersAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
     }
 
 }

@@ -4,9 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 // import { Button } from "@/components/ui/button";
 // import { LogOut, Users, FolderPlus, LayoutDashboard, Settings } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import PresidentSidebar from "@/components/PresidentSidebar";
-import VicePresidentSidebar from "@/components/VicePresidentSidebar";
-import DirectorSidebar from "@/components/DirectorSidebar";
+import Sidebar from "@/components/Sidebar";
+// import VicePresidentSidebar from "@/components/VicePresidentSidebar";
+// import DirectorSidebar from "@/components/DirectorSidebar";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -37,7 +37,7 @@ const DashboardLayout = ({
     switch (user.role) {
       case 'president':
         return (
-          <PresidentSidebar
+          <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             darkMode={darkMode}
@@ -45,7 +45,7 @@ const DashboardLayout = ({
         );
       case 'vice_president':
         return (
-          <VicePresidentSidebar
+          <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             darkMode={darkMode}
@@ -53,7 +53,7 @@ const DashboardLayout = ({
         );
       case 'director':
         return (
-          <DirectorSidebar
+          <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             darkMode={darkMode}
@@ -65,16 +65,16 @@ const DashboardLayout = ({
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
+    <div className={`flex h-screen mt-4 ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
       {renderSidebar()}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col ">
         <Navbar
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           darkMode={darkMode}
           setDarkMode={setDarkMode}
         />
-        <div className="flex-1 flex overflow-hidden">
-          <main className="flex-1 overflow-y-auto">
+        <div className="flex-1 flex ">
+          <main className="flex-1 ">
             <div className="container mx-auto px-4 py-6">
               {children}
             </div>

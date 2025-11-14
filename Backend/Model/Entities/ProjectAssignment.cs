@@ -2,38 +2,68 @@
 using System.ComponentModel.DataAnnotations;
 using ProjectManagementSystem1.Model.Entities;
 
-public class ProjectAssignment
+
+namespace ProjectManagementSystem1.Model.Entities
 {
-    [Key]
-    public int Id { get; set; }
+    public enum AssignmentStatus
+    {
+        Pending,
+        Approved,
+        Rejected
+    }
+    public class ProjectAssignment
+    {
+        
 
-    [Required]
-    public int ProjectId { get; set; }
+        [Key]
+        public int Id { get; set; }
 
-    [ForeignKey("ProjectId")]
-    public Project Project { get; set; }
+        [Required]
 
-    [Required]
-    public string MemberId { get; set; }
+        public int ProjectId { get; set; }
 
-    [ForeignKey("MemberId")]
-    public ApplicationUser Member { get; set; }
+        [ForeignKey("ProjectId")]
+        public Project Project { get; set; }
 
-    [Required]
-    public string MemberRole { get; set; }
 
-    public string? Role { get; set; } // e.g., "ScrumMaster", "TeamLeader", "Member"
 
-    public double Status { get; set; } = 0;
+        [Required]
+        public string MemberId { get; set; }
 
-    // Audit fields
-    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedDate { get; set; }
-    public string? CreateUser { get; set; }
-    public string? UpdateUser { get; set; }
+        [ForeignKey("MemberId")]
+        public ApplicationUser Member { get; set; }
 
-    [Timestamp]
-    public byte[] Version { get; set; }
+        [Required]
+        public string MemberRole { get; set; }
 
-    public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>(); // navigation property
+        public string? Role { get; set; } // e.g., "ScrumMaster", "TeamLeader", "Member"
+
+        //public double Status { get; set; } = 0;
+
+        // Audit fields
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; }
+        public string? CreateUser { get; set; }
+        public string? UpdateUser { get; set; }
+
+        [Timestamp]
+        public byte[] Version { get; set; }
+
+        public AssignmentStatus Status { get; set; } = AssignmentStatus.Pending;
+        public string? ApprovedById { get; set; }
+        public DateTime? ApprovedDate { get; set; }
+        public DateTime? AssignmentAcceptedDate { get; set; }
+        public string? RejectionReason { get; set; }
+
+        // Phase 2B: Enhanced Assignment System
+        public bool IsPrimaryScrumMaster { get; set; } = false; // For multiple scrum masters
+        public double WorkloadPercentage { get; set; } = 100.0; // How much time allocated to this project
+        public DateTime? AssignmentStartDate { get; set; }
+        public DateTime? AssignmentEndDate { get; set; }
+        public string? AssignmentNotes { get; set; }
+        public bool IsActive { get; set; } = true; // For soft deletion/reassignment
+
+        public ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>(); // navigation property
+    }
 }
+   

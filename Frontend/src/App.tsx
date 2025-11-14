@@ -1,109 +1,139 @@
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useEffect, useState } from "react";
 
-import { AuthProvider, useAuth } from "@/context/AuthContext"; // keep AuthContext
-import ProtectedRoute from "@/components/auth/ProtectedRoute"; // role-based route protection
-import { ProjectProvider } from "@/context/ProjectContext"; // Add ProjectProvider import
-import Projects from "@/pages/Projects"; // Add Projects import
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { ProjectProvider } from "@/context/ProjectContext";
+import { TaskProvider } from "@/context/TaskContext";
 
-import Home from "@/components/Home"; // keep Home component
 import Navbar from "@/components/Navbar";
-import MemberSidebar from "@/components/MemberSidebar";
-import ManagerSidebar from "@/components/ManagerSidebar";
-import VicePresidentSidebar from "@/components/VicePresidentSidebar";
-import DirectorSidebar from "@/components/DirectorSidebar";
+import Sidebar from "@/components/Sidebar";
 import DocumentTitle from "@/components/DocumentTitle";
-import { NotificationProvider } from "@/components/NotificationContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { NotificationProvider } from "@/context/NotificationContext";
 
-import Index from "@/pages/Index"; // keep login/signup etc
-import Login from "@/pages/Login";
-import SignUp from "@/pages/Signup";
+import Index from "@/pages/Index";
+import Login from "@/pages/Account/Login";
+import SignUp from "@/pages/Account/Signup";
+import ChangePassword from "@/pages/Account/ChangePassword";
 import ForgotPassword from "@/pages/profilePages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
+import ResetPassword from "@/pages/Account/ResetPassword";
 import Unauthorized from "@/pages/Unauthorized";
 import NotFound from "@/pages/NotFound";
+import TimelinePage from "@/pages/TimelinePage";
+import TimelineList from "@/pages/TimelineList";
+import EscalationsList from "@/pages/Escalations/EscalationsList";
+import RequestForm from "@/pages/Requests/RequestForm";
 
-import MemberDashboard from "@/pages/dashboards/MemberDashboard";
-import ManagerDashboard from "@/pages/dashboards/ManagerDashboard";
-import DirectorDashboard from "@/pages/dashboards/DirectorDashboard";
-
+import Dashboard from "@/pages/dashboards/Dashboard";
 import AdminDashboard from "@/pages/dashboards/AdminDashboard";
-import PresidentDashboard from "@/pages/dashboards/PresidentDashboard";
-import VicePresidentDashboard from "@/pages/dashboards/VicePresidentDashboard";
-
-// Supervisor Sidebar Pages
-
-import SupervisorProjects from "@/pages/SupervisorSidebarPages/Projects";
-import Tasks from "@/pages/SupervisorSidebarPages/Tasks";
-import Team from "@/pages/SupervisorSidebarPages/Team";
-import Report from "@/components/Report";
+import MyProjects from "@/pages/Projects/MyProjects";
+import Projects from "@/pages/Projects";
+import ProjectsUnified from "@/pages/Projects/ProjectsUnified";
+import MyTasks from "@/pages/Tasks/MyTasks";
+import TasksUnified from "@/pages/Tasks/TasksUnified";
+import AssignedToMe from "@/pages/Projects/AssignedToMe";
+// import TasksAssignedToMe from "@/pages/Tasks/TasksAssignedToMe";
+import TeamLeaderApprovals from "@/pages/Tasks/TeamLeaderApprovals";
+//import Chat from "@/pages/Chat/Chat";
+import TeamChat from "@/pages/Chat/TeamChat";
+import Announcements from "@/pages/Announcement/Announcements";
+import ArchivedTasks from "@/pages/Tasks/ArchivedTasks";
+import Personal from "@/pages/Tasks/Personal";
+import MultistepProjectCreation from "@/pages/Projects/MultistepProjectCreation";
+import NotificationsPage from "@/pages/notifications";
+import { Project } from "@/types/types";
 
 import EditProfile from "@/pages/profilePages/EditProfilePage";
 import ChangePasswordPage from "@/pages/profilePages/ChangePasswordPage";
 import UserProfile from "@/pages/profilePages/userProfile";
 
-// Member Sidebar Pages
+import VicePresidentCreateProject from "@/pages/Projects/CreateProject";
+import VicePresidentReports from "@/pages/Report/ReportNew";
+import VicePresidentTeams from "@/pages/Team/Teams";
+import VicePresidentAnnouncements from "@/pages/Announcement/Announcements";
 
-import MemberMilestoneChart from "@/pages/MemberSidebarPages/MilestoneChart";
-import MemberTeamChat from "@/pages/MemberSidebarPages/TeamChat";
-import MemberTasksList from "@/pages/MemberSidebarPages/TasksList";
-import MemberArchivedTasks from "@/pages/MemberSidebarPages/ArchivedTasks";
+import DirectorCreateProject from "@/pages/Projects/CreateProject";
+import DirectorReports from "@/pages/Report/ReportNew";
+import DirectorTeams from "@/pages/Team/Teams";
+import DirectorAnnouncements from "@/pages/Announcement/Announcements";
+import DirectorArchivedTasks from "@/pages/Tasks/ArchivedTasks";
 
-import SupervisorSidebar from "@/components/SupervisorSidebar";
+import ManagerCreateProject from "@/pages/Projects/MultistepProjectCreation";
+import ManagerReports from "@/pages/Report/ReportNew";
+import ManagerMilestones from "@/pages/Milestones/Milestones";
 
-// Import the manager components
-import ManagerCreateProject from "@/pages/ManagerSidebarPages/CreateProject";
-import ManagerProjects from "@/pages/ManagerSidebarPages/Projects";
-import ManagerReports from "@/pages/ManagerSidebarPages/Reports";
-import ManagerTasks from "@/pages/ManagerSidebarPages/Tasks";
-import ManagerChat from "@/pages/ManagerSidebarPages/Chat";
-import ManagerAnnouncements from "@/pages/ManagerSidebarPages/Announcements";
-import ManagerArchivedTasks from "@/pages/ManagerSidebarPages/ArchivedTasks";
+import MemberMilestoneChart from "@/pages/Milestones/MilestoneChart";
+import MemberAddMilestone from "@/pages/Milestones/AddMilestone";
+import MemberTasksList from "@/pages/Tasks/TasksList";
+import MemberArchivedTasks from "@/pages/Tasks/ArchivedTasks";
 
-import DashboardLayout from "@/components/layout/DashboardLayout";
+import AuthoredMile from "@/pages/Milestones/AuthoredMile";
+import DelegatedAssignments from "@/pages/Projects/DelegatedAssignments"; // ✅ NEW: Real delegated assignments page
+import PendingApprovals from "@/pages/Projects/PendingApprovals"; // ✅ NEW: Approval workflow page
+import MilestonesUnified from "./pages/Milestones/MilestonesUnified";
+import ProjectDetailPage from "./pages/Projects/ProjectDetailPage";
 
-// President Sidebar Pages
-import PresidentCreateProject from "@/pages/PresidentSidebarPages/CreateProject";
-import PresidentProjects from "@/pages/PresidentSidebarPages/Projects";
-import PresidentReports from "@/pages/PresidentSidebarPages/Reports";
-import PresidentAnnouncements from "@/pages/PresidentSidebarPages/Announcements";
-import PresidentSettings from "@/pages/PresidentSidebarPages/Settings";
+// Dashboard Layout Wrapper that can access AuthProvider
+const DashboardLayoutWrapper = ({
+  children,
+  darkMode,
+  setDarkMode,
+  sidebarOpen,
+  setSidebarOpen,
+  hideSidebar = false,
+}: {
+  children: React.ReactNode;
+  darkMode: boolean;
+  setDarkMode: (darkMode: boolean) => void;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  hideSidebar?: boolean;
+}) => {
+  const { user } = useAuth();
+  const userRole = user?.role || "member";
 
-// Vice President Sidebar Pages
-import VicePresidentCreateProject from "@/pages/VicePresidentSidebarPages/CreateProject";
-import VicePresidentProjects from "@/pages/VicePresidentSidebarPages/Projects";
-import VicePresidentReports from "@/pages/VicePresidentSidebarPages/Reports";
-import VicePresidentTeams from "@/pages/VicePresidentSidebarPages/Teams";
-import VicePresidentSettings from "@/pages/VicePresidentSidebarPages/Settings";
-import VicePresidentAnnouncements from "@/pages/VicePresidentSidebarPages/Announcements";
+  return (
+    <div
+      className={`flex h-screen overflow-hidden ${
+        darkMode ? "dark bg-zinc-800" : "bg-white"
+      }`}
+    >
+      <div className="flex-1 flex flex-col overflow-hidden pt-16">
+        <Navbar
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
+        <Toaster position="top-right" />
+        <div className="flex-1 flex overflow-hidden">
+          {!hideSidebar && (
+            <Sidebar
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              darkMode={darkMode}
+              userRole={userRole}
+            />
+          )}
+          <main className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-2">{children}</div>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-// Director Sidebar Pages
-import DirectorCreateProject from "@/pages/DirectorSidebarPages/CreateProject";
-import DirectorProjects from "@/pages/DirectorSidebarPages/Projects";
-import DirectorReports from "@/pages/DirectorSidebarPages/Reports";
-import DirectorTeams from "@/pages/DirectorSidebarPages/Teams";
-import DirectorSettings from "@/pages/DirectorSidebarPages/Settings";
-import MyProjects from "./pages/MemberSidebarPages/Projects/Project/MyProjects";
-import MyTasks from "./pages/MemberSidebarPages/Projects/Tasks/MyTasks";
-import Teams from "@/pages/ManagerSidebarPages/Teams";
-import AssignedToMe from "./pages/MemberSidebarPages/Projects/Project/AssignedToMe";
-import TasksAssignedToMe from "./pages/MemberSidebarPages/Projects/Tasks/TasksAssignedToMe";
-import Chat from "@/pages/ManagerSidebarPages/Chat";
-import Announcements from "@/pages/ManagerSidebarPages/Announcements";
-import ArchivedTasks from "@/pages/ManagerSidebarPages/ArchivedTasks";
-import DirectorChat from "@/pages/DirectorSidebarPages/Chat";
-import DirectorAnnouncements from "@/pages/DirectorSidebarPages/Announcements";
-import DirectorTasks from "@/pages/DirectorSidebarPages/Tasks";
-import DirectorArchivedTasks from "@/pages/DirectorSidebarPages/ArchivedTasks";
-
-// DashboardRedirect based on role (from Version A)
 const DashboardRedirect = () => {
   const { user } = useAuth();
-
   if (!user) return <Navigate to="/login" replace />;
 
-  switch (user.role) {
+  const role = (user.role || "").toLowerCase();
+  console.log("User role for dashboard redirect:", role);
+  console.log("Full user object:", user);
+
+  switch (role) {
     case "admin":
       return <Navigate to="/dashboard/admin" replace />;
     case "manager":
@@ -119,12 +149,15 @@ const DashboardRedirect = () => {
     case "vice_president":
       return <Navigate to="/dashboard/vice-president" replace />;
     default:
-      return <Navigate to="/unauthorized" replace />;
+      console.warn("Unknown role, redirecting to unauthorized:", role);
+      // Fallback: redirect to user dashboard for any authenticated user
+      return <Navigate to="/dashboard/member" replace />;
   }
 };
 
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme) return savedTheme === "dark";
@@ -136,451 +169,759 @@ const App = () => {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
+  const handleProjectCreated = (newProject: Project) => {
+    setProjects((prev) => [newProject, ...prev]);
+  };
+
+  const renderDashboardLayout = (
+    children: React.ReactNode,
+    hideSidebar: boolean = false
+  ) => (
+    <DashboardLayoutWrapper
+      darkMode={darkMode}
+      setDarkMode={setDarkMode}
+      sidebarOpen={sidebarOpen}
+      setSidebarOpen={setSidebarOpen}
+      hideSidebar={hideSidebar}
+    >
+      {children}
+    </DashboardLayoutWrapper>
+  );
+
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <DocumentTitle />
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route path="/404" element={<NotFound />} />
-
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "supervisor",
-                  "member",
-                  "director",
-                  "president",
-                  "vice_president",
-                ]}
-              >
-                <DashboardRedirect />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/admin/*"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <DashboardLayout
-                  darkMode={darkMode}
-                  setDarkMode={setDarkMode}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
+    <ErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <DocumentTitle />
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/change-password" element={<ChangePassword />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/404" element={<NotFound />} />
+            <Route
+              path="/timeline/:projectId"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "supervisor",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
                 >
-                  <AdminDashboard
-                    darkMode={darkMode}
-                    setDarkMode={setDarkMode}
-                    sidebarOpen={sidebarOpen}
-                    setSidebarOpen={setSidebarOpen}
-                  />
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/supervisor/*"
-            element={
-              <ProtectedRoute allowedRoles={["supervisor"]}>
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 flex overflow-hidden">
-                      <SupervisorSidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        darkMode={darkMode}
-                      />
-                      <main className="flex-1 overflow-y-auto">
-                        <div className="container mx-auto px-4 py-6">
-                          <Routes>
-                            <Route index element={<Home darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-                            <Route path="projects" element={<SupervisorProjects darkMode={darkMode} />} />
-                            <Route path="tasks" element={<Tasks darkMode={darkMode} />} />
-                            <Route path="team" element={<Team darkMode={darkMode} />} />
-                            <Route path="report" element={<Report darkMode={darkMode} />} />
-                          </Routes>
-                        </div>
-                      </main>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard/vice-president/*"
-            element={
-              <ProtectedRoute allowedRoles={["vice_president"]}>
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 flex overflow-hidden">
-                      <VicePresidentSidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        darkMode={darkMode}
-                      />
-                      <main className="flex-1 overflow-y-auto">
-                        <div className="container mx-auto px-4 py-6">
-                          <Routes>
-                            <Route index element={<VicePresidentDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="create-project" element={<VicePresidentCreateProject darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="projects" element={<VicePresidentProjects />} />
-                            <Route path="reports" element={<VicePresidentReports darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="teams" element={<VicePresidentTeams darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="announcements" element={<VicePresidentAnnouncements darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="settings" element={<VicePresidentSettings darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                          </Routes>
-                        </div>
-                      </main>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Director Dashboard Route */}
-          <Route
-            path="/dashboard/director/*"
-            element={
-              <ProtectedRoute allowedRoles={["director"]}>
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 flex overflow-hidden">
-                      <DirectorSidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        darkMode={darkMode}
-                      />
-                      <main className="flex-1 overflow-y-auto">
-                        <div className="">
-                          <Routes>
-                            <Route index element={<DirectorDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="create-project" element={<DirectorCreateProject darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="projects" element={<DirectorProjects />} />
-                            <Route path="projects/assigned" element={<DirectorProjects />} />
-                            <Route path="reports" element={<DirectorReports darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="teams" element={<DirectorTeams darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="settings" element={<DirectorSettings darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="chat" element={<DirectorChat darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="announcements" element={<DirectorAnnouncements darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="tasks" element={<DirectorTasks darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="archived-tasks" element={<DirectorArchivedTasks />} />
-                          </Routes>
-                        </div>
-                      </main>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* President Dashboard Route */}
-          <Route
-            path="/dashboard/president/*"
-            element={
-              <ProtectedRoute allowedRoles={["president"]}>
-                <DashboardLayout
-                  darkMode={darkMode}
-                  setDarkMode={setDarkMode}
-                  sidebarOpen={sidebarOpen}
-                  setSidebarOpen={setSidebarOpen}
+                  {renderDashboardLayout(<TimelinePage darkMode={darkMode} />)}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timeline"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "supervisor",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
                 >
-                  <Routes>
-                    <Route index element={<PresidentDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                    <Route path="create-project" element={<PresidentCreateProject darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                    <Route path="projects" element={<PresidentProjects darkMode={darkMode} />} />
-                    <Route path="reports" element={<PresidentReports darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                    <Route path="announcements" element={<PresidentAnnouncements darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                    <Route path="settings" element={<PresidentSettings darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                  </Routes>
-                </DashboardLayout>
-              </ProtectedRoute>
-            }
-          />
+                  {renderDashboardLayout(<TimelineList darkMode={darkMode} />)}
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Other Dashboard Routes */}
-          <Route
-            path="/dashboard/*"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "member",
-                ]}
-              >
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 overflow-auto p-5">
+            {/* Escalations - accessible under dashboard role path */}
+            <Route
+              path="/dashboard/:role/escalations"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "supervisor",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
+                >
+                  {renderDashboardLayout(<EscalationsList darkMode={darkMode} />)}
+                </ProtectedRoute>
+              }
+            />
+            {/* Requests - intake form */}
+            <Route
+              path="/dashboard/:role/requests"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "supervisor",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
+                >
+                  {renderDashboardLayout(<RequestForm darkMode={darkMode} />)}
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Root dashboard redirect */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "supervisor",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
+                >
+                  <DashboardRedirect />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin */}
+            <Route
+              path="/dashboard/admin/*"
+              element={
+                <ProtectedRoute allowedRoles={["admin"]}>
+                  <TaskProvider>
+                    {renderDashboardLayout(
                       <Routes>
-                        <Route path="member" element={<MemberDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                        <Route path="manager" element={<ManagerDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+                        <Route
+                          index
+                          element={
+                            <AdminDashboard
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="approvals"
+                          element={<PendingApprovals darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="notifications"
+                          element={<NotificationsPage />}
+                        />
                       </Routes>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
+                    )}
+                  </TaskProvider>
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Profile routes */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "supervisor",
-                  "member",
-                  "director",
-                  "president",
-                  "vice_president",
-                ]}
-              >
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 overflow-auto p-4">
-                      <UserProfile />
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/edit-profile"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "supervisor",
-                  "member",
-                  "director",
-                  "president",
-                  "vice_president",
-                ]}
-              >
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 overflow-auto p-4">
-                      <EditProfile />
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/change-password"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "supervisor",
-                  "member",
-                  "director",
-                  "president",
-                  "vice_president",
-                ]}
-              >
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 overflow-auto p-4">
-                      <ChangePasswordPage />
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard/member/*"
-            element={
-              <ProtectedRoute allowedRoles={["member"]}>
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className=" flex flex-col w-full overflow-hidden pt-16 ">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 flex overflow-hidden">
-                      <MemberSidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        darkMode={darkMode}
+            {/* Vice President */}
+            <Route
+              path="/dashboard/vice-president/*"
+              element={
+                <ProtectedRoute allowedRoles={["vice_president"]}>
+                  {renderDashboardLayout(
+                    <Routes>
+                      <Route
+                        index
+                        element={
+                          <Dashboard
+                            darkMode={darkMode}
+                            setDarkMode={setDarkMode}
+                            sidebarOpen={sidebarOpen}
+                            setSidebarOpen={setSidebarOpen}
+                          />
+                        }
                       />
-                      <main className={`flex-1 overflow-y-auto   ${darkMode ? 'bg-zinc-800' : 'bg-white'} `}>
-                        <div className="container mx-auto px-4 py-6">
-
-                          <Routes>
-
-                            <Route index element={<Home darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-                            <Route path="MilestoneChart" element={<MemberMilestoneChart darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-                            <Route path="projects/assigned-to-me" element={<AssignedToMe darkMode={darkMode} />} />
-                            <Route path="projects/mine" element={<MyProjects darkMode={darkMode} />} />
-                            <Route path="tasks/assigned-to-me" element={<TasksAssignedToMe darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-                            <Route path="tasks/mine" element={<MyTasks darkMode={darkMode} />} />
-                            <Route path="TasksList" element={<MemberTasksList darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-                            <Route path="Chat" element={<MemberTeamChat darkMode={darkMode} />} />
-                            <Route path="Reports" element={<Report darkMode={darkMode} />} />
-                            <Route path="ArchivedTasks" element={<MemberArchivedTasks darkMode={darkMode} isSidebarOpen={sidebarOpen} />} />
-
-
-                          </Routes>
-                        </div>
-
-                      </main>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/manager/*"
-            element={
-              <ProtectedRoute allowedRoles={["manager"]}>
-                <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                  <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                    <Navbar
-                      onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                      darkMode={darkMode}
-                      setDarkMode={setDarkMode}
-                    />
-                    <Toaster position="top-right" />
-                    <div className="flex-1 flex overflow-hidden">
-                      <ManagerSidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        darkMode={darkMode}
+                      <Route path="projects/:projectId" element={<ProjectDetailPage />}/>
+                      <Route
+                        path="create-project"
+                        element={
+                          <VicePresidentCreateProject
+                            darkMode={darkMode}
+                            onProjectCreated={handleProjectCreated}
+                          />
+                        }
                       />
-                      <main className="flex-1 overflow-y-auto">
-                        <div className="container mx-auto px-4 py-6">
-                          <Routes>
-                            <Route index element={<ManagerDashboard darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="create-project" element={<ManagerCreateProject darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="projects" element={<ManagerProjects darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="tasks" element={<ManagerTasks />} />
-                            <Route path="chat" element={<Chat />} />
-                            <Route path="announcements" element={<Announcements />} />
-                            <Route path="archived-tasks" element={<ArchivedTasks />} />
-                            <Route path="teams" element={<Teams darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="reports" element={<ManagerReports darkMode={darkMode} setDarkMode={setDarkMode} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
-                            <Route path="tasks" element={<ManagerTasks />} />
-                            <Route path="chat" element={<ManagerChat />} />
-                            <Route path="announcements" element={<ManagerAnnouncements />} />
-                            <Route path="archived-tasks" element={<ManagerArchivedTasks />} />
-                          </Routes>
-                        </div>
-                      </main>
-                    </div>
-                  </div>
-                </div>
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "admin",
-                  "manager",
-                  "supervisor",
-                  "member",
-                  "director",
-                  "president",
-                  "vice_president",
-                ]}
-              >
-                <ProjectProvider>
-                  <div className={`flex h-screen overflow-hidden ${darkMode ? "dark bg-zinc-800" : "bg-white"}`}>
-                    <div className="flex-1 flex flex-col overflow-hidden pt-16">
-                      <Navbar
-                        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-                        darkMode={darkMode}
-                        setDarkMode={setDarkMode}
+                      <Route
+                        path="reports"
+                        element={<VicePresidentReports darkMode={darkMode} />}
                       />
-                      <Toaster position="top-right" />
-                      <main className="flex-1 overflow-y-auto">
-                        <div className="container mx-auto px-4 py-6">
-                          <Projects />
-                        </div>
-                      </main>
-                    </div>
-                  </div>
-                </ProjectProvider>
-              </ProtectedRoute>
-            }
-          />
+                      <Route
+                        path="teams"
+                        element={
+                          <VicePresidentTeams
+                            darkMode={darkMode}
+                            setDarkMode={setDarkMode}
+                            sidebarOpen={sidebarOpen}
+                            setSidebarOpen={setSidebarOpen}
+                          />
+                        }
+                      />
+                      <Route
+                        path="announcements"
+                        element={
+                          <VicePresidentAnnouncements darkMode={darkMode} />
+                        }
+                      />
+                      <Route
+                        path="projects"
+                        element={<ProjectsUnified darkMode={darkMode} />}
+                      />
+                      <Route
+                        path="projects/new/:step"
+                        element={
+                          <MultistepProjectCreation
+                            darkMode={darkMode}
+                            onProjectCreated={handleProjectCreated}
+                          />
+                        }
+                      />
+                      <Route
+                        path="tasks"
+                        element={
+                          <TasksUnified
+                            darkMode={darkMode}
+                            isSidebarOpen={sidebarOpen}
+                          />
+                        }
+                      />
+                      <Route
+                        path="tasks/approvals"
+                        element={<TeamLeaderApprovals darkMode={darkMode} />}
+                      />
+                      <Route
+                        path="tasks/authored"
+                        element={<MyTasks darkMode={darkMode} />}
+                      />
+                      <Route
+                        path="Chat"
+                        element={<TeamChat darkMode={darkMode} />}
+                      />
+                      <Route
+                        path="ArchivedTasks"
+                        element={
+                          <ArchivedTasks
+                            darkMode={darkMode}
+                            isSidebarOpen={sidebarOpen}
+                          />
+                        }
+                      />
+                      <Route
+                        path="task/personal"
+                        element={<Personal darkMode={darkMode} />}
+                      />
+                      <Route
+                        path="approvals"
+                        element={<PendingApprovals darkMode={darkMode} />}
+                      />
+                    </Routes>
+                  )}
+                </ProtectedRoute>
+              }
+            />
 
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
-      </NotificationProvider>
-    </AuthProvider>
+            {/* Director */}
+            <Route
+              path="/dashboard/director/*"
+              element={
+                <ProtectedRoute allowedRoles={["director"]}>
+                  <TaskProvider>
+                    {renderDashboardLayout(
+                      <Routes>
+                        <Route
+                          index
+                          element={
+                            <Dashboard
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route path="projects/:projectId" element={<ProjectDetailPage />}/>
+                        <Route
+                          path="create-project"
+                          element={
+                            <DirectorCreateProject
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="reports"
+                          element={<DirectorReports darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="teams"
+                          element={
+                            <DirectorTeams
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="chat"
+                          element={<TeamChat darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="announcements"
+                          element={
+                            <DirectorAnnouncements darkMode={darkMode} />
+                          }
+                        />
+                        <Route
+                          path="archived-tasks"
+                          element={
+                            <DirectorArchivedTasks
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="projects"
+                          element={<ProjectsUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="projects/new/:step"
+                          element={
+                            <MultistepProjectCreation
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="tasks"
+                          element={
+                            <TasksUnified
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="tasks/approvals"
+                          element={<TeamLeaderApprovals darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="tasks/authored"
+                          element={<MyTasks darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="task/personal"
+                          element={<Personal darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="approvals"
+                          element={<PendingApprovals darkMode={darkMode} />}
+                        />
+                      </Routes>
+                    )}
+                  </TaskProvider>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Manager */}
+            <Route
+              path="/dashboard/manager/*"
+              element={
+                <ProtectedRoute allowedRoles={["manager"]}>
+                  <TaskProvider>
+                    {renderDashboardLayout(
+                      <Routes>
+                        <Route
+                          index
+                          element={
+                            <Dashboard
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route path="projects/:projectId" element={<ProjectDetailPage />}/>
+                        <Route
+                          path="create-project"
+                          element={
+                            <ManagerCreateProject
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="projects"
+                          element={<ProjectsUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="projects/new/:step"
+                          element={
+                            <ProtectedRoute
+                              allowedRoles={[
+                                "manager",
+                                "director",
+                                "vice_president",
+                                "president",
+                                "member",
+                                "admin",
+                              ]}
+                            >
+                              <MultistepProjectCreation
+                                darkMode={darkMode}
+                                onProjectCreated={handleProjectCreated}
+                              />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="milestones"
+                          element={<MilestonesUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="tasks"
+                          element={
+                            <TasksUnified
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="tasks/approvals"
+                          element={<TeamLeaderApprovals darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="tasks/authored"
+                          element={<MyTasks darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="chat"
+                          element={<TeamChat darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="announcements"
+                          element={<Announcements darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="archived-tasks"
+                          element={
+                            <ArchivedTasks
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="teams"
+                          element={
+                            <VicePresidentTeams
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="reports"
+                          element={<ManagerReports darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="milestones"
+                          element={<ManagerMilestones />}
+                        />
+                        <Route
+                          path="task/personal"
+                          element={<Personal darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="approvals"
+                          element={<PendingApprovals darkMode={darkMode} />}
+                        />
+                      </Routes>
+                    )}
+                  </TaskProvider>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* President */}
+            <Route
+              path="/dashboard/president/*"
+              element={
+                <ProtectedRoute allowedRoles={["president"]}>
+                  <TaskProvider>
+                    {renderDashboardLayout(
+                      <Routes>
+                        <Route
+                          index
+                          element={
+                            <Dashboard
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route path="projects/:projectId" element={<ProjectDetailPage />}/>
+                        <Route
+                          path="create-project"
+                          element={
+                            <MultistepProjectCreation
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="projects"
+                          element={<ProjectsUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="projects/new/:step"
+                          element={
+                            <MultistepProjectCreation
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="announcements"
+                          element={<Announcements darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="reports"
+                          element={<VicePresidentReports darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="teams"
+                          element={
+                            <VicePresidentTeams
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="task/personal"
+                          element={<Personal darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="approvals"
+                          element={<PendingApprovals darkMode={darkMode} />}
+                        />
+                      </Routes>
+                    )}
+                  </TaskProvider>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Member */}
+            <Route
+              path="/dashboard/member/*"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "manager",
+                    "director",
+                    "vice_president",
+                    "president",
+                    "member",
+                    "admin",
+                  ]}
+                >
+                  <TaskProvider>
+                    {renderDashboardLayout(
+                      <Routes>
+                        <Route
+                          index
+                          element={
+                            <Dashboard
+                              darkMode={darkMode}
+                              setDarkMode={setDarkMode}
+                              sidebarOpen={sidebarOpen}
+                              setSidebarOpen={setSidebarOpen}
+                            />
+                          }
+                        />
+                        <Route path="projects/:projectId" element={<ProjectDetailPage />}/>
+                        <Route
+                          path="MilestoneChart"
+                          element={
+                            <MemberMilestoneChart
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="add-milestone"
+                          element={
+                            <MemberAddMilestone
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="projects"
+                          element={<ProjectsUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="projects/new/:step"
+                          element={
+                            <MultistepProjectCreation
+                              darkMode={darkMode}
+                              onProjectCreated={handleProjectCreated}
+                            />
+                          }
+                        />
+                        <Route
+                          path="milestones"
+                          element={<MilestonesUnified darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="tasks"
+                          element={
+                            <TasksUnified
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="tasks/approvals"
+                          element={<TeamLeaderApprovals darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="tasks/authored"
+                          element={<MyTasks darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="TasksList"
+                          element={<MemberTasksList darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="Chat"
+                          element={<TeamChat darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="ArchivedTasks"
+                          element={
+                            <MemberArchivedTasks
+                              darkMode={darkMode}
+                              isSidebarOpen={sidebarOpen}
+                            />
+                          }
+                        />
+                        <Route
+                          path="task/personal"
+                          element={<Personal darkMode={darkMode} />}
+                        />
+                        <Route
+                          path="approvals"
+                          element={<PendingApprovals darkMode={darkMode} />}
+                        />
+                      </Routes>
+                    )}
+                  </TaskProvider>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Profile */}
+            {["profile", "profile/edit-profile", "profile/change-password"].map(
+              (path) => (
+                <Route
+                  key={path}
+                  path={`/${path}`}
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        "admin",
+                        "manager",
+                        "supervisor",
+                        "member",
+                        "director",
+                        "president",
+                        "vice_president",
+                      ]}
+                    >
+                      {renderDashboardLayout(
+                        path === "profile" ? (
+                          <UserProfile />
+                        ) : path === "profile/edit-profile" ? (
+                          <EditProfile darkMode={darkMode} />
+                        ) : (
+                          <ChangePasswordPage />
+                        ),
+                        true
+                      )}
+                    </ProtectedRoute>
+                  }
+                />
+              )
+            )}
+
+            {/* Projects (shared) */}
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    "admin",
+                    "manager",
+                    "member",
+                    "director",
+                    "president",
+                    "vice_president",
+                  ]}
+                >
+                  <ProjectProvider>
+                    {renderDashboardLayout(<Projects />)}
+                  </ProjectProvider>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/404" replace />} />
+          </Routes>
+        </NotificationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

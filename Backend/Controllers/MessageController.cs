@@ -95,7 +95,24 @@ namespace ProjectManagementSystem1.Controllers
         public async Task<IActionResult> GetDepartmentMessages()
         {
             var dept = User.FindFirst("Department")?.Value;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var messages = await _messageService.GetDepartmentMessagesAsync(dept);
+            
+            // Set per-user read status
+            foreach (var msg in messages)
+            {
+                if (msg.SenderId == userId)
+                {
+                    msg.IsRead = true; // Own messages are always "read"
+                }
+                else
+                {
+                    var readStatus = await _context.MessageReadStatuses
+                        .FirstOrDefaultAsync(r => r.MessageId == msg.MessageId && r.UserId == userId);
+                    msg.IsRead = readStatus?.IsRead ?? false;
+                }
+            }
+            
             return Ok(messages);
         }
 
@@ -103,16 +120,17 @@ namespace ProjectManagementSystem1.Controllers
         [HttpGet("project")]
         public async Task<IActionResult> GetProjectMessages()
         {
-            var senderId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             // Get all project IDs the user is assigned to
             var projectIds = await _context.ProjectAssignments
-                .Where(pa => pa.MemberId == senderId)
+                .Where(pa => pa.MemberId == userId)
                 .Select(pa => pa.ProjectId)
                 .ToListAsync();
 
             var messages = await _context.Messages
                 .Include(m => m.Sender)
+                .Include(m => m.Attachment)
                 .Where(m =>
                     m.MessageType == 1 &&
                     m.ProjectId.HasValue &&
@@ -122,6 +140,64 @@ namespace ProjectManagementSystem1.Controllers
                 .ToListAsync();
 
             var mapped = _mapper.Map<List<MessageDto>>(messages);
+            
+            // Set per-user read status
+            foreach (var msg in mapped)
+            {
+                if (msg.SenderId == userId)
+                {
+                    msg.IsRead = true; // Own messages are always "read"
+                }
+                else
+                {
+                    var readStatus = await _context.MessageReadStatuses
+                        .FirstOrDefaultAsync(r => r.MessageId == msg.MessageId && r.UserId == userId);
+                    msg.IsRead = readStatus?.IsRead ?? false;
+                }
+            }
+            
+            return Ok(mapped);
+        }
+
+        [HttpGet("project/{projectId}")]
+        public async Task<IActionResult> GetProjectMessagesById(int projectId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Verify user is a member of this project
+            var isMember = await _context.ProjectAssignments
+                .AnyAsync(pa => pa.ProjectId == projectId && pa.MemberId == userId);
+
+            if (!isMember)
+                return Forbid("You are not a member of this project.");
+
+            var messages = await _context.Messages
+                .Include(m => m.Sender)
+                .Include(m => m.Attachment)
+                .Where(m =>
+                    m.MessageType == 1 &&
+                    m.ProjectId == projectId &&
+                    !m.IsDeleted)
+                .OrderBy(m => m.TimeSent)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<List<MessageDto>>(messages);
+            
+            // Set per-user read status
+            foreach (var msg in mapped)
+            {
+                if (msg.SenderId == userId)
+                {
+                    msg.IsRead = true; // Own messages are always "read"
+                }
+                else
+                {
+                    var readStatus = await _context.MessageReadStatuses
+                        .FirstOrDefaultAsync(r => r.MessageId == msg.MessageId && r.UserId == userId);
+                    msg.IsRead = readStatus?.IsRead ?? false;
+                }
+            }
+            
             return Ok(mapped);
         }
 
@@ -131,6 +207,31 @@ namespace ProjectManagementSystem1.Controllers
             var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var messages = await _messageService.GetPersonalMessagesAsync(currentUserId);
             return Ok(messages);
+        }
+
+        [HttpGet("personal/{employeeId}")]
+        public async Task<IActionResult> GetPersonalMessagesWith(string employeeId)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Get the other user's GUID from their employeeId
+            var otherUser = await _userService.GetUserByEmployeeIdAsync(employeeId);
+            if (otherUser == null)
+                return NotFound("User not found.");
+
+            var messages = await _context.Messages
+                .Include(m => m.Sender)
+                .Include(m => m.Attachment)
+                .Where(m =>
+                    m.MessageType == 3 &&
+                    !m.IsDeleted &&
+                    ((m.SenderId == currentUserId && m.ReceiverId == otherUser.Id) ||
+                     (m.SenderId == otherUser.Id && m.ReceiverId == currentUserId)))
+                .OrderBy(m => m.TimeSent)
+                .ToListAsync();
+
+            var mapped = _mapper.Map<List<MessageDto>>(messages);
+            return Ok(mapped);
         }
 
         [HttpPut("edit")]
@@ -178,15 +279,32 @@ namespace ProjectManagementSystem1.Controllers
 
             // Personal messages
             var personalUnread = await _context.Messages
-                .Where(m => m.MessageType == 3 && m.ReceiverId == userId && !m.IsRead)
+                .Where(m => m.MessageType == 3 && m.ReceiverId == userId && !m.IsRead && !m.IsDeleted)
                 .CountAsync();
 
-            // Group messages
-            var groupUnread = await _context.MessageReadStatuses
-                .Where(r => r.UserId == userId && !r.IsRead)
+            // Department messages (MessageType == 2)
+            var departmentUnread = await _context.MessageReadStatuses
+                .Include(r => r.Message)
+                .Where(r => r.UserId == userId && !r.IsRead && r.Message.MessageType == 2)
                 .CountAsync();
 
-            return Ok(new { personalUnread, groupUnread, total = personalUnread + groupUnread });
+            // Project messages (MessageType == 1)
+            var projectUnread = await _context.MessageReadStatuses
+                .Include(r => r.Message)
+                .Where(r => r.UserId == userId && !r.IsRead && r.Message.MessageType == 1)
+                .CountAsync();
+
+            // Group messages (total)
+            var groupUnread = departmentUnread + projectUnread;
+
+            return Ok(new
+            {
+                personalUnread,
+                departmentUnread,
+                projectUnread,
+                groupUnread,
+                total = personalUnread + groupUnread
+            });
         }
 
         [HttpPost("mark-read/{messageId}")]
@@ -225,6 +343,35 @@ namespace ProjectManagementSystem1.Controllers
 
             await _context.SaveChangesAsync();
             return Ok("✅ Group message marked as read.");
+        }
+
+        [HttpGet("project/{projectId}/members")]
+        public async Task<IActionResult> GetProjectMembers(int projectId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            // Verify user is a member of this project
+            var isMember = await _context.ProjectAssignments
+                .AnyAsync(pa => pa.ProjectId == projectId && pa.MemberId == userId);
+
+            if (!isMember)
+                return Forbid("You are not a member of this project.");
+
+            // Get all members of this project
+            var members = await _context.ProjectAssignments
+                .Where(pa => pa.ProjectId == projectId)
+                .Include(pa => pa.Member)
+                .Select(pa => new
+                {
+                    id = pa.Member.Id,
+                    fullName = pa.Member.FullName,
+                    employeeId = pa.Member.EmployeeId,
+                    email = pa.Member.Email,
+                    department = pa.Member.Department
+                })
+                .ToListAsync();
+
+            return Ok(members);
         }
 
     }

@@ -40,13 +40,13 @@ namespace ProjectManagementSystem1.Services.CommentService
             // Notify the assigned member of the task (if they are not the one who commented)
             if (task.AssignedMemberId != memberId && !string.IsNullOrEmpty(task.AssignedMemberId))
             {
-                await _notification.CreateNotificationAsync(
-                    recipientUserId: task.AssignedMemberId,
-                    subject: "New Comment Added",
-                    message: $"A new comment has been added to task '{task.Title}'.",
-                    relatedEntityType: "ProjectTask",
-                    relatedEntityId: taskId,
-                    deliveryMethod: NotificationDeliveryMethod.InApp // Added delivery method here
+                await _notification.SendNotificationAsync(
+                    task.AssignedMemberId,
+                    "New Comment Added",
+                    $"A new comment has been added to task '{task.Title}'.",
+                    "CommentAdded",
+                    "ProjectTask",
+                    taskId
                 );
             }
         }

@@ -6,6 +6,8 @@ namespace ProjectManagementSystem1.Services.ErpUserService
     {
         Task<ErpUserDto> SyncSingleUserAsync(string employeeId);
         Task<List<ErpUserDto>> SyncMultipleUsersAsync(List<string> employeeIds);
+        Task<List<ErpUserDto>> SyncAllUsersAsync();
     }
+
 
 }

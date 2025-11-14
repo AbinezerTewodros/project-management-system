@@ -30,7 +30,7 @@ namespace ProjectManagementSystem1.Data.Seeders
                     Company = "CBE",
                     EmployeeId = "123456",
                     Status = "Active",
-                    IsFirstLogin = true
+                    IsFirstLogin = false
                 };
 
                 var createAdmin = await userManager.CreateAsync(admin, adminPassword);

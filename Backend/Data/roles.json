@@ -1,0 +1,42 @@
+[
+    {
+      "role": "Full-Stack Developer",
+      "aliases": ["Fullstack Engineer", "Full Stack Engineer"],
+      "seniority": ["Junior", "Mid", "Senior", "Lead"],
+      "primaryCategories": ["Software Development", "Frontend Engineering", "Databases", "DevOps & Infrastructure"],
+      "recommendedSkills": ["C#", ".NET", "ASP.NET Core", "Entity Framework Core", "React", "TypeScript", "SQL Server", "Git", "CI/CD", "Docker"],
+      "optionalSkills": ["Azure", "Kubernetes", "Terraform", "Redis", "RabbitMQ"]
+    },
+    {
+      "role": "Backend Developer",
+      "aliases": ["Backend Engineer", "API Engineer"],
+      "seniority": ["Junior", "Mid", "Senior", "Staff"],
+      "primaryCategories": ["Software Development", "Databases", "Security"],
+      "recommendedSkills": ["C#", ".NET", "ASP.NET Core", "REST APIs", "Entity Framework Core", "SQL", "JWT", "OAuth 2.0"],
+      "optionalSkills": ["Microservices", "gRPC", "Kafka", "Redis", "Docker", "Kubernetes"]
+    },
+    {
+      "role": "Frontend Developer",
+      "aliases": ["Frontend Engineer", "Web UI Engineer"],
+      "seniority": ["Junior", "Mid", "Senior", "Lead"],
+      "primaryCategories": ["Frontend Engineering", "UI/UX & Design"],
+      "recommendedSkills": ["TypeScript", "React", "Next.js", "Redux", "HTML5", "CSS3", "Tailwind CSS", "Accessibility"],
+      "optionalSkills": ["Cypress", "Playwright", "Storybook", "GraphQL"]
+    },
+    {
+      "role": "DevOps Engineer",
+      "aliases": ["Platform Engineer", "SRE"],
+      "seniority": ["Mid", "Senior", "Staff"],
+      "primaryCategories": ["DevOps & Infrastructure", "Cloud Platforms", "Security"],
+      "recommendedSkills": ["CI/CD", "Docker", "Kubernetes", "Helm", "Terraform", "Linux", "Monitoring", "Prometheus", "Grafana"],
+      "optionalSkills": ["Azure", "AWS", "GCP", "Argo CD", "Pulumi", "OpenTelemetry"]
+    },
+    {
+      "role": "Data Scientist",
+      "aliases": ["ML Scientist", "Applied Scientist"],
+      "seniority": ["Junior", "Mid", "Senior"],
+      "primaryCategories": ["Data Science & Analytics", "Machine Learning & AI"],
+      "recommendedSkills": ["Python", "Pandas", "NumPy", "Scikit-learn", "Jupyter", "Statistics", "Experiment Design"],
+      "optionalSkills": ["TensorFlow", "PyTorch", "Feature Stores", "MLflow"]
+    }
+  ]

@@ -9,6 +9,13 @@ namespace ProjectManagementSystem1.Services.ProjectService
         Task<ProjectDto> CreateAsync(CreateProjectDto dto, string currentUser);
         Task<bool> UpdateAsync(int id, UpdateProjectDto dto, string currentUser);
         Task<bool> DeleteAsync(int id);
+        Task ArchiveProjectAsync(int projectId, string currentUser);
+        Task RestoreProjectAsync(int projectId, string currentUser);
+        Task<List<ProjectDto>> GetAllVisibleAsync(string currentUserId);
+        
+        // ✅ NEW: Progress calculation methods
+        Task<double> CalculateProjectProgress(int projectId);
+        Task UpdateProjectProgress(int projectId);
     }
 
 }

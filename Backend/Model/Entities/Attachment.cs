@@ -1,7 +1,9 @@
-﻿using ProjectManagementSystem1.Model.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using ProjectManagementSystem1.Model.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
 
 public class Attachment
 {
@@ -23,6 +25,20 @@ public class Attachment
     [Required]
     public string FilePhysicalPath { get; set; } // Absolute or relative path to the file
 
+    //[Column(TypeName = "jsonb")] // For PostgreSQL
+    //public string MetadataJson { get; set; }
+
+    //[NotMapped]
+    //public Dictionary<string, string> Metadata
+    //{
+    //    get => JsonSerializer.Deserialize<Dictionary<string, string>>(MetadataJson ?? "{}");
+    //    set => MetadataJson = JsonSerializer.Serialize(value);
+    //}
+
+    // ... other properties ...
+    public List<AttachmentMetadata> Metadata { get; set; } = new();
+
+
     public string UploadedByUserId { get; set; } // Foreign Key referencing the user
 
     [ForeignKey("UploadedByUserId")]
@@ -41,26 +57,52 @@ public class Attachment
 
     public int Version { get; set; } = 1; // Optional: For tracking file revisions
 
-    public Guid EntityId { get; set; } // Foreign Key to the associated entity
+    public string EntityId { get; set; } // Foreign Key to the associated entity
 
-    [Required]
+    
     [MaxLength(100)]
     public string EntityType { get; set; } // Type of the associated entity
+    public byte[]? Thumbnail { get; set; } // Stores compressed thumbnail
+    public string? ThumbnailContentType { get; set; }
 
     public int? ProjectTaskId { get; set; }
     [ForeignKey("ProjectTaskId")]
     public ProjectTask? ProjectTask { get; set; }
 }
 
+//public enum AttachmentCategory
+//{
+//    Chat,
+//    Attachment,
+//    DDL,
+//    Profile,
+//    Task,
+//    Project,
+//    // Add other categories as needed
+//}
+
 public enum AttachmentCategory
 {
-    Chat,
-    Attachment,
-    DDL,
-    Profile,
-    Task,
+    [Display(Name = "Project Documents")]
     Project,
-    // Add other categories as needed
+
+    [Display(Name = "Task Attachments")]
+    Task,
+
+    [Display(Name = "Deliverables")]
+    Deliverable,
+
+    [Display(Name = "Team Communications")]
+    Communication,
+
+    [Display(Name = "Financial Records")]
+    Financial,
+
+    [Display(Name = "Risk Materials")]
+    Risk,
+
+    [Display(Name = "Compliance Docs")]
+    Compliance
 }
 
 public enum AccessibilityLevel
@@ -71,3 +113,15 @@ public enum AccessibilityLevel
     Internal,
     // Add other levels as needed
 }
+
+//[Owned]
+public class AttachmentMetadata
+{
+
+    [MaxLength(100)]
+    public string Key { get; set; }
+
+    [MaxLength(100)]
+    public string Value { get; set; }
+}
+

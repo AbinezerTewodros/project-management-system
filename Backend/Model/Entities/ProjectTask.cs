@@ -18,19 +18,32 @@ namespace ProjectManagementSystem1.Model.Entities
         [Required, MaxLength(250)]
         public string Title { get; set; } = string.Empty;
 
-        public string Description;
+        [MaxLength(4000)]
+        public string? Description;
 
         [Required]
         public int ProjectAssignmentId { get; set; }
 
+        public int ProjectId { get; set; }
+
         [ForeignKey("ProjectAssignmentId")]
+            
+     
         public ProjectAssignment ProjectAssignment { get; set; }
+
+        //public int ProjectId { get; set; }
+
+        //[ForeignKey("ProjectId")]
+        //public Project Project { get; set; }
 
         public int? MilestoneId { get; set; }
 
         [ForeignKey("MilestoneId")]
-        public Milestone Milestone { get; set; }
+        public virtual Milestone Milestone { get; set; }
         public string? AssignedMemberId { get; set; }
+
+        // ✅ NEW: Track who created the task
+        public string? CreatedByUserId { get; set; }
 
         public int? ParentTaskId { get; set; }
         [ForeignKey("ParentTaskId")]
@@ -62,6 +75,8 @@ namespace ProjectManagementSystem1.Model.Entities
                 _progress = value;
             }
         }
+
+        public DateTime? AcceptedDate { get; set; }
         public bool IsProjectRoot { get; set; } = false;
         public TaskStatus Status { get; set; } = TaskStatus.Pending; // Re-add this with a default value
 
@@ -71,15 +86,33 @@ namespace ProjectManagementSystem1.Model.Entities
         public double EstimatedHours { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
         public bool IsAutoCreateTodo { get; set; } // Default to true
         public ICollection<TodoItem> TodoItems { get; set; } = new List<TodoItem>();
         public ICollection<ProjectTask> Dependencies { get; set; } = new List<ProjectTask>();
+        public ICollection<Escalation> Escalations { get; set; }
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
+            if (MilestoneId != null && !IsWithinMilestoneDates())
+            {
+                yield return new ValidationResult(
+                    "Task dates must fall within milestone date range",
+                    new[] { nameof(StartDate), nameof(DueDate) });
+            }
+
             if ((Priority == TaskPriority.High || Priority == TaskPriority.Critical) && !DueDate.HasValue)
                 yield return new ValidationResult("High/Critical tasks require due dates", [nameof(DueDate)]);
         }
 
+        public bool IsWithinMilestoneDates()
+        {
+            if (MilestoneId == null) return true;
+
+            return (!StartDate.HasValue || StartDate >= Milestone.StartDate) &&
+                   (!DueDate.HasValue || DueDate <= Milestone.DueDate);
+        }
+
+        
         public void UpdateHierarchy()
         {
 
@@ -90,7 +123,7 @@ namespace ProjectManagementSystem1.Model.Entities
             {
                 foreach (var subtask in SubTasks)
                 {
-                    if (subtask.ParentTask != this) subtask.ParentTask = this;
+                    subtask.ParentTask = this;
                     subtask.UpdateHierarchy();
                 }
             }
@@ -100,5 +133,8 @@ namespace ProjectManagementSystem1.Model.Entities
         {
             _progress = progress;
         }
+        public int? IssueId { get; set; } // Foreign key to Issue
+        public virtual Issue Issue { get; set; } // Navigation property
+        public string AssignedToId { get; internal set; }
     }
 }

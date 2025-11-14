@@ -16,7 +16,7 @@ namespace ProjectManagementSystem1.Model.Dto.IndependentTaskDto
 
         public DateTime? DueDate { get; set; }
 
-        public string? Status { get; set; }
+        public IndependentTaskStatus? Status { get; set; }
 
         [Range(0, 100)]
         public double? Progress { get; set; }

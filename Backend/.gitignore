@@ -1,0 +1,12 @@
+# Build / publish outputs
+bin/
+obj/
+*.user
+*.vs
+.vscode/
+Migrations/
+# Secrets
+
+# System files
+.DS_Store
+Thumbs.db

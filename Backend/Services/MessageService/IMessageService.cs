@@ -12,8 +12,8 @@ namespace ProjectManagementSystem1.Services.MessageService
         Task<bool> EditMessageAsync(EditMessageDto dto, string senderId);
         Task<bool> SoftDeleteMessageAsync(int messageId, string senderId);
         Task<int> GetUnreadMessageCountAsync(string userId);
-
-
+        Task<bool> MarkMessageAsReadAsync(int messageId, string userId);
+        Task<bool> MarkGroupMessageAsRead(int messageId, string userId);
     }
 
 }

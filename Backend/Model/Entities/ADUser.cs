@@ -12,6 +12,6 @@ namespace ProjectManagementSystem1.Model
         public string Company { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string EmployeeId { get; set; } = string.Empty;
-        public string? Role { get; set; } = "User"; // default fallback
+        public string? Role { get; set; } = "Member"; // ✅ FIXED: default fallback to "Member" not "User"
     }
 }

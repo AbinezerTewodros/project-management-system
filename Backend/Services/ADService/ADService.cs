@@ -1,9 +1,10 @@
-﻿using System.DirectoryServices;
-using System.Reflection.PortableExecutable;
-using ProjectManagementSystem1.Model;
-using ProjectManagementSystem1.Model.Entities;
-using System.Text.Json;
+﻿using ProjectManagementSystem1.Model;
+using ProjectManagementSystem1.Model.Dto.ADDto;
 using ProjectManagementSystem1.Model.Dto.UserManagementDto;
+using ProjectManagementSystem1.Model.Entities;
+using System.DirectoryServices;
+using System.Reflection.PortableExecutable;
+using System.Text.Json;
 
 namespace ProjectManagementSystem1.Services.ADService
 {
@@ -12,12 +13,14 @@ namespace ProjectManagementSystem1.Services.ADService
         private readonly string _ldapPath;
         private readonly string _ldapUser;
         private readonly string _ldapPassword;
+        private readonly IADAuthService _adAuthService;
 
-        public ADService(IConfiguration configuration)
+        public ADService(IConfiguration configuration, IADAuthService adAuthService)
         {
             _ldapPath = configuration["AD:LdapPath"]!;
             _ldapUser = configuration["AD:Username"]!;
             _ldapPassword = configuration["AD:Password"]!;
+            _adAuthService = adAuthService;
         }
 
         public async Task<List<string>> GetAllUsersAsync()
@@ -61,7 +64,7 @@ namespace ProjectManagementSystem1.Services.ADService
                             searcher.PropertiesToLoad.Add("sAMAccountName");
                             searcher.PropertiesToLoad.Add("department");
                             searcher.PropertiesToLoad.Add("description");
-
+                            searcher.PropertiesToLoad.Add("telephoneNumber");
                             var result = searcher.FindOne();
                             if (result == null) return null;
 
@@ -129,11 +132,53 @@ namespace ProjectManagementSystem1.Services.ADService
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Console.WriteLine("AD lookup by employee ID failed: " + ex.Message);
                     return null;
                 }
             });
+        }
+
+        public async Task<EmployeeADDto> GetEmployeeByDn(string dn)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    using (var entry = new System.DirectoryServices.DirectoryEntry(_ldapPath, _ldapUser, _ldapPassword))
+                    {
+                        using (var searcher = new DirectorySearcher(entry))
+                        {
+                            searcher.Filter = $"(distinguishedName={dn})";
+                            searcher.PropertiesToLoad.AddRange(new[] { "employeeID", "mail", "displayName", "department", "title", "company", "manager" });
+                            var result = searcher.FindOne();
+                            if (result == null) return null;
+
+                            return new EmployeeADDto
+                            {
+                                EmpId = result.Properties["employeeID"]?.Count > 0 ? result.Properties["employeeID"][0]?.ToString() : null,
+                                Email = result.Properties["mail"]?.Count > 0 ? result.Properties["mail"][0]?.ToString() : null,
+                                Name = result.Properties["displayName"]?.Count > 0 ? result.Properties["displayName"][0]?.ToString() : null,
+                                Department = result.Properties["department"]?.Count > 0 ? result.Properties["department"][0]?.ToString() : null,
+                                Title = result.Properties["title"]?.Count > 0 ? result.Properties["title"][0]?.ToString() : null,
+                                Company = result.Properties["company"]?.Count > 0 ? result.Properties["company"][0]?.ToString() : null,
+                                Manager = result.Properties["manager"]?.Count > 0 ? result.Properties["manager"][0]?.ToString() : null
+                            };
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("AD lookup by DN failed: " + ex.Message);
+                    return null;
+                }
+            });
+        }
+
+        public async Task<List<EmployeeADDto>> GetUsersByOrganizationalUnitsAsync(List<string> organizationalUnits)
+        {
+            return await _adAuthService.GetUsersByOrganizationalUnitsAsync(organizationalUnits);
         }
     }
 }

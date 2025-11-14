@@ -11,6 +11,7 @@ namespace ProjectManagementSystem1.Model.Dto
         public string? Description { get; set; }
         public int ProjectAssignmentId { get; set; }
         public string? AssignedMemberId { get; set; }
+        public string? CreatedByUserId { get; set; } // ✅ NEW: Track task creator
         public int? ParentTaskId { get; set; }
 
         // Auto-calculated fields
