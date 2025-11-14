@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using ProjectManagementSystem1.Model.Entities;
 
 namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
 {
@@ -18,8 +19,7 @@ namespace ProjectManagementSystem1.Model.Dto.ProjectManagementDto
         [Range(0, 100, ErrorMessage = "Weight must be between 0 and 100.")]
         public int Weight { get; set; } // Make nullable for optional updates
 
-        public string Status { get; set; }
-
+        public MilestoneStatus Status { get; set; }
         public string AssignedMemberId { get; set; } // Optional assignment update
 
         [Range(0, 100, ErrorMessage = "Progress must be between 0 and 100.")]

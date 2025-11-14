@@ -6,7 +6,7 @@ namespace ProjectManagementSystem1.Data.Seeders
 {
     public static class RoleSeeder
     {
-        private static readonly string[] Roles = new[] { "Admin", "Manager", "Supervisor", "User" };
+        private static readonly string[] Roles = new[] { "Admin", "Manager", "Supervisor", "Member", "Director", "President", "Vice-President" };
 
         public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
         {

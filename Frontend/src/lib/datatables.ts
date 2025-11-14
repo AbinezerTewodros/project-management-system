@@ -22,12 +22,12 @@ export const initializeDataTable = (tableRef: HTMLTableElement, options: any = {
             $('.dt-paging-button:last-child').removeClass('mx-1').addClass('ml-1');
 
             // Reapply styles for length selector and search
-            $('.dt-length select').addClass('border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent w-full sm:w-auto');
+            $('.dt-length select').addClass('border rounded px-2 py-1 text-sm focus:outline-none focus:border-transparent w-full sm:w-auto');
             $('.dt-length label').addClass('text-sm text-gray-600 flex items-center gap-2 font-medium whitespace-nowrap');
             $('.dt-length label').html(function (_, html) {
                 return html.replace('Show', '<span class="font-bold">Show</span>');
             });
-            $('.dt-search input').addClass('border rounded px-2 sm:px-3 py-1 text-sm w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent');
+            $('.dt-search input').addClass('mr-3 border rounded px-2 sm:px-3 py-1 text-sm w-full sm:w-auto focus:outline-none ');
 
             // Responsive table styles
             $('.dataTable').addClass('w-full min-w-[640px] sm:min-w-0');
@@ -35,14 +35,14 @@ export const initializeDataTable = (tableRef: HTMLTableElement, options: any = {
         },
         initComplete: function () {
             // Style length selector
-            $('.dt-length select').addClass('border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent w-full sm:w-auto');
+            $('.dt-length select').addClass('border rounded px-2 py-1 text-sm focus:outline-none w-full sm:w-auto');
             $('.dt-length label').addClass('text-sm text-gray-600 flex items-center gap-2 font-medium whitespace-nowrap');
             $('.dt-length label').html(function (_, html) {
                 return html.replace('Show', '<span class="font-bold">Show</span>');
             });
 
             // Style search input
-            $('.dt-search input').addClass('border rounded px-2 sm:px-3 py-1 text-sm w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent');
+            $('.dt-search input').addClass('mr-2 border rounded px-3 sm:px-3 py-2 text-sm w-full sm:w-auto focus:outline-none ');
 
             // Apply styles for pagination container and elements
             $('.dataTables_paginate').addClass('flex items-center gap-2');

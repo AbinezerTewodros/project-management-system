@@ -1,13 +1,90 @@
-# Build / publish outputs
-bin/
-obj/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules
+dist
+dist-ssr
+
+# Environment files
+.env
+.env.*
+Frontend/.env
+Frontend/.env.*
+
+# Editor directories and files
+.idea
+.fleet
+.history
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
 *.user
-*.vs
-.vscode/
-
-# Secrets
-
-# System files
+*.sw?
 .DS_Store
 Thumbs.db
 
+# Build / publish outputs
+**/bin/
+**/obj/
+**/TestResults/
+**/BenchmarkDotNet.Artifacts/
+**/publish/
+**/GeneratedFiles/
+**/Generated_Code/
+
+# .NET specific build artifacts
+temp_auto_push.bat
+*.dll
+*.exe
+*.pdb
+*.cache
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.usertasks
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Tooling caches
+.cache/
+tmp/
+temp/
+Frontend/.vite/
+Frontend/.cache/
+Frontend/.eslintcache
+Frontend/.nyc_output
+Frontend/coverage/
+Frontend/.turbo/
+Frontend/turbo/
+
+# IDE-specific state
+.vs/
+**/.vs/
+*.swp
+*.swo
+*~
+
+# JetBrains IDEs
+.idea/
+*.sln.iml
+
+# Runtime artifacts
+Backend/run_out.txt
+Backend/run_err.txt
+.gitignore
+branch_structure.json

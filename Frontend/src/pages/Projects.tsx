@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
 import { useAuth } from '@/context/AuthContext';
-import CreateProject from '@/components/CreateProject';
+import CreateProject from './Projects/CreateProject';
 import { Plus, Users, Calendar, CheckCircle, Clock } from 'lucide-react';
 
 const Projects = () => {

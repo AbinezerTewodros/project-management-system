@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProjectManagementSystem1.Model.Dto.Attachments
 {
@@ -10,13 +11,15 @@ namespace ProjectManagementSystem1.Model.Dto.Attachments
         [Required]
         public AttachmentCategory Category { get; set; }
 
-        [Required]
-        public Guid EntityId { get; set; }
+        public string EntityId { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+        
         public string EntityType { get; set; }
 
-        public int? ProjectTaskId { get; set; }
+        public Dictionary<string, string>? CustomMetadata { get; set; } = new();
+
+        [Required]
+        [DefaultValue(AccessibilityLevel.Private)]
+        public AccessibilityLevel AccessibilityLevel { get; set; } = AccessibilityLevel.Private;
     }
 }

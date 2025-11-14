@@ -1,0 +1,124 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules
+dist
+dist-ssr
+
+# Environment files
+.env
+.env.*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.history
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+*.user
+*.sw?
+
+# Tooling caches
+.cache/
+.eslintcache
+.nyc_output
+coverage/
+.turbo/
+turbo/
+.vite/
+.vite/
+# ========================
+# LOGS
+# ========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ========================
+# DEPENDENCY DIRECTORIES
+# ========================
+node_modules/
+dist/
+dist-ssr/
+
+# ========================
+# ENVIRONMENT FILES
+# ========================
+.env
+.env.*
+Frontend/.env
+Frontend/.env.*
+
+# ========================
+# EDITOR / IDE SETTINGS
+# ========================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.fleet/
+.history/
+.vs/
+**/.vs/
+Backend/.vscode/
+
+# ========================
+# TEMPORARY / CACHE FILES
+# ========================
+.cache/
+tmp/
+temp/
+Frontend/.vite/
+Frontend/.cache/
+Frontend/.eslintcache
+Frontend/.nyc_output/
+Frontend/coverage/
+Frontend/.turbo/
+Frontend/turbo/
+
+# ========================
+# BUILD & PUBLISH OUTPUTS
+# ========================
+**/bin/
+**/obj/
+**/TestResults/
+**/BenchmarkDotNet.Artifacts/
+**/publish/
+**/GeneratedFiles/
+**/Generated_Code/
+
+# ========================
+# RUNTIME ARTIFACTS
+# ========================
+Backend/run_out.txt
+Backend/run_err.txt
+
+# ========================
+# OS-SPECIFIC FILES
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# MISC EDITOR FILES
+# ========================
+*.suo
+*.ntvs*
+*.njsproj
+*.sln.docstates
+*.user
+*.sw?

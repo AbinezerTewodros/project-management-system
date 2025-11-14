@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ClipboardList, Home, SquareDashedKanban, UsersRound, PlusCircle, MessageCircle, Megaphone, ChevronDown, Archive} from "lucide-react"; // ClipboardCheck
+import { ClipboardList, Home, SquareDashedKanban, UsersRound, PlusCircle, MessageCircle, Megaphone, ChevronDown, Archive, Bell} from "lucide-react"; // ClipboardCheck
 import { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 
@@ -18,15 +18,18 @@ const ManagerSidebar = ({ isOpen, onClose, darkMode }: ManagerSidebarProps) => {
         { name: "Home", icon: Home, href: "/dashboard/manager" },
         { name: "Create Project", icon: PlusCircle, href: "/dashboard/manager/create-project" },
         {
-            name: "Projects", icon: SquareDashedKanban, subItems: [
+            name: "Assignments", icon: SquareDashedKanban, subItems: [
                 { name: "My Assignment", href: "/dashboard/manager/tasks" },
-                { name: "My Projects", href: "/dashboard/manager/projects" }
+                // { name: "Assigned Project", href: "/dashboard/manager/assigned-projects" },
+                { name: "My Projects", href: "/dashboard/manager/projects" },
+                {name: "Milestones", href: "/dashboard/manager/milestones"}
             ]
         },
         { name: "Teams", icon: UsersRound, href: "/dashboard/manager/teams" },
         { name: "Reports", icon: ClipboardList, href: "/dashboard/manager/reports" },
         { name: "Chat", icon: MessageCircle, href: "/dashboard/manager/chat" },
         { name: "Announcements", icon: Megaphone, href: "/dashboard/manager/announcements" },
+        { name: "Notifications", icon: Bell, href: "/dashboard/manager/notifications" },
         { name: "Archived Tasks", icon: Archive, href: "/dashboard/manager/archived-tasks" },
     ];
 
@@ -62,7 +65,7 @@ const ManagerSidebar = ({ isOpen, onClose, darkMode }: ManagerSidebarProps) => {
                 )}
             </AnimatePresence>
             <motion.aside
-                className={`fixed md:relative z-50 h-screen overflow-hidden ${darkMode
+                className={`fixed top-16 left-0 z-50 h-[calc(100vh-4rem)] overflow-hidden ${darkMode
                     ? 'bg-zinc-800 bg-opacity-90 border-r border-gray-700'
                     : 'bg-white bg-opacity-50 border-r border-gray-100'
                     } ${isMobile ? (isOpen ? "w-64" : "w-0") : ""}`}

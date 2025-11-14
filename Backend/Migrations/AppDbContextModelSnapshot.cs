@@ -22,6 +22,21 @@ namespace ProjectManagementSystem1.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ApplicationUserEscalation", b =>
+                {
+                    b.Property<int>("ReceivedEscalationsId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReceiverId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("ReceivedEscalationsId", "ReceiverId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.ToTable("ApplicationUserEscalation");
+                });
+
             modelBuilder.Entity("Attachment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -35,7 +50,6 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Checksum")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
@@ -47,11 +61,10 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("EntityId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("EntityId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EntityType")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -67,23 +80,33 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
+                    b.Property<int?>("IndependentTaskTaskId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<int?>("ProjectTaskId")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("Thumbnail")
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("ThumbnailContentType")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UploadedByUserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Version")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IndependentTaskTaskId");
 
                     b.HasIndex("ProjectTaskId");
 
@@ -233,14 +256,34 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovalNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ApprovalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("CreateUser")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedByUserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Department")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
@@ -249,31 +292,38 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsAutomateTodo")
                         .HasColumnType("bit");
 
                     b.Property<string>("Priority")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("Progress")
+                        .HasColumnType("float");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProjectOwner")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProjectOwnerEmail")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ProjectOwnerPhone")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UpdateUser")
@@ -284,7 +334,6 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<byte[]>("Version")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
@@ -293,7 +342,7 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("ProjectAssignment", b =>
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AccessLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -301,48 +350,96 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CreateUser")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MemberId")
+                    b.Property<string>("Action")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("MemberRole")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("Browser")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("ProjectId")
+                    b.Property<string>("Department")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DeviceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Endpoint")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("HttpMethod")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int?>("HttpStatusCode")
                         .HasColumnType("int");
 
-                    b.Property<string>("Role")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<double>("Status")
-                        .HasColumnType("float");
+                    b.Property<bool>("IsSuspicious")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("UpdateUser")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("OperatingSystem")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<DateTime?>("UpdatedDate")
+                    b.Property<string>("RequestBody")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("RequestUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ResponseBody")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<TimeSpan?>("SessionDuration")
+                        .HasColumnType("time");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
-                    b.Property<byte[]>("Version")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UserEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MemberId");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("ProjectAssignments");
+                    b.ToTable("AccessLogs");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ActivityLog", b =>
@@ -358,29 +455,134 @@ namespace ProjectManagementSystem1.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Details")
-                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<int>("EntityId")
                         .HasColumnType("int");
 
+                    b.Property<string>("EntityName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("EntityType")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SessionId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("IX_ActivityLog_Entity");
+
+                    b.HasIndex("UserId", "CreatedAt")
+                        .HasDatabaseName("IX_ActivityLog_UserCreated");
+
                     b.ToTable("ActivityLogs");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ActivityLogFieldChange", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityLogId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("FieldType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NewValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OldValue")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityLogId");
+
+                    b.ToTable("ActivityLogFieldChanges");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EndorsementCount")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedName");
+
+                    b.ToTable("AddSkills");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
@@ -393,6 +595,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<string>("AccessToken")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ArchiveDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Company")
                         .IsRequired()
@@ -427,6 +632,9 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsFirstLogin")
                         .HasColumnType("bit");
 
@@ -459,11 +667,13 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("ReportsToUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -498,7 +708,38 @@ namespace ProjectManagementSystem1.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("ReportsToUserId");
+
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Archive", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ArchivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ArchivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EntityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Version")
+                        .HasColumnType("varbinary(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Archives");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
@@ -514,11 +755,9 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("RoleId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -541,11 +780,13 @@ namespace ProjectManagementSystem1.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("IndependentTaskTaskId")
+                        .HasColumnType("int");
 
                     b.Property<string>("MemberId")
                         .IsRequired()
@@ -555,6 +796,8 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IndependentTaskTaskId");
 
                     b.HasIndex("TaskId");
 
@@ -570,7 +813,6 @@ namespace ProjectManagementSystem1.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Company")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CreatedBy")
@@ -580,11 +822,9 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Department")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EmployeeId")
@@ -596,11 +836,9 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("JobTitle")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UpdatedBy")
@@ -611,13 +849,157 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<byte[]>("Version")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
                     b.HasKey("Id");
 
                     b.ToTable("ErpUsers");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Escalation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid?>("AttachmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("EscalationLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IndependentTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int?>("MilestoneId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ParentEscalationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int")
+                        .HasColumnName("ProjectId");
+
+                    b.Property<int?>("ProjectTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ResponseTimeLimit")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("TimeEdited")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("TimeSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IndependentTaskId");
+
+                    b.HasIndex("MilestoneId");
+
+                    b.HasIndex("ParentEscalationId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Escalations", (string)null);
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.EscalationReply", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EscalationId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("ReceiverId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SenderId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("TimeSent")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EscalationId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("EscalationReplies");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.EscalationUser", b =>
+                {
+                    b.Property<int>("EscalationId")
+                        .HasColumnType("int")
+                        .HasColumnOrder(1);
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnOrder(2);
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.HasKey("EscalationId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("EscalationUsers", (string)null);
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.IndependentTask", b =>
@@ -628,9 +1010,18 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskId"));
 
+                    b.Property<string>("ApprovalComments")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("AssignedToUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionDetails")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -640,19 +1031,33 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("LateCompletionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<double>("Progress")
                         .HasColumnType("float");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReopenReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -667,11 +1072,76 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("TaskId");
 
-                    b.HasIndex("AssignedToUserId");
+                    b.HasIndex("AssignedToUserId")
+                        .HasDatabaseName("IX_IndependentTask_Assignee");
 
-                    b.HasIndex("CreatedByUserId");
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("IX_IndependentTask_Creator");
+
+                    b.HasIndex("AssignedToUserId", "Status")
+                        .HasDatabaseName("IX_IndependentTask_AssigneeStatus");
 
                     b.ToTable("IndependentTasks");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssigneeId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PriorityValue")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReporterId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssigneeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.ToTable("Issues");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -688,6 +1158,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -716,7 +1189,6 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<byte[]>("Version")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
@@ -770,14 +1242,24 @@ namespace ProjectManagementSystem1.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MilestoneId"));
 
                     b.Property<string>("AssignedMemberId")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("AssignmentAcceptedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignmentRejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AssignmentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DueDate")
@@ -792,6 +1274,9 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -810,6 +1295,48 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Milestones");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.MilestoneMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("AssignmentAcceptedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignmentRejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("AssignmentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsLead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("MilestoneId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex("MilestoneId");
+
+                    b.ToTable("MilestoneMembers");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Notification", b =>
@@ -836,7 +1363,7 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.Property<string>("RecipientUserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("RelatedEntityId")
                         .HasColumnType("int");
@@ -862,6 +1389,12 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Notification_CreatedAt");
+
+                    b.HasIndex("RecipientUserId", "Status")
+                        .HasDatabaseName("IX_Notification_UserStatus");
+
                     b.ToTable("Notifications");
                 });
 
@@ -873,18 +1406,73 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TodoId"));
 
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("EnableEmailReminders")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnablePushNotifications")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableReminders")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("EnableSmsReminders")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastReminderSent")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Progress")
                         .HasColumnType("int");
 
-                    b.Property<string>("Task")
+                    b.Property<string>("RecurrencePattern")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ReminderHoursBeforeDue")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Tags")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Task")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -900,6 +1488,87 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("PersonalTodo");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectAssignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovedById")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("AssignmentAcceptedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("AssignmentEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignmentNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AssignmentStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreateUser")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimaryScrumMaster")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MemberId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MemberRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Role")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UpdateUser")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<double>("WorkloadPercentage")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectAssignments");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
                 {
                     b.Property<int>("Id")
@@ -908,17 +1577,34 @@ namespace ProjectManagementSystem1.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("AcceptedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<double?>("ActualHours")
                         .HasColumnType("float");
 
                     b.Property<string>("AssignedMemberId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AssignedToId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Depth")
                         .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(MAX)")
+                        .HasColumnName("Description");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
@@ -935,6 +1621,9 @@ namespace ProjectManagementSystem1.Migrations
                     b.Property<bool>("IsProjectRoot")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("IssueId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("MilestoneId")
                         .HasColumnType("int");
 
@@ -948,6 +1637,9 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("float");
 
                     b.Property<int>("ProjectAssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
                     b.Property<int?>("ProjectTaskId")
@@ -975,13 +1667,35 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AssignedMemberId")
+                        .HasDatabaseName("IX_ProjectTask_Assignee");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("IssueId");
+
                     b.HasIndex("MilestoneId");
 
-                    b.HasIndex("ParentTaskId");
+                    b.HasIndex("ParentTaskId")
+                        .HasDatabaseName("IX_ProjectTask_ParentTask");
 
-                    b.HasIndex("ProjectAssignmentId");
+                    b.HasIndex("Priority");
+
+                    b.HasIndex("ProjectAssignmentId")
+                        .HasDatabaseName("IX_ProjectTask_Assignment");
 
                     b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("AssignedMemberId", "Status")
+                        .HasDatabaseName("IX_ProjectTask_AssigneeStatus");
+
+                    b.HasIndex("ParentTaskId", "Status")
+                        .HasDatabaseName("IX_ProjectTask_ParentStatus");
+
+                    b.HasIndex("ProjectAssignmentId", "Status", "DueDate")
+                        .HasDatabaseName("IX_ProjectTask_AssignmentStatusDue");
 
                     b.ToTable("ProjectTasks");
                 });
@@ -1021,6 +1735,336 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ScheduledReportEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CronExpression")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExportFormat")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Recipients")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReportType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ScheduleType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScheduledReports");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ScheduledReportExecutionEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExecutedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExecutionId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExportFormat")
+                        .HasColumnType("int");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("JobId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReportType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ScheduledReportExecutions");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TaskDependency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("DependencyType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("LagDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PredecessorTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SuccessorTaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PredecessorTaskId");
+
+                    b.HasIndex("SuccessorTaskId");
+
+                    b.ToTable("TaskDependencies");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TaskStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChangeReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OldStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedById");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TaskStatusHistories");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Timeline", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeSpan?>("CycleTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EventTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EventType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FeasibilityTestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IndependentTaskId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeSpan?>("LeadTime")
+                        .HasColumnType("time");
+
+                    b.Property<int?>("MilestoneId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MilestoneName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ParentTimelineId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Priority")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProjectAssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProjectName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RedirectUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RequestVerificationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TimelineType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IndependentTaskId");
+
+                    b.HasIndex("MilestoneId");
+
+                    b.HasIndex("ParentTimelineId");
+
+                    b.HasIndex("ProjectAssignmentId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Timelines");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TimelinePhase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<TimeSpan>("Duration")
+                        .HasColumnType("time");
+
+                    b.Property<int?>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PhaseEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhaseName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime?>("PhaseStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhaseStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<TimeSpan>("TaktTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("TimelineId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TimelineId");
+
+                    b.ToTable("TimelinePhases");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TodoItem", b =>
                 {
                     b.Property<int>("Id")
@@ -1033,11 +2077,13 @@ namespace ProjectManagementSystem1.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AssignedBy")
-                        .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("AssigneeId")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompletionDetails")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1093,6 +2139,8 @@ namespace ProjectManagementSystem1.Migrations
 
                     b.HasIndex("ProjectTaskId");
 
+                    b.HasIndex("Status");
+
                     b.ToTable("TodoItems");
                 });
 
@@ -1125,8 +2173,474 @@ namespace ProjectManagementSystem1.Migrations
                     b.ToTable("UserAccessTokens");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserSkill", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EndorsementCount")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Proficiency")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("UserSkills");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ApprovalDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedTeam")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("AssignedTo")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("BenefitCaptureDuration")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BusinessDepartment")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BusinessDivision")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("BusinessImpact")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BusinessSector")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("BusinessValueScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ComplexityLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("EstimatedBenefit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("EstimatedCost")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("EvaluationRemarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("EvaluatorID")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("FeasibilityScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("LastUpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OrganizationName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("PrimaryContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("PrimaryContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("PriorityLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReferenceNo")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("RequestCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestDescription")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("RequestID")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
+
+                    b.Property<string>("RequestTitle")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("RequestType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RequestUrgency")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("RequestedByName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("RequestedDeliveryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RiskLevel")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SecondaryContactEmail")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("SecondaryContactPhone")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("ServiceCategory")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StrategicAlignment")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("TechnicalComplexityScore")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TotalScore")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<int?>("WorkflowStage")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedDate");
+
+                    b.HasIndex("RequestID")
+                        .IsUnique();
+
+                    b.HasIndex("RequestedBy");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ProjectRequests");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BlobId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("FileCategory")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("FileType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Links")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UploadedBy")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UploadedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestAttachments");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorID")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CommentText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestComments");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestFeedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorID")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FeedbackText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestFeedbacks");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestOwnerHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("OwnerID")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("OwnerName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("OwnerRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestOwnerHistorys");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestStatusHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("StatusDescription")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("StatusID")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StatusOwner")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestStatusHistorys");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestWorkflowHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProjectRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("WorkflowDescription")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WorkflowOwner")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectRequestId");
+
+                    b.ToTable("ProjectRequestWorkflowHistorys");
+                });
+
+            modelBuilder.Entity("ApplicationUserEscalation", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Escalation", null)
+                        .WithMany()
+                        .HasForeignKey("ReceivedEscalationsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Attachment", b =>
                 {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("IndependentTaskTaskId");
+
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
                         .WithMany()
                         .HasForeignKey("ProjectTaskId");
@@ -1134,8 +2648,38 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "UploadedBy")
                         .WithMany()
                         .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.OwnsMany("AttachmentMetadata", "Metadata", b1 =>
+                        {
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<Guid>("AttachmentId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Key")
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Value")
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("AttachmentId");
+
+                            b1.HasIndex("Key", "Value");
+
+                            b1.ToTable("AttachmentMetadata", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("AttachmentId");
+                        });
+
+                    b.Navigation("Metadata");
 
                     b.Navigation("ProjectTask");
 
@@ -1193,23 +2737,34 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ProjectAssignment", b =>
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AccessLog", b =>
                 {
-                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Member")
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
                         .WithMany()
-                        .HasForeignKey("MemberId")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ActivityLogFieldChange", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ActivityLog", "ActivityLog")
+                        .WithMany("FieldChanges")
+                        .HasForeignKey("ActivityLogId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Project", "Project")
-                        .WithMany("ProjectAssignments")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ActivityLog");
+                });
 
-                    b.Navigation("Member");
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "ReportsTo")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ReportsToUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Project");
+                    b.Navigation("ReportsTo");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AttachmentPermission", b =>
@@ -1223,14 +2778,12 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Attachment");
 
@@ -1241,6 +2794,10 @@ namespace ProjectManagementSystem1.Migrations
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Comment", b =>
                 {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", null)
+                        .WithMany("Comments")
+                        .HasForeignKey("IndependentTaskTaskId");
+
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "Task")
                         .WithMany()
                         .HasForeignKey("TaskId")
@@ -1248,6 +2805,96 @@ namespace ProjectManagementSystem1.Migrations
                         .IsRequired();
 
                     b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Escalation", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", "IndependentTask")
+                        .WithMany("Escalations")
+                        .HasForeignKey("IndependentTaskId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Milestone", "Milestone")
+                        .WithMany("Escalations")
+                        .HasForeignKey("MilestoneId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Escalation", "ParentEscalation")
+                        .WithMany()
+                        .HasForeignKey("ParentEscalationId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("Project", "Project")
+                        .WithMany("Escalations")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
+                        .WithMany("Escalations")
+                        .HasForeignKey("ProjectTaskId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Sender")
+                        .WithMany("SentEscalations")
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("IndependentTask");
+
+                    b.Navigation("Milestone");
+
+                    b.Navigation("ParentEscalation");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ProjectTask");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.EscalationReply", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Escalation", "Escalation")
+                        .WithMany("EscalationReplies")
+                        .HasForeignKey("EscalationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Escalation");
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.EscalationUser", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Escalation", "Escalation")
+                        .WithMany("EscalationUsers")
+                        .HasForeignKey("EscalationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
+                        .WithMany("EscalationUsers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Escalation");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.IndependentTask", b =>
@@ -1267,6 +2914,36 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("AssignedToUser");
 
                     b.Navigation("CreatedByUser");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeId");
+
+                    b.HasOne("Project", "Project")
+                        .WithMany("Issues")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
+                        .WithMany()
+                        .HasForeignKey("ProjectTaskId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assignee");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ProjectTask");
+
+                    b.Navigation("Reporter");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -1321,9 +2998,7 @@ namespace ProjectManagementSystem1.Migrations
                 {
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "AssignedMember")
                         .WithMany()
-                        .HasForeignKey("AssignedMemberId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AssignedMemberId");
 
                     b.HasOne("Project", "Project")
                         .WithMany()
@@ -1334,6 +3009,25 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("AssignedMember");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.MilestoneMember", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Milestone", "Milestone")
+                        .WithMany("MilestoneMembers")
+                        .HasForeignKey("MilestoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Milestone");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.PersonalTodo", b =>
@@ -1347,8 +3041,32 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectAssignment", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Project", "Project")
+                        .WithMany("ProjectAssignments")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
                 {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Issue", "Issue")
+                        .WithMany("ProjectTasks")
+                        .HasForeignKey("IssueId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("ProjectManagementSystem1.Model.Entities.Milestone", "Milestone")
                         .WithMany()
                         .HasForeignKey("MilestoneId");
@@ -1358,7 +3076,7 @@ namespace ProjectManagementSystem1.Migrations
                         .HasForeignKey("ParentTaskId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("ProjectAssignment", "ProjectAssignment")
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectAssignment", "ProjectAssignment")
                         .WithMany("Tasks")
                         .HasForeignKey("ProjectAssignmentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1367,6 +3085,8 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", null)
                         .WithMany("Dependencies")
                         .HasForeignKey("ProjectTaskId");
+
+                    b.Navigation("Issue");
 
                     b.Navigation("Milestone");
 
@@ -1386,13 +3106,112 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TaskDependency", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "PredecessorTask")
+                        .WithMany()
+                        .HasForeignKey("PredecessorTaskId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "SuccessorTask")
+                        .WithMany()
+                        .HasForeignKey("SuccessorTaskId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("PredecessorTask");
+
+                    b.Navigation("SuccessorTask");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TaskStatusHistory", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedById");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", "Task")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Timeline", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", "IndependentTask")
+                        .WithMany()
+                        .HasForeignKey("IndependentTaskId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Milestone", "Milestone")
+                        .WithMany()
+                        .HasForeignKey("MilestoneId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Timeline", "ParentTimeline")
+                        .WithMany("SubTimelines")
+                        .HasForeignKey("ParentTimelineId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectAssignment", "ProjectAssignment")
+                        .WithMany()
+                        .HasForeignKey("ProjectAssignmentId");
+
+                    b.HasOne("Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId");
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("IndependentTask");
+
+                    b.Navigation("Milestone");
+
+                    b.Navigation("ParentTimeline");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ProjectAssignment");
+
+                    b.Navigation("Task");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TimelinePhase", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.Timeline", "Timeline")
+                        .WithMany("Phases")
+                        .HasForeignKey("TimelineId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Timeline");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.TodoItem", b =>
                 {
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "AssigningTeamLeader")
                         .WithMany()
-                        .HasForeignKey("AssignedBy")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("AssignedBy");
 
                     b.HasOne("ProjectManagementSystem1.Model.Entities.IndependentTask", "IndependentTask")
                         .WithMany()
@@ -1401,7 +3220,7 @@ namespace ProjectManagementSystem1.Migrations
                     b.HasOne("ProjectManagementSystem1.Model.Entities.ProjectTask", "ProjectTask")
                         .WithMany("TodoItems")
                         .HasForeignKey("ProjectTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AssigningTeamLeader");
@@ -1422,14 +3241,142 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.UserSkill", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.AddSkill", "Skill")
+                        .WithMany("UserSkills")
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectManagementSystem1.Model.Entities.ApplicationUser", "User")
+                        .WithMany("UserSkills")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Skill");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestAttachment", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestComment", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("Comments")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestFeedback", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestOwnerHistory", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("OwnerHistories")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestStatusHistory", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequestWorkflowHistory", b =>
+                {
+                    b.HasOne("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", "ProjectRequest")
+                        .WithMany("WorkflowHistories")
+                        .HasForeignKey("ProjectRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectRequest");
+                });
+
             modelBuilder.Entity("Project", b =>
                 {
+                    b.Navigation("Escalations");
+
+                    b.Navigation("Issues");
+
                     b.Navigation("ProjectAssignments");
                 });
 
-            modelBuilder.Entity("ProjectAssignment", b =>
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ActivityLog", b =>
                 {
-                    b.Navigation("Tasks");
+                    b.Navigation("FieldChanges");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.AddSkill", b =>
+                {
+                    b.Navigation("UserSkills");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ApplicationUser", b =>
+                {
+                    b.Navigation("DirectReports");
+
+                    b.Navigation("EscalationUsers");
+
+                    b.Navigation("SentEscalations");
+
+                    b.Navigation("UserSkills");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Escalation", b =>
+                {
+                    b.Navigation("EscalationReplies");
+
+                    b.Navigation("EscalationUsers");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.IndependentTask", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("Escalations");
+
+                    b.Navigation("StatusHistory");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Issue", b =>
+                {
+                    b.Navigation("ProjectTasks");
                 });
 
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Message", b =>
@@ -1437,13 +3384,49 @@ namespace ProjectManagementSystem1.Migrations
                     b.Navigation("ReadStatuses");
                 });
 
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Milestone", b =>
+                {
+                    b.Navigation("Escalations");
+
+                    b.Navigation("MilestoneMembers");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectAssignment", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
             modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.ProjectTask", b =>
                 {
                     b.Navigation("Dependencies");
 
+                    b.Navigation("Escalations");
+
                     b.Navigation("SubTasks");
 
                     b.Navigation("TodoItems");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Model.Entities.Timeline", b =>
+                {
+                    b.Navigation("Phases");
+
+                    b.Navigation("SubTimelines");
+                });
+
+            modelBuilder.Entity("ProjectManagementSystem1.Models.Entities.ProjectRequestEntities.ProjectRequest", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("Feedbacks");
+
+                    b.Navigation("OwnerHistories");
+
+                    b.Navigation("StatusHistories");
+
+                    b.Navigation("WorkflowHistories");
                 });
 #pragma warning restore 612, 618
         }

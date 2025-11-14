@@ -29,5 +29,5 @@
       "@/*": ["./src/*"]
     }
   },
-    "include": ["src", "src/pages/Login.tsx"]
+    "include": ["src", "src/pages/Account/Login.tsx"]
   }

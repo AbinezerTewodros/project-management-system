@@ -11,6 +11,8 @@ namespace ProjectManagementSystem1.Services.JwtService
     public interface IJwtService
     {
         Task<string> GenerateJwtTokenAsync(ApplicationUser user);
+        //string GenerateDownloadToken(Guid fileId, TimeSpan lifespan);
+        //bool ValidateDownloadToken(string token, Guid expectedFileId);
     }
 
     public class JwtService : IJwtService
@@ -36,7 +38,17 @@ namespace ProjectManagementSystem1.Services.JwtService
                 throw new InvalidOperationException("JWT configuration is missing in appsettings.json");
             }
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            byte[] signingKeyBytes;
+            try
+            {
+                signingKeyBytes = Convert.FromBase64String(secretKey);
+            }
+            catch (FormatException)
+            {
+                signingKeyBytes = Encoding.UTF8.GetBytes(secretKey);
+            }
+
+            var key = new SymmetricSecurityKey(signingKeyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // 🔥 Build claims
@@ -61,5 +73,7 @@ namespace ProjectManagementSystem1.Services.JwtService
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+    
     }
 }

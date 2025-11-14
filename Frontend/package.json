@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node init && vite",
+    "build": "node init && tsc -b && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-types": "openapi-typescript swagger.json --output src/types/api.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -50,6 +51,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/react-calendar": "^3.9.0",
     "aws-sdk": "^2.1692.0",
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -58,6 +60,7 @@
     "datatables.net": "^2.3.2",
     "datatables.net-bs5": "^2.3.1",
     "datatables.net-dt": "^2.3.2",
+    "datatables.net-responsive-dt": "^3.0.6",
     "date-fns": "^3.6.0",
     "date-holidays": "^3.24.3",
     "embla-carousel-react": "^8.3.0",
@@ -66,6 +69,7 @@
     "jquery": "^3.7.1",
     "lucide-react": "^0.486.0",
     "next-themes": "^0.3.0",
+    "openapi-fetch": "^0.14.0",
     "react": "^18.2.0",
     "react-calendar": "^6.0.0",
     "react-data-table-component": "^7.7.0",
@@ -104,10 +108,11 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.7",
+    "openapi-typescript": "^7.9.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "^5.2.10"
+    "vite": "^6.3.6"
   }
 }
